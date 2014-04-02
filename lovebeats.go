@@ -129,7 +129,15 @@ func updateExpiry(service *Service, ts int64) {
 
 func service_save(service *Service, ref *Service) {
 	if *service != *ref {
-		log.Printf("service " + service.Name + ", " + ref.State + " -> " + service.State);
+		if service.State != ref.State {
+			log.Printf("service %s, state %s -> %s", service.Name, ref.State, service.State)
+		}
+		if service.WarningTimeout != ref.WarningTimeout {
+			log.Printf("service %s, warn %d -> %d", service.Name, ref.WarningTimeout, service.WarningTimeout)
+		}
+		if service.ErrorTimeout != ref.ErrorTimeout {
+			log.Printf("service %s, err %d -> %d", service.Name, ref.ErrorTimeout, service.ErrorTimeout)
+		}
 		b, _ := json.Marshal(service)
 		client.Set("lb.service." + service.Name, b)
 	}
