@@ -302,9 +302,48 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
         io.WriteString(c, body)
 }
 
+func TriggerHandler(c http.ResponseWriter, r *http.Request) {
+	var err = r.ParseForm()
+	if err != nil {
+		log.Print("error parsing form ", err)
+		return
+	}
+
+	var errtmo, warntmo = r.FormValue("err-tmo"), r.FormValue("warn-tmo")
+
+	In <- &Cmd{
+		Action:  ACTION_BEAT,
+		Service: string("path"),
+		Value:   1,
+	}
+
+	
+	if val, err := strconv.Atoi(errtmo); err == nil {
+		In <- &Cmd{
+			Action:  ACTION_SET_ERR,
+			Service: string("path"),
+			Value:   val,
+		}
+	}
+
+	if val, err := strconv.Atoi(warntmo); err == nil {
+		In <- &Cmd{
+			Action:  ACTION_SET_WARN,
+			Service: string("path"),
+			Value:   val,
+		}
+	}
+
+
+        c.Header().Add("Content-Type", "text/plain")
+        c.Header().Add("Content-Length", "3")
+        io.WriteString(c, "ok\n")
+}
+
 func httpServer() {
 	http.Handle("/", http.HandlerFunc(DashboardHandler))
 	http.Handle("/status", http.HandlerFunc(StatusHandler))
+	http.Handle("/trigger", http.HandlerFunc(TriggerHandler))
         http.ListenAndServe(":8080", nil)
 }
 
