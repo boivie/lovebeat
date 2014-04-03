@@ -17,9 +17,6 @@ import (
 	"github.com/hoisie/redis"
 )
 
-var signalchan chan os.Signal
-var client redis.Client
-
 const (
 	VERSION                 = "0.1.0"
 	MAX_UNPROCESSED_PACKETS = 1000
@@ -64,6 +61,8 @@ type Service struct {
 
 var (
 	In       = make(chan *Cmd, MAX_UNPROCESSED_PACKETS)
+	signalchan chan os.Signal
+	client redis.Client
 )
 
 func now() int64 { return time.Now().Unix() }
@@ -84,17 +83,17 @@ func getOrCreate(name string) (*Service, *Service) {
 	return service, &ref
 }
 
-func getExpiry(service *Service, timeout int64) int64 {
+func (s *Service)GetExpiry(timeout int64) int64 {
 	if timeout <= 0 {
 		return 0
 	}
-	return service.LastBeat + timeout
+	return s.LastBeat + timeout
 }
 
-func service_get_next_expiry(service *Service, ts int64) int64 {
+func (s *Service)GetNextExpiry(ts int64) int64 {
 	var next int64 = 0
-	var warningExpiry = getExpiry(service, service.WarningTimeout)
-	var errorExpiry = getExpiry(service, service.ErrorTimeout)
+	var warningExpiry = s.GetExpiry(s.WarningTimeout)
+	var errorExpiry = s.GetExpiry(s.ErrorTimeout)
 	if warningExpiry > 0 && warningExpiry > ts && (next == 0 || warningExpiry < next) {
 		next = warningExpiry
 	}
@@ -105,21 +104,21 @@ func service_get_next_expiry(service *Service, ts int64) int64 {
 	return next
 }
 
-func service_update_state(service *Service, ts int64) {
-	service.State = STATE_OK
-	var warningExpiry = getExpiry(service, service.WarningTimeout)
-	var errorExpiry = getExpiry(service, service.ErrorTimeout)
+func (s *Service) UpdateState(ts int64) {
+	s.State = STATE_OK
+	var warningExpiry = s.GetExpiry(s.WarningTimeout)
+	var errorExpiry = s.GetExpiry(s.ErrorTimeout)
 	if warningExpiry > 0 && ts >= warningExpiry {
-		service.State = STATE_WARNING
+		s.State = STATE_WARNING
 	}
 	if errorExpiry > 0 && ts >= errorExpiry {
-		service.State = STATE_ERROR
+		s.State = STATE_ERROR
 	}
 }
 
 func updateExpiry(service *Service, ts int64) {
 	if service.State != STATE_PAUSED {
-		if expiry := service_get_next_expiry(service, ts); expiry > 0 {
+		if expiry := service.GetNextExpiry(ts); expiry > 0 {
 			client.Zadd("lb.expiry", []byte(service.Name), float64(expiry))
 			return
 		}
@@ -127,19 +126,19 @@ func updateExpiry(service *Service, ts int64) {
 	client.Zrem("lb.expiry", []byte(service.Name))
 }
 
-func service_save(service *Service, ref *Service) {
-	if *service != *ref {
-		if service.State != ref.State {
-			log.Printf("service %s, state %s -> %s", service.Name, ref.State, service.State)
+func (s *Service)Save(ref *Service) {
+	if *s != *ref {
+		if s.State != ref.State {
+			log.Printf("service %s, state %s -> %s", s.Name, ref.State, s.State)
 		}
-		if service.WarningTimeout != ref.WarningTimeout {
-			log.Printf("service %s, warn %d -> %d", service.Name, ref.WarningTimeout, service.WarningTimeout)
+		if s.WarningTimeout != ref.WarningTimeout {
+			log.Printf("service %s, warn %d -> %d", s.Name, ref.WarningTimeout, s.WarningTimeout)
 		}
-		if service.ErrorTimeout != ref.ErrorTimeout {
-			log.Printf("service %s, err %d -> %d", service.Name, ref.ErrorTimeout, service.ErrorTimeout)
+		if s.ErrorTimeout != ref.ErrorTimeout {
+			log.Printf("service %s, err %d -> %d", s.Name, ref.ErrorTimeout, s.ErrorTimeout)
 		}
-		b, _ := json.Marshal(service)
-		client.Set("lb.service." + service.Name, b)
+		b, _ := json.Marshal(s)
+		client.Set("lb.service." + s.Name, b)
 	}
 }
 
@@ -153,13 +152,11 @@ func monitor() {
 			return
 		case <-ticker.C:
 			var ts = now()
-			log.Printf("TICK!")
-			// get list of expired events
 			if expired, err := client.Zrangebyscore("lb.expiry", 0, float64(now())); err == nil {
 				for _, elem := range expired {
 					var service, ref = getOrCreate(string(elem))
-					service_update_state(service, ts);
-					service_save(service, ref)
+					service.UpdateState(ts)
+					service.Save(ref)
 					updateExpiry(service, ts)
 				}
 			}
@@ -174,8 +171,8 @@ func monitor() {
 			case ACTION_BEAT:
 				service.LastBeat = ts
 			}
-			service_update_state(service, ts);
-			service_save(service, ref)
+			service.UpdateState(ts)
+			service.Save(ref)
 			updateExpiry(service, ts)
 		}
 	}
