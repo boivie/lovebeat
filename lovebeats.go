@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"strconv"
 	"time"
+	"io"
+	"net/http"
 	"github.com/hoisie/redis"
 )
 
@@ -102,7 +104,6 @@ func (s *Service)GetNextExpiry(ts int64) int64 {
 	if errorExpiry > 0 && errorExpiry > ts && (next == 0 || errorExpiry < next) {
 		next = errorExpiry
 	}
-	log.Printf("now: %d, warning: %d, error: %d, chosen: %d", ts, warningExpiry, errorExpiry, next)
 	return next
 }
 
@@ -260,6 +261,53 @@ func udpListener() {
 	}
 }
 
+func DashboardHandler(c http.ResponseWriter, req *http.Request) {
+	var buffer bytes.Buffer
+	var services, _ = client.Smembers("lb.services.all")
+	var errors, warnings = false, false
+	for _, v := range services {
+		var service, _ = getOrCreate(string(v))
+		buffer.WriteString(fmt.Sprintf("%-40s%s\n", service.Name, service.State))
+		if service.State == STATE_WARNING {
+			warnings = true
+		}
+		if service.State == STATE_ERROR {
+			errors = true
+		}
+	}
+	buffer.WriteString(fmt.Sprintf("\nwarnings: %t\nerrors: %t\ngood: %t\n", warnings, errors, !warnings && !errors))
+        body := buffer.String()
+        c.Header().Add("Content-Type", "text/plain")
+        c.Header().Add("Content-Length", strconv.Itoa(len(body)))
+        io.WriteString(c, body)
+}
+
+func StatusHandler(c http.ResponseWriter, req *http.Request) {
+	var buffer bytes.Buffer
+	var services, _ = client.Smembers("lb.services.all")
+	var errors, warnings = false, false
+	for _, v := range services {
+		var service, _ = getOrCreate(string(v))
+		if service.State == STATE_WARNING {
+			warnings = true
+		}
+		if service.State == STATE_ERROR {
+			errors = true
+		}
+	}
+	buffer.WriteString(fmt.Sprintf("warnings: %t\nerrors: %t\ngood: %t\n", warnings, errors, !warnings && !errors))
+        body := buffer.String()
+        c.Header().Add("Content-Type", "text/plain")
+        c.Header().Add("Content-Length", strconv.Itoa(len(body)))
+        io.WriteString(c, body)
+}
+
+func httpServer() {
+	http.Handle("/", http.HandlerFunc(DashboardHandler))
+	http.Handle("/status", http.HandlerFunc(StatusHandler))
+        http.ListenAndServe(":8080", nil)
+}
+
 func main() {
 	flag.Parse()
 	if *showVersion {
@@ -270,6 +318,7 @@ func main() {
 	signalchan = make(chan os.Signal, 1)
 	signal.Notify(signalchan, syscall.SIGTERM)
 
+	go httpServer()
 	go udpListener()
 	monitor()
 }
