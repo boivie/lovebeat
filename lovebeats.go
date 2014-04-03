@@ -53,6 +53,7 @@ type Service struct {
 	Name           string
 	LastValue      int
 	LastBeat       int64
+	LastUpdated    int64
 	WarningTimeout int64
 	ErrorTimeout   int64
 	State          string
@@ -71,6 +72,7 @@ func getOrCreate(name string) (*Service, *Service) {
 		Name: name,
 		LastValue: -1,
 		LastBeat: -1,
+		LastUpdated: -1,
 		WarningTimeout: -1,
 		ErrorTimeout: -1,
 		State: STATE_PAUSED,
@@ -126,7 +128,7 @@ func updateExpiry(service *Service, ts int64) {
 	client.Zrem("lb.expiry", []byte(service.Name))
 }
 
-func (s *Service)Save(ref *Service) {
+func (s *Service)Save(ref *Service, ts int64) {
 	if *s != *ref {
 		if s.State != ref.State {
 			log.Printf("service %s, state %s -> %s", s.Name, ref.State, s.State)
@@ -137,8 +139,12 @@ func (s *Service)Save(ref *Service) {
 		if s.ErrorTimeout != ref.ErrorTimeout {
 			log.Printf("service %s, err %d -> %d", s.Name, ref.ErrorTimeout, s.ErrorTimeout)
 		}
+		s.LastUpdated = ts
 		b, _ := json.Marshal(s)
 		client.Set("lb.service." + s.Name, b)
+		if ref.LastUpdated < 0 {
+			client.Sadd("lb.services.all", []byte(s.Name))
+		}
 	}
 }
 
@@ -156,7 +162,7 @@ func monitor() {
 				for _, elem := range expired {
 					var service, ref = getOrCreate(string(elem))
 					service.UpdateState(ts)
-					service.Save(ref)
+					service.Save(ref, ts)
 					updateExpiry(service, ts)
 				}
 			}
@@ -172,7 +178,7 @@ func monitor() {
 				service.LastBeat = ts
 			}
 			service.UpdateState(ts)
-			service.Save(ref)
+			service.Save(ref, ts)
 			updateExpiry(service, ts)
 		}
 	}
