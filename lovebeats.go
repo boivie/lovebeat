@@ -56,7 +56,6 @@ type Service struct {
 	WarningTimeout int64
 	ErrorTimeout   int64
 	State          string
-	Status         string
 }
 
 var (
@@ -71,6 +70,7 @@ func getOrCreate(name string) (*Service, *Service) {
 	service := &Service{
 		Name: name,
 		LastValue: -1,
+		LastBeat: -1,
 		WarningTimeout: -1,
 		ErrorTimeout: -1,
 		State: STATE_PAUSED,
