@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"github.com/hoisie/redis"
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -319,6 +320,9 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 }
 
 func TriggerHandler(c http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	name := params["name"]
+
 	var err = r.ParseForm()
 	if err != nil {
 		log.Print("error parsing form ", err)
@@ -329,7 +333,7 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 
 	In <- &Cmd{
 		Action:  ACTION_BEAT,
-		Service: string("path"),
+		Service: name,
 		Value:   1,
 	}
 
@@ -337,7 +341,7 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 	if val, err := strconv.Atoi(errtmo); err == nil {
 		In <- &Cmd{
 			Action:  ACTION_SET_ERR,
-			Service: string("path"),
+			Service: name,
 			Value:   val,
 		}
 	}
@@ -345,7 +349,7 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 	if val, err := strconv.Atoi(warntmo); err == nil {
 		In <- &Cmd{
 			Action:  ACTION_SET_WARN,
-			Service: string("path"),
+			Service: name,
 			Value:   val,
 		}
 	}
@@ -357,9 +361,11 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func httpServer() {
-	http.Handle("/", http.HandlerFunc(DashboardHandler))
-	http.Handle("/status", http.HandlerFunc(StatusHandler))
-	http.Handle("/trigger", http.HandlerFunc(TriggerHandler))
+	rtr := mux.NewRouter()
+	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
+	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
+	rtr.HandleFunc("/trigger/{name:[a-z.]+}", TriggerHandler).Methods("POST")
+	http.Handle("/", rtr)
         http.ListenAndServe(":8080", nil)
 }
 
