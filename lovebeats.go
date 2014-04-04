@@ -278,13 +278,22 @@ func udpListener() {
 	}
 }
 
+func DashboardState(in string) string {
+	return map[string]string {
+		STATE_WARNING: "  WARN   ",
+		STATE_ERROR:   "      ERR",
+		STATE_OK:      "OK       ",
+	}[in]
+}
+
 func DashboardHandler(c http.ResponseWriter, req *http.Request) {
 	var buffer bytes.Buffer
 	var services, _ = client.Smembers("lb.services.all")
 	var errors, warnings = false, false
+
 	for _, v := range services {
 		var service, _ = getOrCreate(string(v))
-		buffer.WriteString(fmt.Sprintf("%-40s%s\n", service.Name, service.State))
+		buffer.WriteString(fmt.Sprintf(" %s | %-40s\n", DashboardState(service.State), service.Name))
 		if service.State == STATE_WARNING {
 			warnings = true
 		}
