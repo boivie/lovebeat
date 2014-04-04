@@ -22,6 +22,7 @@ import (
 const (
 	VERSION                 = "0.1.0"
 	MAX_UNPROCESSED_PACKETS = 1000
+	MAX_LOG_ENTRIES         = 1000
 	MAX_UDP_PACKET_SIZE     = 512
 )
 
@@ -119,6 +120,13 @@ func (s *Service) UpdateState(ts int64) {
 	}
 }
 
+func (s *Service) Log(format string, args ...interface{}) {
+	var key = "lb.service-log." + s.Name
+	var log = fmt.Sprintf(format, args...)
+	client.Lpush(key, []byte(log))
+	client.Ltrim(key, 0, MAX_LOG_ENTRIES)
+}
+
 func updateExpiry(service *Service, ts int64) {
 	if service.State != STATE_PAUSED {
 		if expiry := service.GetNextExpiry(ts); expiry > 0 {
@@ -132,13 +140,19 @@ func updateExpiry(service *Service, ts int64) {
 func (s *Service)Save(ref *Service, ts int64) {
 	if *s != *ref {
 		if s.State != ref.State {
-			log.Printf("service %s, state %s -> %s", s.Name, ref.State, s.State)
+			log.Printf("service %s, state %s -> %s",
+				s.Name, ref.State, s.State)
+			s.Log("%d|state|%s", ts, s.State)
 		}
 		if s.WarningTimeout != ref.WarningTimeout {
-			log.Printf("service %s, warn %d -> %d", s.Name, ref.WarningTimeout, s.WarningTimeout)
+			log.Printf("service %s, warn %d -> %d",
+				s.Name, ref.WarningTimeout, s.WarningTimeout)
+			s.Log("%d|warn-tmo|%s", ts, ref.WarningTimeout)
 		}
 		if s.ErrorTimeout != ref.ErrorTimeout {
-			log.Printf("service %s, err %d -> %d", s.Name, ref.ErrorTimeout, s.ErrorTimeout)
+			log.Printf("service %s, err %d -> %d",
+				s.Name, ref.ErrorTimeout, s.ErrorTimeout)
+			s.Log("%d|err-tmo|%s", ts, ref.ErrorTimeout)
 		}
 		s.LastUpdated = ts
 		b, _ := json.Marshal(s)
@@ -177,6 +191,8 @@ func monitor() {
 				service.ErrorTimeout = int64(s.Value)
 			case ACTION_BEAT:
 				service.LastBeat = ts
+				var diff = ts - ref.LastBeat
+				service.Log("%d|beat|%d", ts, diff)
 			}
 			service.UpdateState(ts)
 			service.Save(ref, ts)
