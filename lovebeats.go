@@ -283,6 +283,7 @@ func monitor() {
 				service.LastBeat = ts
 				var diff = ts - ref.LastBeat
 				service.Log("%d|beat|%d", ts, diff)
+				log.Printf("Beat from %s", s.Service)
 			}
 			service.UpdateState(ts)
 			service.Save(ref, ts)
@@ -347,7 +348,7 @@ func parseMessage(data []byte) []*Cmd {
 
 func udpListener() {
 	address, _ := net.ResolveUDPAddr("udp", *serviceAddress)
-	log.Printf("listening on %s", address)
+	log.Printf("UDP listener running on %s", address)
 	listener, err := net.ListenUDP("udp", address)
 	if err != nil {
 		log.Fatalf("ERROR: ListenUDP - %s", err)
@@ -492,27 +493,28 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func httpServer() {
+func httpServer(port int16) {
 	rtr := mux.NewRouter()
 	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/trigger/{name:[a-z0-9.]+}", TriggerHandler).Methods("POST")
 	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
 	http.Handle("/", rtr)
-        http.ListenAndServe(":8080", nil)
+	log.Printf("HTTP server running on port %d\n", port)
+        http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 func main() {
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("statsdaemon v%s (built w/%s)\n", VERSION, runtime.Version())
+		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
 		return
 	}
 
 	signalchan = make(chan os.Signal, 1)
 	signal.Notify(signalchan, syscall.SIGTERM)
 
-	go httpServer()
+	go httpServer(8080)
 	go udpListener()
 	monitor()
 }
