@@ -280,6 +280,9 @@ func monitor() {
 			case ACTION_SET_ERR:
 				service.ErrorTimeout = int64(s.Value)
 			case ACTION_BEAT:
+				if s.Value > 1 {
+					service.ErrorTimeout = int64(s.Value)
+				}
 				service.LastBeat = ts
 				var diff = ts - ref.LastBeat
 				service.Log("%d|beat|%d", ts, diff)
