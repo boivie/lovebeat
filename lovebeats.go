@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	serviceAddress   = flag.String("address", ":8125", "UDP service address")
+	serviceAddress   = flag.String("address", ":8127", "UDP service address")
 	expiryInterval   = flag.Int64("expiry-interval", 1, "Expiry interval (seconds)")
 	debug            = flag.Bool("debug", false, "print statistics sent to graphite")
 	showVersion      = flag.Bool("version", false, "print version string")
