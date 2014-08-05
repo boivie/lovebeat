@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"encoding/json"
 	"os"
@@ -18,7 +17,10 @@ import (
 	"net/http"
 	"github.com/hoisie/redis"
 	"github.com/gorilla/mux"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("package.example")
 
 const (
 	VERSION                 = "0.1.0"
@@ -157,17 +159,17 @@ func updateExpiry(service *Service, ts int64) {
 func (s *Service)Save(ref *Service, ts int64) {
 	if *s != *ref {
 		if s.State != ref.State {
-			log.Printf("SERVICE '%s', state %s -> %s",
+			log.Info("SERVICE '%s', state %s -> %s",
 				s.Name, ref.State, s.State)
 			s.Log("%d|state|%s", ts, s.State)
 		}
 		if s.WarningTimeout != ref.WarningTimeout {
-			log.Printf("SERVICE '%s', warn %d -> %d",
+			log.Info("SERVICE '%s', warn %d -> %d",
 				s.Name, ref.WarningTimeout, s.WarningTimeout)
 			s.Log("%d|warn-tmo|%s", ts, ref.WarningTimeout)
 		}
 		if s.ErrorTimeout != ref.ErrorTimeout {
-			log.Printf("SERVICE '%s', err %d -> %d",
+			log.Info("SERVICE '%s', err %d -> %d",
 				s.Name, ref.ErrorTimeout, s.ErrorTimeout)
 			s.Log("%d|err-tmo|%s", ts, ref.ErrorTimeout)
 		}
@@ -217,7 +219,7 @@ func (v *View) Log(format string, args ...interface{}) {
 func (v *View) Save(ref *View, ts int64) {
 	if *v != *ref {
 		if v.State != ref.State {
-			log.Printf("VIEW '%s', state %s -> %s",
+			log.Info("VIEW '%s', state %s -> %s",
 				v.Name, ref.State, v.State)
 			v.Log("%d|state|%s", ts, v.State)
 		}
@@ -286,7 +288,7 @@ func monitor() {
 				service.LastBeat = ts
 				var diff = ts - ref.LastBeat
 				service.Log("%d|beat|%d", ts, diff)
-				log.Printf("Beat from %s", s.Service)
+				log.Debug("Beat from %s", s.Service)
 			}
 			service.UpdateState(ts)
 			service.Save(ref, ts)
@@ -316,14 +318,14 @@ func parseMessage(data []byte) []*Cmd {
 		case "c":
 			var vali, err = strconv.ParseInt(string(item[3]), 10, 64)
 			if err != nil {
-				log.Printf("ERROR: failed to ParseInt %s - %s", item[3], err)
+				log.Error("failed to ParseInt %s - %s", item[3], err)
 				continue
 			}
 			value = int(vali)
 		default:
 			var valu, err = strconv.ParseUint(string(item[3]), 10, 64)
 			if err != nil {
-				log.Printf("ERROR: failed to ParseUint %s - %s", item[3], err)
+				log.Error("failed to ParseUint %s - %s", item[3], err)
 				continue
 			}
 			value = int(valu)
@@ -351,10 +353,10 @@ func parseMessage(data []byte) []*Cmd {
 
 func udpListener() {
 	address, _ := net.ResolveUDPAddr("udp", *serviceAddress)
-	log.Printf("UDP listener running on %s", address)
+	log.Info("UDP listener running on %s", address)
 	listener, err := net.ListenUDP("udp", address)
 	if err != nil {
-		log.Fatalf("ERROR: ListenUDP - %s", err)
+		log.Fatalf("ListenUDP - %s", err)
 	}
 	defer listener.Close()
 
@@ -362,7 +364,7 @@ func udpListener() {
 	for {
 		n, remaddr, err := listener.ReadFromUDP(message)
 		if err != nil {
-			log.Printf("ERROR: reading UDP packet from %+v - %s", remaddr, err)
+			log.Error("reading UDP packet from %+v - %s", remaddr, err)
 			continue
 		}
 
@@ -428,7 +430,7 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 
 	var err = r.ParseForm()
 	if err != nil {
-		log.Print("error parsing form ", err)
+		log.Error("error parsing form ", err)
 		return
 	}
 
@@ -468,13 +470,13 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 	view_name := params["name"]
 	var expr = r.FormValue("regexp")
 	if expr == "" {
-		log.Printf("No regexp provided")
+		log.Error("No regexp provided")
 		return
 	}
 
 	var re, err = regexp.Compile(expr)
 	if err != nil {
-		log.Printf("Invalid regexp: %s", err)
+		log.Error("Invalid regexp: %s", err)
 		return
 	}
 
@@ -489,7 +491,7 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 	}
 
 	client.Sadd("lb.views.all", []byte(view_name))
-	log.Printf("VIEW '%s' created or updated.", view_name)
+	log.Info("VIEW '%s' created or updated.", view_name)
 	ViewCmdChan <- &ViewCmd{
 		Action: ACTION_REFRESH_VIEW,
 		View:   view_name,
@@ -503,7 +505,7 @@ func httpServer(port int16) {
 	rtr.HandleFunc("/trigger/{name:[a-z0-9.]+}", TriggerHandler).Methods("POST")
 	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
 	http.Handle("/", rtr)
-	log.Printf("HTTP server running on port %d\n", port)
+	log.Info("HTTP server running on port %d\n", port)
         http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
@@ -516,6 +518,10 @@ func main() {
 
 	signalchan = make(chan os.Signal, 1)
 	signal.Notify(signalchan, syscall.SIGTERM)
+
+	var format = logging.MustStringFormatter("%{level} %{message}")
+	logging.SetFormatter(format)
+	logging.SetLevel(logging.INFO, "package.example")
 
 	go httpServer(8080)
 	go udpListener()
