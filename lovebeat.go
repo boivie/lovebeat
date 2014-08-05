@@ -407,17 +407,21 @@ func DashboardHandler(c http.ResponseWriter, req *http.Request) {
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var buffer bytes.Buffer
 	var services, _ = client.Smembers("lb.services.all")
-	var errors, warnings = false, false
+	var errors, warnings, ok = 0, 0, 0
 	for _, v := range services {
 		var service, _ = getOrCreate(string(v))
 		if service.State == STATE_WARNING {
-			warnings = true
-		}
-		if service.State == STATE_ERROR {
-			errors = true
+			warnings++
+		} else if service.State == STATE_ERROR {
+			errors++
+		} else {
+			ok++
 		}
 	}
-	buffer.WriteString(fmt.Sprintf("warnings: %t\nerrors: %t\ngood: %t\n", warnings, errors, !warnings && !errors))
+	buffer.WriteString(fmt.Sprintf("num_ok %d\nnum_warning %d\nnum_error %d\n",
+		ok, warnings, errors))
+	buffer.WriteString(fmt.Sprintf("has_warning %t\nhas_error %t\ngood %t\n",
+		warnings > 0, errors > 0, warnings == 0 && errors == 0))
         body := buffer.String()
         c.Header().Add("Content-Type", "text/plain")
         c.Header().Add("Content-Length", strconv.Itoa(len(body)))
