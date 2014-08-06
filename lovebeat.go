@@ -18,6 +18,7 @@ import (
 	"github.com/hoisie/redis"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
+	"html/template"
 )
 
 var log = logging.MustGetLogger("package.example")
@@ -382,26 +383,22 @@ func DashboardState(in string) string {
 	}[in]
 }
 
-func DashboardHandler(c http.ResponseWriter, req *http.Request) {
-	var buffer bytes.Buffer
-	var services, _ = client.Smembers("lb.services.all")
-	var errors, warnings = false, false
+func DashboardHandler(w http.ResponseWriter, r *http.Request) {
+	var names, _ = client.Smembers("lb.services.all")
+	services := make(map[string]*Service)
 
-	for _, v := range services {
-		var service, _ = getOrCreate(string(v))
-		buffer.WriteString(fmt.Sprintf(" %s | %-40s\n", DashboardState(service.State), service.Name))
-		if service.State == STATE_WARNING {
-			warnings = true
-		}
-		if service.State == STATE_ERROR {
-			errors = true
-		}
+	for _, name := range names {
+		var service, _ = getOrCreate(string(name))
+		services[string(name)] = service
 	}
-	buffer.WriteString(fmt.Sprintf("\nwarnings: %t\nerrors: %t\ngood: %t\n", warnings, errors, !warnings && !errors))
-        body := buffer.String()
-        c.Header().Add("Content-Type", "text/plain")
-        c.Header().Add("Content-Length", strconv.Itoa(len(body)))
-        io.WriteString(c, body)
+
+	tc := make(map[string]interface{})
+	tc["services"] = services
+
+	templates := template.Must(template.ParseFiles("templates/base.html", "templates/index.html"))
+	if err := templates.Execute(w, tc); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
