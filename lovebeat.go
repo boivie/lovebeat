@@ -22,7 +22,7 @@ import (
 	"html/template"
 )
 
-var log = logging.MustGetLogger("package.example")
+var log = logging.MustGetLogger("lovebeat")
 
 const (
 	VERSION                 = "0.1.0"
@@ -552,7 +552,12 @@ func main() {
 
 	var format = logging.MustStringFormatter("%{level} %{message}")
 	logging.SetFormatter(format)
-	logging.SetLevel(logging.INFO, "package.example")
+	if *debug {
+		logging.SetLevel(logging.DEBUG, "lovebeat")
+	} else {
+		logging.SetLevel(logging.INFO, "lovebeat")
+	}
+	log.Debug("Debug logs enabled")
 
 	go httpServer(8080)
 	go udpListener()
