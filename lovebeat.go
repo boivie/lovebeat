@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -375,6 +376,35 @@ func udpListener() {
 	}
 }
 
+func tcpHandle(c *net.TCPConn) {
+	defer c.Close()
+	r := bufio.NewReaderSize(c, 4096)
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		var buf = scanner.Bytes()
+		for _, p := range parseMessage(buf) {
+			ServiceCmdChan <- p
+		}
+	}
+}
+
+func tcpListener() {
+	address, _ := net.ResolveTCPAddr("tcp", *serviceAddress)
+	log.Info("TCP listener running on %s", address)
+	listener, err := net.ListenTCP("tcp", address)
+	if err != nil {
+		log.Fatalf("ListenTCP - %s", err)
+	}
+	for {
+		c, err := listener.AcceptTCP()
+		if nil != err {
+			log.Error("Error: %s", err)
+			break
+		}
+		go tcpHandle(c)
+	}
+}
+
 func DashboardState(in string) string {
 	return map[string]string {
 		STATE_WARNING: "  WARN   ",
@@ -526,5 +556,6 @@ func main() {
 
 	go httpServer(8080)
 	go udpListener()
+	go tcpListener()
 	monitor()
 }
