@@ -53,7 +53,7 @@ type ViewCmd struct {
 	View     string
 }
 
-func GetOrCreate(name string) (*Service, *Service) {
+func GetFromBackend(name string) *Service {
 	service := &Service{
 		Name: name,
 		LastValue: -1,
@@ -67,9 +67,9 @@ func GetOrCreate(name string) (*Service, *Service) {
 	if data, err := client.Get("lb.service." + name); err == nil {
 		json.Unmarshal(data, &service)
 	}
-	var ref = *service
-	return service, &ref
+	return service
 }
+
 
 func (s *Service)GetExpiry(timeout int64) int64 {
 	if timeout <= 0 {
@@ -141,7 +141,7 @@ func (v *View) Refresh(ts int64) {
 	v.State = STATE_OK
 
 	for _, serv := range services {
-		var service, _ = GetOrCreate(string(serv))
+		var service = GetService(string(serv))
 		if service.State == STATE_WARNING && v.State == STATE_OK  {
 			v.State = STATE_WARNING
 		} else if service.State == STATE_ERROR {
@@ -231,20 +231,23 @@ func GetExpired(ts int64) []*Service {
 
 	var services = make([]*Service, len(names))
 	for idx, elem := range names {
-		var s, _ = GetOrCreate(string(elem))
+		var s = GetService(string(elem))
 		services[idx] = s
 	}
 	return services
 }
 
-func GetServices() []*Service {
-	var names, _ = client.Smembers("lb.services.all")
-	var services = make([]*Service, len(names))
-	for idx, elem := range names {
-		var s, _ = GetOrCreate(string(elem))
-		services[idx] = s
-	}
+func GetServices() map[string]*Service {
 	return services
+}
+
+func GetService(name string) *Service {
+	var s, ok = services[name]
+	if !ok {
+		log.Error("Asked for unknown service %s", name)
+		s = GetFromBackend(name)
+	}
+	return s
 }
 
 func CreateView(view_name string, re *regexp.Regexp, channel chan *ViewCmd) {
@@ -264,4 +267,16 @@ func CreateView(view_name string, re *regexp.Regexp, channel chan *ViewCmd) {
 		View:   view_name,
 	}
 
+}
+
+var (
+	services = make(map[string]*Service)
+	views = make(map[string]*View)
+)
+
+func Startup() {
+	for _, name := range GetServiceNames() {
+		services[name] = GetFromBackend(name)
+		log.Debug("Found service %s", name)
+	}
 }

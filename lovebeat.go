@@ -78,13 +78,15 @@ func monitor() {
 			var ts = now()
 			switch s.Action {
 			case service.ACTION_REFRESH_VIEW:
+				log.Debug("Refresh view %s", s.View)
 				var view, ref = service.GetView(s.View)
 				view.Refresh(ts)
 				view.Save(ref, ts);
 			}
 		case s := <-ServiceCmdChan:
 			var ts = now()
-			var service, ref = service.GetOrCreate(s.Service)
+			var service = service.GetService(s.Service)
+			var ref = *service
 			switch s.Action {
 			case ACTION_SET_WARN:
 				service.WarningTimeout = int64(s.Value)
@@ -100,7 +102,7 @@ func monitor() {
 				log.Debug("Beat from %s", s.Service)
 			}
 			service.UpdateState(ts)
-			service.Save(ref, ts)
+			service.Save(&ref, ts)
 			service.UpdateExpiry(ts)
 			service.UpdateViews(ViewCmdChan)
 		}
@@ -331,6 +333,8 @@ func main() {
 		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
 		return
 	}
+
+	service.Startup()
 
 	signalchan = make(chan os.Signal, 1)
 	signal.Notify(signalchan, syscall.SIGTERM)
