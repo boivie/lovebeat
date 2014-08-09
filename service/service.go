@@ -23,8 +23,6 @@ const (
 	ACTION_REFRESH_VIEW = "refresh-view"
 )
 
-
-
 var (
 	client redis.Client
 )
@@ -47,7 +45,6 @@ type View struct {
 	LastUpdated    int64
 }
 
-
 type ViewCmd struct {
 	Action   string
 	View     string
@@ -69,7 +66,6 @@ func GetFromBackend(name string) *Service {
 	}
 	return service
 }
-
 
 func (s *Service)GetExpiry(timeout int64) int64 {
 	if timeout <= 0 {
@@ -210,18 +206,6 @@ func (s *Service) UpdateViews(channel chan *ViewCmd) {
 	}
 }
 
-
-func GetServiceNames() []string {
-	var namesBytes, _ = client.Smembers("lb.services.all")
-
-	var names = make([]string, len(namesBytes))
-	for idx, elem := range namesBytes {
-		names[idx] = string(elem)
-	}
-	return names
-}
-
-
 func GetExpired(ts int64) []*Service {
 	names, err := client.Zrangebyscore("lb.expiry", 0, float64(ts))
 	if err != nil {
@@ -246,6 +230,7 @@ func GetService(name string) *Service {
 	if !ok {
 		log.Error("Asked for unknown service %s", name)
 		s = GetFromBackend(name)
+		services[name] = s
 	}
 	return s
 }
@@ -275,7 +260,9 @@ var (
 )
 
 func Startup() {
-	for _, name := range GetServiceNames() {
+	var namesBytes, _ = client.Smembers("lb.services.all")
+	for _, nameByte := range namesBytes {
+		var name = string(nameByte)
 		services[name] = GetFromBackend(name)
 		log.Debug("Found service %s", name)
 	}
