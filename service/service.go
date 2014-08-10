@@ -78,31 +78,19 @@ func (s *Service)GetExpiry(timeout int64) int64 {
 		return 0
 	}
 	return s.LastBeat + timeout
-}
+ }
 
-func (s *Service)GetNextExpiry(ts int64) int64 {
-	var next int64 = 0
-	var warningExpiry = s.GetExpiry(s.WarningTimeout)
-	var errorExpiry = s.GetExpiry(s.ErrorTimeout)
-	if warningExpiry > 0 && warningExpiry > ts && (next == 0 || warningExpiry < next) {
-		next = warningExpiry
-	}
-	if errorExpiry > 0 && errorExpiry > ts && (next == 0 || errorExpiry < next) {
-		next = errorExpiry
-	}
-	return next
-}
-
-func (s *Service) UpdateState(ts int64) {
-	s.State = STATE_OK
+func (s *Service) StateAt(ts int64) string {
+	var state = STATE_OK
 	var warningExpiry = s.GetExpiry(s.WarningTimeout)
 	var errorExpiry = s.GetExpiry(s.ErrorTimeout)
 	if warningExpiry > 0 && ts >= warningExpiry {
-		s.State = STATE_WARNING
+		state = STATE_WARNING
 	}
 	if errorExpiry > 0 && ts >= errorExpiry {
-		s.State = STATE_ERROR
+		state = STATE_ERROR
 	}
+	return state
 }
 
 func (s *Service) Log(format string, args ...interface{}) {
@@ -171,17 +159,6 @@ func (v *View) Save(ref *View, ts int64) {
 	}
 }
 
-func (s *Service) UpdateExpiry(ts int64) {
-	if s.State != STATE_PAUSED {
-		if expiry := s.GetNextExpiry(ts); expiry > 0 {
-			client.Zadd("lb.expiry", []byte(s.Name), float64(expiry))
-			return
-		}
-	}
-	client.Zrem("lb.expiry", []byte(s.Name))
-}
-
-
 func GetViewFromBackend(name string) *View {
 	view := &View{
 		Name: name,
@@ -208,21 +185,6 @@ func (s *Service) UpdateViews(channel chan *ViewCmd) {
 	}
 }
 
-func GetExpired(ts int64) []*Service {
-	names, err := client.Zrangebyscore("lb.expiry", 0, float64(ts))
-	if err != nil {
-		log.Error("Failed to get expired services: %s", err)
-		return make([]*Service, 0)
-	}
-
-	var services = make([]*Service, len(names))
-	for idx, elem := range names {
-		var s = GetService(string(elem))
-		services[idx] = s
-	}
-	return services
-}
-
 func GetServices() map[string]*Service {
 	return services
 }
@@ -232,6 +194,7 @@ func GetService(name string) *Service {
 	if !ok {
 		log.Error("Asked for unknown service %s", name)
 		s = GetFromBackend(name)
+		s.LastUpdated = -1
 		services[name] = s
 	}
 	return s
@@ -243,6 +206,7 @@ func GetView(name string) *View {
 	if !ok {
 		log.Error("Asked for unknown view %s", name)
 		s = GetViewFromBackend(name)
+		s.LastUpdated = -1
 		views[name] = s
 	}
 	return s

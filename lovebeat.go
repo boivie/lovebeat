@@ -56,7 +56,6 @@ var (
 
 func now() int64 { return time.Now().Unix() }
 
-
 func monitor() {
 	period := time.Duration(*expiryInterval) * time.Second
 	ticker := time.NewTicker(period)
@@ -67,11 +66,13 @@ func monitor() {
 			return
 		case <-ticker.C:
 			var ts = now()
-			for _, s := range service.GetExpired(ts) {
+			for _, s := range service.GetServices() {
+				if (s.State == service.STATE_PAUSED || s.State == s.StateAt(ts)) {
+					continue;
+				}
 				var ref = *s
-				s.UpdateState(ts)
+				s.State = s.StateAt(ts)
 				s.Save(&ref, ts)
-				s.UpdateExpiry(ts)
 				s.UpdateViews(ViewCmdChan)
 			}
 		case s := <-ViewCmdChan:
@@ -102,9 +103,10 @@ func monitor() {
 				service.Log("%d|beat|%d", ts, diff)
 				log.Debug("Beat from %s", s.Service)
 			}
-			service.UpdateState(ts)
+			if service.State != service.StateAt(ts) {
+				service.State = service.StateAt(ts)
+			}
 			service.Save(&ref, ts)
-			service.UpdateExpiry(ts)
 			service.UpdateViews(ViewCmdChan)
 		}
 	}
@@ -217,6 +219,7 @@ func tcpListener() {
 
 func DashboardState(in string) string {
 	return map[string]string {
+		service.STATE_PAUSED:  "-PAUSED--",
 		service.STATE_WARNING: "  WARN   ",
 		service.STATE_ERROR:   "      ERR",
 		service.STATE_OK:      "OK       ",
