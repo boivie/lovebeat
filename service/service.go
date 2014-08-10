@@ -24,6 +24,10 @@ const (
 )
 
 var (
+	EMPTY_REGEXP *regexp.Regexp
+)
+
+var (
 	client redis.Client
 )
 
@@ -42,7 +46,9 @@ type Service struct {
 type View struct {
 	Name           string
 	State          string
+	Regexp         string
 	LastUpdated    int64
+	ree            *regexp.Regexp
 }
 
 type ViewCmd struct {
@@ -133,15 +139,14 @@ func (s *Service)Save(ref *Service, ts int64) {
 }
 
 func (v *View) Refresh(ts int64) {
-	var services, _ = client.Smembers("lb.view-contents." + v.Name)
 	v.State = STATE_OK
-
-	for _, serv := range services {
-		var service = GetService(string(serv))
-		if service.State == STATE_WARNING && v.State == STATE_OK  {
-			v.State = STATE_WARNING
-		} else if service.State == STATE_ERROR {
-			v.State = STATE_ERROR
+	for _, s := range services {
+		if v.ree.Match([]byte(s.Name)) {
+			if s.State == STATE_WARNING && v.State == STATE_OK  {
+				v.State = STATE_WARNING
+			} else if s.State == STATE_ERROR {
+				v.State = STATE_ERROR
+			}
 		}
 	}
 }
@@ -177,30 +182,27 @@ func (s *Service) UpdateExpiry(ts int64) {
 }
 
 
-func GetView(name string) (*View, *View) {
+func GetViewFromBackend(name string) *View {
 	view := &View{
 		Name: name,
 		State: STATE_OK,
+		Regexp: "",
+		ree: EMPTY_REGEXP,
 	}
 
 	if data, err := client.Get("lb.view." + name); err == nil {
 		json.Unmarshal(data, &view)
+		view.ree, _ = regexp.Compile(view.Regexp)
 	}
-	var ref = *view
-	return view, &ref
+	return view
 }
 
 func (s *Service) UpdateViews(channel chan *ViewCmd) {
-	var views, _ = client.Smembers("lb.views.all")
-
 	for _, view := range views {
-		var view_name = string(view)
-		var mbr, _ = client.Sismember("lb.view-contents." + view_name,
-			[]byte(s.Name));
-		if mbr {
+		if view.ree.Match([]byte(s.Name)) {
 			channel <- &ViewCmd{
 				Action: ACTION_REFRESH_VIEW,
-				View:   view_name,
+				View:   view.Name,
 			}
 		}
 	}
@@ -235,23 +237,34 @@ func GetService(name string) *Service {
 	return s
 }
 
-func CreateView(view_name string, re *regexp.Regexp, channel chan *ViewCmd) {
-	var key = "lb.view-contents." + view_name
-	client.Del(key)
-	var names, _ = client.Smembers("lb.services.all")
-	for _, name := range names {
-		if re.Match(name) {
-			client.Sadd(key, name)
-		}
+
+func GetView(name string) *View {
+	var s, ok = views[name]
+	if !ok {
+		log.Error("Asked for unknown view %s", name)
+		s = GetViewFromBackend(name)
+		views[name] = s
+	}
+	return s
+}
+
+
+func CreateView(name string, expr string, channel chan *ViewCmd, ts int64) {
+	var ree, err = regexp.Compile(expr)
+	if err != nil {
+		log.Error("Invalid regexp: %s", err)
+		return
 	}
 
-	client.Sadd("lb.views.all", []byte(view_name))
-	log.Info("VIEW '%s' created or updated.", view_name)
-	channel <- &ViewCmd{
-		Action: ACTION_REFRESH_VIEW,
-		View:   view_name,
-	}
+	var view = GetView(name)
+	var ref = *view
+	view.Regexp = expr
+	view.ree = ree
+	view.Save(&ref, ts)
 
+	log.Info("VIEW '%s' created or updated.", name)
+
+	channel <- &ViewCmd{ Action: ACTION_REFRESH_VIEW, View: name }
 }
 
 var (
@@ -260,10 +273,19 @@ var (
 )
 
 func Startup() {
+	EMPTY_REGEXP, _ = regexp.Compile("^$")
 	var namesBytes, _ = client.Smembers("lb.services.all")
 	for _, nameByte := range namesBytes {
 		var name = string(nameByte)
 		services[name] = GetFromBackend(name)
 		log.Debug("Found service %s", name)
 	}
+
+	namesBytes, _ = client.Smembers("lb.views.all")
+	for _, nameByte := range namesBytes {
+		var name = string(nameByte)
+		views[name] = GetViewFromBackend(name)
+		log.Debug("Found view %s", name)
+	}
+
 }

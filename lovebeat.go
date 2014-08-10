@@ -79,9 +79,10 @@ func monitor() {
 			switch s.Action {
 			case service.ACTION_REFRESH_VIEW:
 				log.Debug("Refresh view %s", s.View)
-				var view, ref = service.GetView(s.View)
+				var view = service.GetView(s.View)
+				var ref = *view
 				view.Refresh(ts)
-				view.Save(ref, ts);
+				view.Save(&ref, ts);
 			}
 		case s := <-ServiceCmdChan:
 			var ts = now()
@@ -307,13 +308,7 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var re, err = regexp.Compile(expr)
-	if err != nil {
-		log.Error("Invalid regexp: %s", err)
-		return
-	}
-
-	service.CreateView(view_name, re, ViewCmdChan)
+	service.CreateView(view_name, expr, ViewCmdChan, now())
 }
 
 func httpServer(port int16) {
