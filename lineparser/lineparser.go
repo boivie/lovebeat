@@ -2,14 +2,13 @@ package lineparser
 
 import (
 	"bytes"
-	"strconv"
+	"github.com/boivie/lovebeat-go/internal"
 	"github.com/op/go-logging"
 	"regexp"
-	"github.com/boivie/lovebeat-go/internal"
+	"strconv"
 )
 
 var log = logging.MustGetLogger("lovebeat")
-
 
 var packetRegexp = regexp.MustCompile("^([^:]+)\\.(beat|warn|err):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
@@ -52,12 +51,11 @@ func Parse(data []byte) []*internal.Cmd {
 		case "beat":
 			action = internal.ACTION_BEAT
 		}
-		
 
 		packet := &internal.Cmd{
-			Action: action,
+			Action:  action,
 			Service: string(item[1]),
-			Value:    value,
+			Value:   value,
 		}
 		output = append(output, packet)
 	}

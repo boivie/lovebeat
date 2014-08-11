@@ -1,12 +1,12 @@
 package service
 
 import (
-	"fmt"
-	"regexp"
 	"encoding/json"
+	"fmt"
+	"github.com/boivie/lovebeat-go/internal"
 	"github.com/hoisie/redis"
 	"github.com/op/go-logging"
-	"github.com/boivie/lovebeat-go/internal"
+	"regexp"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 )
 
 const (
-	MAX_LOG_ENTRIES         = 1000
+	MAX_LOG_ENTRIES = 1000
 )
 
 const (
@@ -45,22 +45,22 @@ type Service struct {
 }
 
 type View struct {
-	Name           string
-	State          string
-	Regexp         string
-	LastUpdated    int64
-	ree            *regexp.Regexp
+	Name        string
+	State       string
+	Regexp      string
+	LastUpdated int64
+	ree         *regexp.Regexp
 }
 
 func GetFromBackend(name string) *Service {
 	service := &Service{
-		Name: name,
-		LastValue: -1,
-		LastBeat: -1,
-		LastUpdated: -1,
+		Name:           name,
+		LastValue:      -1,
+		LastBeat:       -1,
+		LastUpdated:    -1,
 		WarningTimeout: -1,
-		ErrorTimeout: -1,
-		State: STATE_PAUSED,
+		ErrorTimeout:   -1,
+		State:          STATE_PAUSED,
 	}
 
 	if data, err := client.Get("lb.service." + name); err == nil {
@@ -69,12 +69,12 @@ func GetFromBackend(name string) *Service {
 	return service
 }
 
-func (s *Service)GetExpiry(timeout int64) int64 {
+func (s *Service) GetExpiry(timeout int64) int64 {
 	if timeout <= 0 {
 		return 0
 	}
 	return s.LastBeat + timeout
- }
+}
 
 func (s *Service) StateAt(ts int64) string {
 	var state = STATE_OK
@@ -96,7 +96,7 @@ func (s *Service) Log(format string, args ...interface{}) {
 	client.Ltrim(key, 0, MAX_LOG_ENTRIES)
 }
 
-func (s *Service)Save(ref *Service, ts int64) {
+func (s *Service) Save(ref *Service, ts int64) {
 	if *s != *ref {
 		if s.State != ref.State {
 			log.Info("SERVICE '%s', state %s -> %s",
@@ -115,7 +115,7 @@ func (s *Service)Save(ref *Service, ts int64) {
 		}
 		s.LastUpdated = ts
 		b, _ := json.Marshal(s)
-		client.Set("lb.service." + s.Name, b)
+		client.Set("lb.service."+s.Name, b)
 		if ref.LastUpdated < 0 {
 			client.Sadd("lb.services.all", []byte(s.Name))
 		}
@@ -126,7 +126,7 @@ func (v *View) Refresh(ts int64) {
 	v.State = STATE_OK
 	for _, s := range services {
 		if v.ree.Match([]byte(s.Name)) {
-			if s.State == STATE_WARNING && v.State == STATE_OK  {
+			if s.State == STATE_WARNING && v.State == STATE_OK {
 				v.State = STATE_WARNING
 			} else if s.State == STATE_ERROR {
 				v.State = STATE_ERROR
@@ -151,16 +151,16 @@ func (v *View) Save(ref *View, ts int64) {
 		}
 		v.LastUpdated = ts
 		b, _ := json.Marshal(v)
-		client.Set("lb.view." + v.Name, b)
+		client.Set("lb.view."+v.Name, b)
 	}
 }
 
 func GetViewFromBackend(name string) *View {
 	view := &View{
-		Name: name,
-		State: STATE_OK,
+		Name:   name,
+		State:  STATE_OK,
 		Regexp: "",
-		ree: EMPTY_REGEXP,
+		ree:    EMPTY_REGEXP,
 	}
 
 	if data, err := client.Get("lb.view." + name); err == nil {
@@ -196,7 +196,6 @@ func GetService(name string) *Service {
 	return s
 }
 
-
 func GetView(name string) *View {
 	var s, ok = views[name]
 	if !ok {
@@ -207,7 +206,6 @@ func GetView(name string) *View {
 	}
 	return s
 }
-
 
 func CreateView(name string, expr string, channel chan *internal.ViewCmd, ts int64) {
 	var ree, err = regexp.Compile(expr)
@@ -224,12 +222,12 @@ func CreateView(name string, expr string, channel chan *internal.ViewCmd, ts int
 
 	log.Info("VIEW '%s' created or updated.", name)
 
-	channel <- &internal.ViewCmd{ Action: ACTION_REFRESH_VIEW, View: name }
+	channel <- &internal.ViewCmd{Action: ACTION_REFRESH_VIEW, View: name}
 }
 
 var (
 	services = make(map[string]*Service)
-	views = make(map[string]*View)
+	views    = make(map[string]*View)
 )
 
 func Startup() {

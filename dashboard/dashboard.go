@@ -1,10 +1,10 @@
 package dashboard
 
 import (
-	"net/http"
-	"html/template"
-	"github.com/gorilla/mux"
 	"github.com/boivie/lovebeat-go/service"
+	"github.com/gorilla/mux"
+	"html/template"
+	"net/http"
 )
 
 func DashboardHandler(w http.ResponseWriter, r *http.Request) {

@@ -3,19 +3,19 @@ package httpapi
 import (
 	"bytes"
 	"fmt"
-	"strconv"
-	"io"
-	"net/http"
-	"time"
-	"github.com/op/go-logging"
-	"github.com/gorilla/mux"
 	"github.com/boivie/lovebeat-go/internal"
 	"github.com/boivie/lovebeat-go/service"
+	"github.com/gorilla/mux"
+	"github.com/op/go-logging"
+	"io"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 var (
 	ServiceCmdChan chan *internal.Cmd
-	ViewCmdChan chan *internal.ViewCmd
+	ViewCmdChan    chan *internal.ViewCmd
 )
 
 func now() int64 { return time.Now().Unix() }
@@ -39,10 +39,10 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 		ok, warnings, errors))
 	buffer.WriteString(fmt.Sprintf("has_warning %t\nhas_error %t\ngood %t\n",
 		warnings > 0, errors > 0, warnings == 0 && errors == 0))
-        body := buffer.String()
-        c.Header().Add("Content-Type", "text/plain")
-        c.Header().Add("Content-Length", strconv.Itoa(len(body)))
-        io.WriteString(c, body)
+	body := buffer.String()
+	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Length", strconv.Itoa(len(body)))
+	io.WriteString(c, body)
 }
 
 func TriggerHandler(c http.ResponseWriter, r *http.Request) {
@@ -63,7 +63,6 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 		Value:   1,
 	}
 
-	
 	if val, err := strconv.Atoi(errtmo); err == nil {
 		ServiceCmdChan <- &internal.Cmd{
 			Action:  internal.ACTION_SET_ERR,
@@ -80,10 +79,9 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
-        c.Header().Add("Content-Type", "text/plain")
-        c.Header().Add("Content-Length", "3")
-        io.WriteString(c, "ok\n")
+	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Length", "3")
+	io.WriteString(c, "ok\n")
 }
 
 func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
@@ -98,7 +96,7 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 	service.CreateView(view_name, expr, ViewCmdChan, now())
 }
 
-func Register (rtr *mux.Router, cmd_chan chan *internal.Cmd, view_chan chan *internal.ViewCmd) {
+func Register(rtr *mux.Router, cmd_chan chan *internal.Cmd, view_chan chan *internal.ViewCmd) {
 	ServiceCmdChan = cmd_chan
 	ViewCmdChan = view_chan
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")

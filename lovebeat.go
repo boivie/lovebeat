@@ -3,20 +3,20 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/boivie/lovebeat-go/dashboard"
+	"github.com/boivie/lovebeat-go/httpapi"
+	"github.com/boivie/lovebeat-go/internal"
+	"github.com/boivie/lovebeat-go/service"
+	"github.com/boivie/lovebeat-go/tcpapi"
+	"github.com/boivie/lovebeat-go/udpapi"
+	"github.com/gorilla/mux"
+	"github.com/op/go-logging"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 	"time"
-	"net/http"
-	"github.com/gorilla/mux"
-	"github.com/op/go-logging"
-	"github.com/boivie/lovebeat-go/internal"
-	"github.com/boivie/lovebeat-go/service"
-	"github.com/boivie/lovebeat-go/dashboard"
-	"github.com/boivie/lovebeat-go/httpapi"
-	"github.com/boivie/lovebeat-go/udpapi"
-	"github.com/boivie/lovebeat-go/tcpapi"
 )
 
 var log = logging.MustGetLogger("lovebeat")
@@ -27,18 +27,17 @@ const (
 )
 
 var (
-	udpAddr          = flag.String("udp", ":8127", "UDP service address")
-	tcpAddr          = flag.String("tcp", ":8127", "TCP service address")
-	expiryInterval   = flag.Int64("expiry-interval", 1, "Expiry interval (seconds)")
-	debug            = flag.Bool("debug", false, "print statistics sent to graphite")
-	showVersion      = flag.Bool("version", false, "print version string")
+	udpAddr        = flag.String("udp", ":8127", "UDP service address")
+	tcpAddr        = flag.String("tcp", ":8127", "TCP service address")
+	expiryInterval = flag.Int64("expiry-interval", 1, "Expiry interval (seconds)")
+	debug          = flag.Bool("debug", false, "print statistics sent to graphite")
+	showVersion    = flag.Bool("version", false, "print version string")
 )
 
 var (
-	ServiceCmdChan    = make(chan *internal.Cmd, MAX_UNPROCESSED_PACKETS)
-	ViewCmdChan         = make(chan *internal.ViewCmd, MAX_UNPROCESSED_PACKETS)
-	signalchan = make(chan os.Signal, 1)
-
+	ServiceCmdChan = make(chan *internal.Cmd, MAX_UNPROCESSED_PACKETS)
+	ViewCmdChan    = make(chan *internal.ViewCmd, MAX_UNPROCESSED_PACKETS)
+	signalchan     = make(chan os.Signal, 1)
 )
 
 func now() int64 { return time.Now().Unix() }
@@ -54,8 +53,8 @@ func monitor() {
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range service.GetServices() {
-				if (s.State == service.STATE_PAUSED || s.State == s.StateAt(ts)) {
-					continue;
+				if s.State == service.STATE_PAUSED || s.State == s.StateAt(ts) {
+					continue
 				}
 				var ref = *s
 				s.State = s.StateAt(ts)
@@ -70,7 +69,7 @@ func monitor() {
 				var view = service.GetView(c.View)
 				var ref = *view
 				view.Refresh(ts)
-				view.Save(&ref, ts);
+				view.Save(&ref, ts)
 			}
 		case c := <-ServiceCmdChan:
 			var ts = now()
@@ -96,14 +95,13 @@ func monitor() {
 	}
 }
 
-
 func httpServer(port int16) {
 	rtr := mux.NewRouter()
 	httpapi.Register(rtr, ServiceCmdChan, ViewCmdChan)
 	dashboard.Register(rtr)
 	http.Handle("/", rtr)
 	log.Info("HTTP server running on port %d\n", port)
-        http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 func main() {

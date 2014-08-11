@@ -1,20 +1,19 @@
 package udpapi
 
-
 import (
-	"net"
-	"github.com/op/go-logging"
-	"github.com/boivie/lovebeat-go/lineparser"
 	"github.com/boivie/lovebeat-go/internal"
+	"github.com/boivie/lovebeat-go/lineparser"
+	"github.com/op/go-logging"
+	"net"
 )
 
 var log = logging.MustGetLogger("lovebeat")
 var ServiceCmdChan chan *internal.Cmd
 
 const (
-	MAX_UDP_PACKET_SIZE     = 512
-
+	MAX_UDP_PACKET_SIZE = 512
 )
+
 func Listener(bindAddr string, channel chan *internal.Cmd) {
 	ServiceCmdChan = channel
 	address, _ := net.ResolveUDPAddr("udp", bindAddr)
