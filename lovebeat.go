@@ -108,14 +108,6 @@ func httpServer(port int16) {
 
 func main() {
 	flag.Parse()
-	if *showVersion {
-		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
-		return
-	}
-
-	service.Startup()
-
-	signal.Notify(signalchan, syscall.SIGTERM)
 
 	var format = logging.MustStringFormatter("%{level} %{message}")
 	logging.SetFormatter(format)
@@ -126,8 +118,21 @@ func main() {
 	}
 	log.Debug("Debug logs enabled")
 
+	if *showVersion {
+		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
+		return
+	}
+	log.Info("Lovebeat v%s started as PID %d", VERSION, os.Getpid())
+
+	service.Startup()
+
+	signal.Notify(signalchan, syscall.SIGTERM)
+
 	go httpServer(8080)
 	go udpapi.Listener(*udpAddr, ServiceCmdChan)
 	go tcpapi.Listener(*tcpAddr, ServiceCmdChan)
+
+	log.Info("Ready to handle incoming connections")
+
 	monitor()
 }
