@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/hoisie/redis"
 	"github.com/op/go-logging"
+	"github.com/boivie/lovebeat-go/internal"
 )
 
 const (
@@ -49,11 +50,6 @@ type View struct {
 	Regexp         string
 	LastUpdated    int64
 	ree            *regexp.Regexp
-}
-
-type ViewCmd struct {
-	Action   string
-	View     string
 }
 
 func GetFromBackend(name string) *Service {
@@ -174,10 +170,10 @@ func GetViewFromBackend(name string) *View {
 	return view
 }
 
-func (s *Service) UpdateViews(channel chan *ViewCmd) {
+func (s *Service) UpdateViews(channel chan *internal.ViewCmd) {
 	for _, view := range views {
 		if view.ree.Match([]byte(s.Name)) {
-			channel <- &ViewCmd{
+			channel <- &internal.ViewCmd{
 				Action: ACTION_REFRESH_VIEW,
 				View:   view.Name,
 			}
@@ -213,7 +209,7 @@ func GetView(name string) *View {
 }
 
 
-func CreateView(name string, expr string, channel chan *ViewCmd, ts int64) {
+func CreateView(name string, expr string, channel chan *internal.ViewCmd, ts int64) {
 	var ree, err = regexp.Compile(expr)
 	if err != nil {
 		log.Error("Invalid regexp: %s", err)
@@ -228,7 +224,7 @@ func CreateView(name string, expr string, channel chan *ViewCmd, ts int64) {
 
 	log.Info("VIEW '%s' created or updated.", name)
 
-	channel <- &ViewCmd{ Action: ACTION_REFRESH_VIEW, View: name }
+	channel <- &internal.ViewCmd{ Action: ACTION_REFRESH_VIEW, View: name }
 }
 
 var (

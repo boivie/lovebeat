@@ -13,12 +13,13 @@ import (
 	"syscall"
 	"strconv"
 	"time"
-	"io"
 	"net/http"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
+	"github.com/boivie/lovebeat-go/internal"
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/boivie/lovebeat-go/dashboard"
+	"github.com/boivie/lovebeat-go/httpapi"
 )
 
 var log = logging.MustGetLogger("lovebeat")
@@ -36,21 +37,9 @@ var (
 	showVersion      = flag.Bool("version", false, "print version string")
 )
 
-const (
-	ACTION_SET_WARN = "set-warn"
-	ACTION_SET_ERR = "set-err"
-	ACTION_BEAT = "beat"
-)
-
-type Cmd struct {
-	Action   string
-	Service  string
-	Value    int
-}
-
 var (
-	ServiceCmdChan    = make(chan *Cmd, MAX_UNPROCESSED_PACKETS)
-	ViewCmdChan         = make(chan *service.ViewCmd, MAX_UNPROCESSED_PACKETS)
+	ServiceCmdChan    = make(chan *internal.Cmd, MAX_UNPROCESSED_PACKETS)
+	ViewCmdChan         = make(chan *internal.ViewCmd, MAX_UNPROCESSED_PACKETS)
 	signalchan chan os.Signal
 )
 
@@ -90,11 +79,11 @@ func monitor() {
 			var s = service.GetService(c.Service)
 			var ref = *s
 			switch c.Action {
-			case ACTION_SET_WARN:
+			case internal.ACTION_SET_WARN:
 				s.WarningTimeout = int64(c.Value)
-			case ACTION_SET_ERR:
+			case internal.ACTION_SET_ERR:
 				s.ErrorTimeout = int64(c.Value)
-			case ACTION_BEAT:
+			case internal.ACTION_BEAT:
 				if c.Value > 0 {
 					s.LastBeat = ts
 					var diff = ts - ref.LastBeat
@@ -111,8 +100,8 @@ func monitor() {
 
 var packetRegexp = regexp.MustCompile("^([^:]+)\\.(beat|warn|err):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
-func parseMessage(data []byte) []*Cmd {
-	var output []*Cmd
+func parseMessage(data []byte) []*internal.Cmd {
+	var output []*internal.Cmd
 	for _, line := range bytes.Split(data, []byte("\n")) {
 		if len(line) == 0 {
 			continue
@@ -144,15 +133,15 @@ func parseMessage(data []byte) []*Cmd {
 		var action string
 		switch string(item[2]) {
 		case "warn":
-			action = ACTION_SET_WARN
+			action = internal.ACTION_SET_WARN
 		case "err":
-			action = ACTION_SET_ERR
+			action = internal.ACTION_SET_ERR
 		case "beat":
-			action = ACTION_BEAT
+			action = internal.ACTION_BEAT
 		}
 		
 
-		packet := &Cmd{
+		packet := &internal.Cmd{
 			Action: action,
 			Service: string(item[1]),
 			Value:    value,
@@ -214,87 +203,10 @@ func tcpListener() {
 	}
 }
 
-func StatusHandler(c http.ResponseWriter, req *http.Request) {
-	var buffer bytes.Buffer
-	var services = service.GetServices()
-	var errors, warnings, ok = 0, 0, 0
-	for _, s := range services {
-		if s.State == service.STATE_WARNING {
-			warnings++
-		} else if s.State == service.STATE_ERROR {
-			errors++
-		} else {
-			ok++
-		}
-	}
-	buffer.WriteString(fmt.Sprintf("num_ok %d\nnum_warning %d\nnum_error %d\n",
-		ok, warnings, errors))
-	buffer.WriteString(fmt.Sprintf("has_warning %t\nhas_error %t\ngood %t\n",
-		warnings > 0, errors > 0, warnings == 0 && errors == 0))
-        body := buffer.String()
-        c.Header().Add("Content-Type", "text/plain")
-        c.Header().Add("Content-Length", strconv.Itoa(len(body)))
-        io.WriteString(c, body)
-}
-
-func TriggerHandler(c http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	name := params["name"]
-
-	var err = r.ParseForm()
-	if err != nil {
-		log.Error("error parsing form ", err)
-		return
-	}
-
-	var errtmo, warntmo = r.FormValue("err-tmo"), r.FormValue("warn-tmo")
-
-	ServiceCmdChan <- &Cmd{
-		Action:  ACTION_BEAT,
-		Service: name,
-		Value:   1,
-	}
-
-	
-	if val, err := strconv.Atoi(errtmo); err == nil {
-		ServiceCmdChan <- &Cmd{
-			Action:  ACTION_SET_ERR,
-			Service: name,
-			Value:   val,
-		}
-	}
-
-	if val, err := strconv.Atoi(warntmo); err == nil {
-		ServiceCmdChan <- &Cmd{
-			Action:  ACTION_SET_WARN,
-			Service: name,
-			Value:   val,
-		}
-	}
-
-
-        c.Header().Add("Content-Type", "text/plain")
-        c.Header().Add("Content-Length", "3")
-        io.WriteString(c, "ok\n")
-}
-
-func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	view_name := params["name"]
-	var expr = r.FormValue("regexp")
-	if expr == "" {
-		log.Error("No regexp provided")
-		return
-	}
-
-	service.CreateView(view_name, expr, ViewCmdChan, now())
-}
 
 func httpServer(port int16) {
 	rtr := mux.NewRouter()
-	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
-	rtr.HandleFunc("/trigger/{name:[a-z0-9.]+}", TriggerHandler).Methods("POST")
-	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
+	httpapi.Register(rtr, ServiceCmdChan, ViewCmdChan)
 	dashboard.Register(rtr)
 	http.Handle("/", rtr)
 	log.Info("HTTP server running on port %d\n", port)
