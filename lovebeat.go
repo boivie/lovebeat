@@ -214,15 +214,6 @@ func tcpListener() {
 	}
 }
 
-func DashboardState(in string) string {
-	return map[string]string {
-		service.STATE_PAUSED:  "-PAUSED--",
-		service.STATE_WARNING: "  WARN   ",
-		service.STATE_ERROR:   "      ERR",
-		service.STATE_OK:      "OK       ",
-	}[in]
-}
-
 func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	var services = service.GetServices()
 
