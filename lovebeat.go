@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -104,6 +105,14 @@ func httpServer(port int16) {
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
+func getHostname() string {
+	var hostname, err = os.Hostname()
+	if err != nil {
+		return fmt.Sprintf("unknown_%d", os.Getpid())
+	}
+	return strings.Split(hostname, ".")[0]
+}
+
 func main() {
 	flag.Parse()
 
@@ -120,7 +129,8 @@ func main() {
 		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
 		return
 	}
-	log.Info("Lovebeat v%s started as PID %d", VERSION, os.Getpid())
+	var hostname = getHostname()
+	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
 	service.Startup()
 
