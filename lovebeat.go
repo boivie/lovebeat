@@ -41,8 +41,6 @@ var (
 	signalchan     = make(chan os.Signal, 1)
 )
 
-func now() int64 { return time.Now().Unix() }
-
 func monitor() {
 	period := time.Duration(*expiryInterval) * time.Second
 	ticker := time.NewTicker(period)
