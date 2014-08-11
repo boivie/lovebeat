@@ -37,7 +37,8 @@ var (
 var (
 	ServiceCmdChan    = make(chan *internal.Cmd, MAX_UNPROCESSED_PACKETS)
 	ViewCmdChan         = make(chan *internal.ViewCmd, MAX_UNPROCESSED_PACKETS)
-	signalchan chan os.Signal
+	signalchan = make(chan os.Signal, 1)
+
 )
 
 func now() int64 { return time.Now().Unix() }
@@ -114,7 +115,6 @@ func main() {
 
 	service.Startup()
 
-	signalchan = make(chan os.Signal, 1)
 	signal.Notify(signalchan, syscall.SIGTERM)
 
 	var format = logging.MustStringFormatter("%{level} %{message}")
