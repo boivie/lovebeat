@@ -1,17 +1,12 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
-	"regexp"
 	"runtime"
 	"syscall"
-	"strconv"
 	"time"
 	"net/http"
 	"github.com/gorilla/mux"
@@ -20,6 +15,8 @@ import (
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/boivie/lovebeat-go/dashboard"
 	"github.com/boivie/lovebeat-go/httpapi"
+	"github.com/boivie/lovebeat-go/udpapi"
+	"github.com/boivie/lovebeat-go/tcpapi"
 )
 
 var log = logging.MustGetLogger("lovebeat")
@@ -27,11 +24,11 @@ var log = logging.MustGetLogger("lovebeat")
 const (
 	VERSION                 = "0.1.0"
 	MAX_UNPROCESSED_PACKETS = 1000
-	MAX_UDP_PACKET_SIZE     = 512
 )
 
 var (
-	serviceAddress   = flag.String("address", ":8127", "UDP service address")
+	udpAddr          = flag.String("udp", ":8127", "UDP service address")
+	tcpAddr          = flag.String("tcp", ":8127", "TCP service address")
 	expiryInterval   = flag.Int64("expiry-interval", 1, "Expiry interval (seconds)")
 	debug            = flag.Bool("debug", false, "print statistics sent to graphite")
 	showVersion      = flag.Bool("version", false, "print version string")
@@ -98,111 +95,6 @@ func monitor() {
 	}
 }
 
-var packetRegexp = regexp.MustCompile("^([^:]+)\\.(beat|warn|err):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
-
-func parseMessage(data []byte) []*internal.Cmd {
-	var output []*internal.Cmd
-	for _, line := range bytes.Split(data, []byte("\n")) {
-		if len(line) == 0 {
-			continue
-		}
-
-		item := packetRegexp.FindSubmatch(line)
-		if len(item) == 0 {
-			continue
-		}
-
-		var value int
-		modifier := string(item[4])
-		switch modifier {
-		case "c":
-			var vali, err = strconv.ParseInt(string(item[3]), 10, 64)
-			if err != nil {
-				log.Error("failed to ParseInt %s - %s", item[3], err)
-				continue
-			}
-			value = int(vali)
-		default:
-			var valu, err = strconv.ParseUint(string(item[3]), 10, 64)
-			if err != nil {
-				log.Error("failed to ParseUint %s - %s", item[3], err)
-				continue
-			}
-			value = int(valu)
-		}
-		var action string
-		switch string(item[2]) {
-		case "warn":
-			action = internal.ACTION_SET_WARN
-		case "err":
-			action = internal.ACTION_SET_ERR
-		case "beat":
-			action = internal.ACTION_BEAT
-		}
-		
-
-		packet := &internal.Cmd{
-			Action: action,
-			Service: string(item[1]),
-			Value:    value,
-		}
-		output = append(output, packet)
-	}
-	return output
-}
-
-func udpListener() {
-	address, _ := net.ResolveUDPAddr("udp", *serviceAddress)
-	log.Info("UDP listener running on %s", address)
-	listener, err := net.ListenUDP("udp", address)
-	if err != nil {
-		log.Fatalf("ListenUDP - %s", err)
-	}
-	defer listener.Close()
-
-	message := make([]byte, MAX_UDP_PACKET_SIZE)
-	for {
-		n, remaddr, err := listener.ReadFromUDP(message)
-		if err != nil {
-			log.Error("reading UDP packet from %+v - %s", remaddr, err)
-			continue
-		}
-
-		for _, p := range parseMessage(message[:n]) {
-			ServiceCmdChan <- p
-		}
-	}
-}
-
-func tcpHandle(c *net.TCPConn) {
-	defer c.Close()
-	r := bufio.NewReaderSize(c, 4096)
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		var buf = scanner.Bytes()
-		for _, p := range parseMessage(buf) {
-			ServiceCmdChan <- p
-		}
-	}
-}
-
-func tcpListener() {
-	address, _ := net.ResolveTCPAddr("tcp", *serviceAddress)
-	log.Info("TCP listener running on %s", address)
-	listener, err := net.ListenTCP("tcp", address)
-	if err != nil {
-		log.Fatalf("ListenTCP - %s", err)
-	}
-	for {
-		c, err := listener.AcceptTCP()
-		if nil != err {
-			log.Error("Error: %s", err)
-			break
-		}
-		go tcpHandle(c)
-	}
-}
-
 
 func httpServer(port int16) {
 	rtr := mux.NewRouter()
@@ -235,7 +127,7 @@ func main() {
 	log.Debug("Debug logs enabled")
 
 	go httpServer(8080)
-	go udpListener()
-	go tcpListener()
+	go udpapi.Listener(*udpAddr, ServiceCmdChan)
+	go tcpapi.Listener(*tcpAddr, ServiceCmdChan)
 	monitor()
 }
