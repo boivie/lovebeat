@@ -17,8 +17,8 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
-	"html/template"
 	"github.com/boivie/lovebeat-go/service"
+	"github.com/boivie/lovebeat-go/dashboard"
 )
 
 var log = logging.MustGetLogger("lovebeat")
@@ -214,18 +214,6 @@ func tcpListener() {
 	}
 }
 
-func DashboardHandler(w http.ResponseWriter, r *http.Request) {
-	var services = service.GetServices()
-
-	tc := make(map[string]interface{})
-	tc["services"] = services
-
-	templates := template.Must(template.ParseFiles("templates/base.html", "templates/index.html"))
-	if err := templates.Execute(w, tc); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var buffer bytes.Buffer
 	var services = service.GetServices()
@@ -304,10 +292,10 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 
 func httpServer(port int16) {
 	rtr := mux.NewRouter()
-	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/trigger/{name:[a-z0-9.]+}", TriggerHandler).Methods("POST")
 	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
+	dashboard.Register(rtr)
 	http.Handle("/", rtr)
 	log.Info("HTTP server running on port %d\n", port)
         http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
