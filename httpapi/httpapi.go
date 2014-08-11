@@ -93,7 +93,11 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.CreateView(view_name, expr, ViewCmdChan, now())
+	ViewCmdChan <- &internal.ViewCmd{
+		Action: internal.ACTION_UPSERT_VIEW,
+		View:   view_name,
+		Regexp: expr,
+	}
 }
 
 func Register(rtr *mux.Router, cmd_chan chan *internal.Cmd, view_chan chan *internal.ViewCmd) {

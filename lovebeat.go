@@ -63,12 +63,15 @@ func monitor() {
 		case c := <-ViewCmdChan:
 			var ts = now()
 			switch c.Action {
-			case service.ACTION_REFRESH_VIEW:
+			case internal.ACTION_REFRESH_VIEW:
 				log.Debug("Refresh view %s", c.View)
 				var view = service.GetView(c.View)
 				var ref = *view
 				view.Refresh(ts)
 				view.Save(&ref, ts)
+			case internal.ACTION_UPSERT_VIEW:
+				log.Debug("Create or update view %s", c.View)
+				service.CreateView(c.View, c.Regexp, now())
 			}
 		case c := <-ServiceCmdChan:
 			var ts = now()

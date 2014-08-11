@@ -20,10 +20,6 @@ const (
 	MAX_LOG_ENTRIES = 1000
 )
 
-const (
-	ACTION_REFRESH_VIEW = "refresh-view"
-)
-
 var (
 	EMPTY_REGEXP = regexp.MustCompile("^$")
 )
@@ -174,7 +170,7 @@ func (s *Service) UpdateViews(channel chan *internal.ViewCmd) {
 	for _, view := range views {
 		if view.ree.Match([]byte(s.Name)) {
 			channel <- &internal.ViewCmd{
-				Action: ACTION_REFRESH_VIEW,
+				Action: internal.ACTION_REFRESH_VIEW,
 				View:   view.Name,
 			}
 		}
@@ -207,7 +203,7 @@ func GetView(name string) *View {
 	return s
 }
 
-func CreateView(name string, expr string, channel chan *internal.ViewCmd, ts int64) {
+func CreateView(name string, expr string, ts int64) {
 	var ree, err = regexp.Compile(expr)
 	if err != nil {
 		log.Error("Invalid regexp: %s", err)
@@ -218,11 +214,10 @@ func CreateView(name string, expr string, channel chan *internal.ViewCmd, ts int
 	var ref = *view
 	view.Regexp = expr
 	view.ree = ree
+	view.Refresh(ts)
 	view.Save(&ref, ts)
 
 	log.Info("VIEW '%s' created or updated.", name)
-
-	channel <- &internal.ViewCmd{Action: ACTION_REFRESH_VIEW, View: name}
 }
 
 var (
