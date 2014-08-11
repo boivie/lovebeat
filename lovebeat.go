@@ -75,39 +75,39 @@ func monitor() {
 				s.Save(&ref, ts)
 				s.UpdateViews(ViewCmdChan)
 			}
-		case s := <-ViewCmdChan:
+		case c := <-ViewCmdChan:
 			var ts = now()
-			switch s.Action {
+			switch c.Action {
 			case service.ACTION_REFRESH_VIEW:
-				log.Debug("Refresh view %s", s.View)
-				var view = service.GetView(s.View)
+				log.Debug("Refresh view %s", c.View)
+				var view = service.GetView(c.View)
 				var ref = *view
 				view.Refresh(ts)
 				view.Save(&ref, ts);
 			}
-		case s := <-ServiceCmdChan:
+		case c := <-ServiceCmdChan:
 			var ts = now()
-			var service = service.GetService(s.Service)
-			var ref = *service
-			switch s.Action {
+			var s = service.GetService(c.Service)
+			var ref = *s
+			switch c.Action {
 			case ACTION_SET_WARN:
-				service.WarningTimeout = int64(s.Value)
+				s.WarningTimeout = int64(c.Value)
 			case ACTION_SET_ERR:
-				service.ErrorTimeout = int64(s.Value)
+				s.ErrorTimeout = int64(c.Value)
 			case ACTION_BEAT:
-				if s.Value > 1 {
-					service.ErrorTimeout = int64(s.Value)
+				if c.Value > 1 {
+					s.ErrorTimeout = int64(c.Value)
 				}
-				service.LastBeat = ts
+				s.LastBeat = ts
 				var diff = ts - ref.LastBeat
-				service.Log("%d|beat|%d", ts, diff)
-				log.Debug("Beat from %s", s.Service)
+				s.Log("%d|beat|%d", ts, diff)
+				log.Debug("Beat from %s", s.Name)
 			}
-			if service.State != service.StateAt(ts) {
-				service.State = service.StateAt(ts)
+			if s.State != s.StateAt(ts) {
+				s.State = s.StateAt(ts)
 			}
-			service.Save(&ref, ts)
-			service.UpdateViews(ViewCmdChan)
+			s.Save(&ref, ts)
+			s.UpdateViews(ViewCmdChan)
 		}
 	}
 }
