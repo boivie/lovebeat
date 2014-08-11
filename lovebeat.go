@@ -102,9 +102,7 @@ func monitor() {
 					log.Debug("Beat from %s", s.Name)
 				}
 			}
-			if s.State != s.StateAt(ts) {
-				s.State = s.StateAt(ts)
-			}
+			s.State = s.StateAt(ts)
 			s.Save(&ref, ts)
 			s.UpdateViews(ViewCmdChan)
 		}
