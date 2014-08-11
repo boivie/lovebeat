@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	EMPTY_REGEXP *regexp.Regexp
+	EMPTY_REGEXP = regexp.MustCompile("^$")
 )
 
 var (
@@ -233,7 +233,6 @@ var (
 )
 
 func Startup() {
-	EMPTY_REGEXP, _ = regexp.Compile("^$")
 	var namesBytes, _ = client.Smembers("lb.services.all")
 	for _, nameByte := range namesBytes {
 		var name = string(nameByte)
