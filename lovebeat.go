@@ -95,13 +95,12 @@ func monitor() {
 			case ACTION_SET_ERR:
 				s.ErrorTimeout = int64(c.Value)
 			case ACTION_BEAT:
-				if c.Value > 1 {
-					s.ErrorTimeout = int64(c.Value)
+				if c.Value > 0 {
+					s.LastBeat = ts
+					var diff = ts - ref.LastBeat
+					s.Log("%d|beat|%d", ts, diff)
+					log.Debug("Beat from %s", s.Name)
 				}
-				s.LastBeat = ts
-				var diff = ts - ref.LastBeat
-				s.Log("%d|beat|%d", ts, diff)
-				log.Debug("Beat from %s", s.Name)
 			}
 			if s.State != s.StateAt(ts) {
 				s.State = s.StateAt(ts)
