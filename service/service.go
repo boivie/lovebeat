@@ -42,17 +42,17 @@ type View struct {
 
 func now() int64 { return time.Now().Unix() }
 
-func (s *Service) GetExpiry(timeout int64) int64 {
+func (s *Service) getExpiry(timeout int64) int64 {
 	if timeout <= 0 {
 		return 0
 	}
 	return s.LastBeat + timeout
 }
 
-func (s *Service) StateAt(ts int64) string {
+func (s *Service) stateAt(ts int64) string {
 	var state = backend.STATE_OK
-	var warningExpiry = s.GetExpiry(s.WarningTimeout)
-	var errorExpiry = s.GetExpiry(s.ErrorTimeout)
+	var warningExpiry = s.getExpiry(s.WarningTimeout)
+	var errorExpiry = s.getExpiry(s.ErrorTimeout)
 	if warningExpiry > 0 && ts >= warningExpiry {
 		state = backend.STATE_WARNING
 	}
@@ -74,7 +74,7 @@ func (v *View) Equals(other *View) bool {
 	return v.stored() == other.stored()
 }
 
-func (s *Service) Save(ref *Service, ts int64) {
+func (s *Service) save(ref *Service, ts int64) {
 	if !s.Equals(ref) {
 		if s.State != ref.State {
 			log.Info("SERVICE '%s', state %s -> %s",
@@ -117,7 +117,7 @@ func (v *View) stored() *backend.StoredView {
 	}
 }
 
-func (v *View) Refresh(ts int64) {
+func (v *View) refresh(ts int64) {
 	v.State = backend.STATE_OK
 	for _, s := range v.svcs.services {
 		if v.ree.Match([]byte(s.Name)) {
@@ -134,7 +134,7 @@ func (v *View) Log(ts int64, action string, extra string) {
 	v.svcs.be.AddViewLog(v.Name, ts, action, extra)
 }
 
-func (v *View) Save(ref *View, ts int64) {
+func (v *View) save(ref *View, ts int64) {
 	if !v.Equals(ref) {
 		if v.State != ref.State {
 			log.Info("VIEW '%s', state %s -> %s",
@@ -146,7 +146,7 @@ func (v *View) Save(ref *View, ts int64) {
 	}
 }
 
-func (s *Service) UpdateViews(channel chan *internal.ViewCmd) {
+func (s *Service) updateViews(channel chan *internal.ViewCmd) {
 	for _, view := range s.svcs.views {
 		if view.ree.Match([]byte(s.Name)) {
 			channel <- &internal.ViewCmd{
@@ -161,7 +161,7 @@ func (svcs *Services) GetServices() map[string]*Service {
 	return svcs.services
 }
 
-func (svcs *Services) GetService(name string) *Service {
+func (svcs *Services) getService(name string) *Service {
 	var s, ok = svcs.services[name]
 	if !ok {
 		log.Error("Asked for unknown service %s", name)
@@ -180,7 +180,7 @@ func (svcs *Services) GetService(name string) *Service {
 	return s
 }
 
-func (svcs *Services) GetView(name string) *View {
+func (svcs *Services) getView(name string) *View {
 	var s, ok = svcs.views[name]
 	if !ok {
 		log.Error("Asked for unknown view %s", name)
@@ -196,19 +196,19 @@ func (svcs *Services) GetView(name string) *View {
 	return s
 }
 
-func (svcs *Services) CreateView(name string, expr string, ts int64) {
+func (svcs *Services) createView(name string, expr string, ts int64) {
 	var ree, err = regexp.Compile(expr)
 	if err != nil {
 		log.Error("Invalid regexp: %s", err)
 		return
 	}
 
-	var view = svcs.GetView(name)
+	var view = svcs.getView(name)
 	var ref = *view
 	view.Regexp = expr
 	view.ree = ree
-	view.Refresh(ts)
-	view.Save(&ref, ts)
+	view.refresh(ts)
+	view.save(&ref, ts)
 
 	log.Info("VIEW '%s' created or updated.", name)
 }
@@ -252,30 +252,30 @@ func (svcs *Services) Monitor(serviceCmdChan chan *internal.Cmd,
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range svcs.GetServices() {
-				if s.State == backend.STATE_PAUSED || s.State == s.StateAt(ts) {
+				if s.State == backend.STATE_PAUSED || s.State == s.stateAt(ts) {
 					continue
 				}
 				var ref = *s
-				s.State = s.StateAt(ts)
-				s.Save(&ref, ts)
-				s.UpdateViews(viewCmdChan)
+				s.State = s.stateAt(ts)
+				s.save(&ref, ts)
+				s.updateViews(viewCmdChan)
 			}
 		case c := <-viewCmdChan:
 			var ts = now()
 			switch c.Action {
 			case internal.ACTION_REFRESH_VIEW:
 				log.Debug("Refresh view %s", c.View)
-				var view = svcs.GetView(c.View)
+				var view = svcs.getView(c.View)
 				var ref = *view
-				view.Refresh(ts)
-				view.Save(&ref, ts)
+				view.refresh(ts)
+				view.save(&ref, ts)
 			case internal.ACTION_UPSERT_VIEW:
 				log.Debug("Create or update view %s", c.View)
-				svcs.CreateView(c.View, c.Regexp, now())
+				svcs.createView(c.View, c.Regexp, now())
 			}
 		case c := <-serviceCmdChan:
 			var ts = now()
-			var s = svcs.GetService(c.Service)
+			var s = svcs.getService(c.Service)
 			var ref = *s
 			switch c.Action {
 			case internal.ACTION_SET_WARN:
@@ -290,9 +290,9 @@ func (svcs *Services) Monitor(serviceCmdChan chan *internal.Cmd,
 					log.Debug("Beat from %s", s.Name)
 				}
 			}
-			s.State = s.StateAt(ts)
-			s.Save(&ref, ts)
-			s.UpdateViews(viewCmdChan)
+			s.State = s.stateAt(ts)
+			s.save(&ref, ts)
+			s.updateViews(viewCmdChan)
 		}
 	}
 }
