@@ -16,10 +16,8 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"strconv"
 	"strings"
 	"syscall"
-	"time"
 )
 
 var log = logging.MustGetLogger("lovebeat")
@@ -42,59 +40,6 @@ var (
 	ViewCmdChan    = make(chan *internal.ViewCmd, MAX_UNPROCESSED_PACKETS)
 	signalchan     = make(chan os.Signal, 1)
 )
-
-func monitor(svcs *service.Services) {
-	period := time.Duration(*expiryInterval) * time.Second
-	ticker := time.NewTicker(period)
-	for {
-		select {
-		case <-ticker.C:
-			var ts = now()
-			for _, s := range svcs.GetServices() {
-				if s.State == backend.STATE_PAUSED || s.State == s.StateAt(ts) {
-					continue
-				}
-				var ref = *s
-				s.State = s.StateAt(ts)
-				s.Save(&ref, ts)
-				s.UpdateViews(ViewCmdChan)
-			}
-		case c := <-ViewCmdChan:
-			var ts = now()
-			switch c.Action {
-			case internal.ACTION_REFRESH_VIEW:
-				log.Debug("Refresh view %s", c.View)
-				var view = svcs.GetView(c.View)
-				var ref = *view
-				view.Refresh(ts)
-				view.Save(&ref, ts)
-			case internal.ACTION_UPSERT_VIEW:
-				log.Debug("Create or update view %s", c.View)
-				svcs.CreateView(c.View, c.Regexp, now())
-			}
-		case c := <-ServiceCmdChan:
-			var ts = now()
-			var s = svcs.GetService(c.Service)
-			var ref = *s
-			switch c.Action {
-			case internal.ACTION_SET_WARN:
-				s.WarningTimeout = int64(c.Value)
-			case internal.ACTION_SET_ERR:
-				s.ErrorTimeout = int64(c.Value)
-			case internal.ACTION_BEAT:
-				if c.Value > 0 {
-					s.LastBeat = ts
-					var diff = ts - ref.LastBeat
-					s.Log(ts, "beat", strconv.Itoa(int(diff)))
-					log.Debug("Beat from %s", s.Name)
-				}
-			}
-			s.State = s.StateAt(ts)
-			s.Save(&ref, ts)
-			s.UpdateViews(ViewCmdChan)
-		}
-	}
-}
 
 func signalHandler() {
 	for {
@@ -148,13 +93,12 @@ func main() {
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 
+	go svcs.Monitor(ServiceCmdChan, ViewCmdChan, *expiryInterval)
 	go httpServer(8080, svcs)
 	go udpapi.Listener(*udpAddr, ServiceCmdChan)
 	go tcpapi.Listener(*tcpAddr, ServiceCmdChan)
 
 	log.Info("Ready to handle incoming connections")
-
-	go monitor(svcs)
 
 	signalHandler()
 }
