@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"fmt"
+	"github.com/boivie/lovebeat-go/backend"
 	"github.com/boivie/lovebeat-go/internal"
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/gorilla/mux"
@@ -27,9 +28,9 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var services = service.GetServices()
 	var errors, warnings, ok = 0, 0, 0
 	for _, s := range services {
-		if s.State == service.STATE_WARNING {
+		if s.State == backend.STATE_WARNING {
 			warnings++
-		} else if s.State == service.STATE_ERROR {
+		} else if s.State == backend.STATE_ERROR {
 			errors++
 		} else {
 			ok++

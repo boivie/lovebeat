@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/boivie/lovebeat-go/backend"
 	"github.com/boivie/lovebeat-go/dashboard"
 	"github.com/boivie/lovebeat-go/httpapi"
 	"github.com/boivie/lovebeat-go/internal"
@@ -15,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -52,7 +54,7 @@ func monitor() {
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range service.GetServices() {
-				if s.State == service.STATE_PAUSED || s.State == s.StateAt(ts) {
+				if s.State == backend.STATE_PAUSED || s.State == s.StateAt(ts) {
 					continue
 				}
 				var ref = *s
@@ -86,7 +88,7 @@ func monitor() {
 				if c.Value > 0 {
 					s.LastBeat = ts
 					var diff = ts - ref.LastBeat
-					s.Log("%d|beat|%d", ts, diff)
+					s.Log(ts, "beat", strconv.Itoa(int(diff)))
 					log.Debug("Beat from %s", s.Name)
 				}
 			}
@@ -133,7 +135,8 @@ func main() {
 	var hostname = getHostname()
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
-	service.Startup()
+	var be = backend.RedisBackend{}
+	service.Startup(be)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 
