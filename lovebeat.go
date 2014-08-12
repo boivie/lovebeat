@@ -48,9 +48,6 @@ func monitor() {
 	ticker := time.NewTicker(period)
 	for {
 		select {
-		case sig := <-signalchan:
-			fmt.Printf("!! Caught signal %d... shutting down\n", sig)
-			return
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range service.GetServices() {
@@ -95,6 +92,16 @@ func monitor() {
 			s.State = s.StateAt(ts)
 			s.Save(&ref, ts)
 			s.UpdateViews(ViewCmdChan)
+		}
+	}
+}
+
+func signalHandler() {
+	for {
+		select {
+		case sig := <-signalchan:
+			fmt.Printf("!! Caught signal %d... shutting down\n", sig)
+			return
 		}
 	}
 }
@@ -146,5 +153,7 @@ func main() {
 
 	log.Info("Ready to handle incoming connections")
 
-	monitor()
+	go monitor()
+
+	signalHandler()
 }
