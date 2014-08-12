@@ -17,6 +17,7 @@ import (
 var (
 	ServiceCmdChan chan *internal.Cmd
 	ViewCmdChan    chan *internal.ViewCmd
+	svcs           *service.Services
 )
 
 func now() int64 { return time.Now().Unix() }
@@ -25,7 +26,7 @@ var log = logging.MustGetLogger("lovebeat")
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var buffer bytes.Buffer
-	var services = service.GetServices()
+	var services = svcs.GetServices()
 	var errors, warnings, ok = 0, 0, 0
 	for _, s := range services {
 		if s.State == backend.STATE_WARNING {
@@ -101,9 +102,10 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Register(rtr *mux.Router, cmd_chan chan *internal.Cmd, view_chan chan *internal.ViewCmd) {
+func Register(rtr *mux.Router, cmd_chan chan *internal.Cmd, view_chan chan *internal.ViewCmd, services *service.Services) {
 	ServiceCmdChan = cmd_chan
 	ViewCmdChan = view_chan
+	svcs = services
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/trigger/{name:[a-z0-9.]+}", TriggerHandler).Methods("POST")
 	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")

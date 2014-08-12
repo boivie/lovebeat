@@ -7,8 +7,10 @@ import (
 	"net/http"
 )
 
+var svcs *service.Services
+
 func DashboardHandler(w http.ResponseWriter, r *http.Request) {
-	var services = service.GetServices()
+	var services = svcs.GetServices()
 
 	tc := make(map[string]interface{})
 	tc["services"] = services
@@ -19,6 +21,7 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Register(rtr *mux.Router) {
+func Register(rtr *mux.Router, services *service.Services) {
+	svcs = services
 	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
 }

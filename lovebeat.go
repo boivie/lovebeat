@@ -43,14 +43,14 @@ var (
 	signalchan     = make(chan os.Signal, 1)
 )
 
-func monitor() {
+func monitor(svcs *service.Services) {
 	period := time.Duration(*expiryInterval) * time.Second
 	ticker := time.NewTicker(period)
 	for {
 		select {
 		case <-ticker.C:
 			var ts = now()
-			for _, s := range service.GetServices() {
+			for _, s := range svcs.GetServices() {
 				if s.State == backend.STATE_PAUSED || s.State == s.StateAt(ts) {
 					continue
 				}
@@ -64,17 +64,17 @@ func monitor() {
 			switch c.Action {
 			case internal.ACTION_REFRESH_VIEW:
 				log.Debug("Refresh view %s", c.View)
-				var view = service.GetView(c.View)
+				var view = svcs.GetView(c.View)
 				var ref = *view
 				view.Refresh(ts)
 				view.Save(&ref, ts)
 			case internal.ACTION_UPSERT_VIEW:
 				log.Debug("Create or update view %s", c.View)
-				service.CreateView(c.View, c.Regexp, now())
+				svcs.CreateView(c.View, c.Regexp, now())
 			}
 		case c := <-ServiceCmdChan:
 			var ts = now()
-			var s = service.GetService(c.Service)
+			var s = svcs.GetService(c.Service)
 			var ref = *s
 			switch c.Action {
 			case internal.ACTION_SET_WARN:
@@ -106,10 +106,10 @@ func signalHandler() {
 	}
 }
 
-func httpServer(port int16) {
+func httpServer(port int16, svcs *service.Services) {
 	rtr := mux.NewRouter()
-	httpapi.Register(rtr, ServiceCmdChan, ViewCmdChan)
-	dashboard.Register(rtr)
+	httpapi.Register(rtr, ServiceCmdChan, ViewCmdChan, svcs)
+	dashboard.Register(rtr, svcs)
 	http.Handle("/", rtr)
 	log.Info("HTTP server running on port %d\n", port)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
@@ -143,17 +143,18 @@ func main() {
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
 	var be = backend.RedisBackend{}
-	service.Startup(be)
+	var svcs = &service.Services{}
+	svcs.Startup(be)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 
-	go httpServer(8080)
+	go httpServer(8080, svcs)
 	go udpapi.Listener(*udpAddr, ServiceCmdChan)
 	go tcpapi.Listener(*tcpAddr, ServiceCmdChan)
 
 	log.Info("Ready to handle incoming connections")
 
-	go monitor()
+	go monitor(svcs)
 
 	signalHandler()
 }
