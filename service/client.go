@@ -3,10 +3,12 @@ package service
 type ServiceIf interface {
 	Beat(name string)
 	DeleteService(name string)
+
 	SetWarningTimeout(name string, timeout int)
 	SetErrorTimeout(name string, timeout int)
 
 	CreateOrUpdateView(name string, regexp string)
+	DeleteView(name string)
 }
 
 const (
@@ -19,6 +21,7 @@ const (
 const (
 	ACTION_REFRESH_VIEW = "refresh-view"
 	ACTION_UPSERT_VIEW  = "upsert-view"
+	ACTION_DELETE_VIEW  = "delete"
 )
 
 type serviceCmd struct {
@@ -49,6 +52,13 @@ func (c *client) DeleteService(name string) {
 	c.svcs.serviceCmdChan <- &serviceCmd{
 		Action:  ACTION_DELETE,
 		Service: name,
+	}
+}
+
+func (c *client) DeleteView(name string) {
+	c.svcs.viewCmdChan <- &viewCmd{
+		Action: ACTION_DELETE_VIEW,
+		View:   name,
 	}
 }
 

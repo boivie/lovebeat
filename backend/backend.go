@@ -35,4 +35,5 @@ type Backend interface {
 	SaveView(view *StoredView)
 
 	DeleteService(name string)
+	DeleteView(name string)
 }

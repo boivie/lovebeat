@@ -223,6 +223,10 @@ func (svcs *Services) createView(name string, expr string, ts int64) {
 	log.Info("VIEW '%s' created or updated.", name)
 }
 
+func (svcs *Services) deleteView(name string) {
+	svcs.be.DeleteView(name)
+}
+
 func (svcs *Services) Monitor() {
 	period := time.Duration(svcs.expiryInterval) * time.Second
 	ticker := time.NewTicker(period)
@@ -251,6 +255,10 @@ func (svcs *Services) Monitor() {
 			case ACTION_UPSERT_VIEW:
 				log.Debug("Create or update view %s", c.View)
 				svcs.createView(c.View, c.Regexp, now())
+			case ACTION_DELETE_VIEW:
+				log.Debug("Delete view %s", c.View)
+				delete(svcs.views, c.View)
+				svcs.deleteView(c.View)
 			}
 		case c := <-svcs.serviceCmdChan:
 			var ts = now()
