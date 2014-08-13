@@ -45,7 +45,7 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	io.WriteString(c, body)
 }
 
-func TriggerHandler(c http.ResponseWriter, r *http.Request) {
+func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
@@ -88,6 +88,6 @@ func Register(rtr *mux.Router, services *service.Services) {
 	svcs = services
 	client = svcs.GetClient()
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
-	rtr.HandleFunc("/trigger/{name:[a-z0-9.]+}", TriggerHandler).Methods("POST")
+	rtr.HandleFunc("/service/{name:[a-z0-9.]+}", ServiceHandler).Methods("POST")
 	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
 }
