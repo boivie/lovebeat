@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/boivie/lovebeat-go/backend"
-	"github.com/boivie/lovebeat-go/internal"
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
@@ -15,9 +14,8 @@ import (
 )
 
 var (
-	ServiceCmdChan chan *internal.Cmd
-	ViewCmdChan    chan *internal.ViewCmd
-	svcs           *service.Services
+	svcs   *service.Services
+	client service.ServiceIf
 )
 
 func now() int64 { return time.Now().Unix() }
@@ -59,26 +57,14 @@ func TriggerHandler(c http.ResponseWriter, r *http.Request) {
 
 	var errtmo, warntmo = r.FormValue("err-tmo"), r.FormValue("warn-tmo")
 
-	ServiceCmdChan <- &internal.Cmd{
-		Action:  internal.ACTION_BEAT,
-		Service: name,
-		Value:   1,
-	}
+	client.Beat(name)
 
 	if val, err := strconv.Atoi(errtmo); err == nil {
-		ServiceCmdChan <- &internal.Cmd{
-			Action:  internal.ACTION_SET_ERR,
-			Service: name,
-			Value:   val,
-		}
+		client.SetErrorTimeout(name, val)
 	}
 
 	if val, err := strconv.Atoi(warntmo); err == nil {
-		ServiceCmdChan <- &internal.Cmd{
-			Action:  internal.ACTION_SET_WARN,
-			Service: name,
-			Value:   val,
-		}
+		client.SetWarningTimeout(name, val)
 	}
 
 	c.Header().Add("Content-Type", "text/plain")
@@ -95,17 +81,12 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ViewCmdChan <- &internal.ViewCmd{
-		Action: internal.ACTION_UPSERT_VIEW,
-		View:   view_name,
-		Regexp: expr,
-	}
+	client.CreateOrUpdateView(view_name, expr)
 }
 
-func Register(rtr *mux.Router, cmd_chan chan *internal.Cmd, view_chan chan *internal.ViewCmd, services *service.Services) {
-	ServiceCmdChan = cmd_chan
-	ViewCmdChan = view_chan
+func Register(rtr *mux.Router, services *service.Services) {
 	svcs = services
+	client = svcs.GetClient()
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/trigger/{name:[a-z0-9.]+}", TriggerHandler).Methods("POST")
 	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")

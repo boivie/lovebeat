@@ -1,21 +1,19 @@
 package udpapi
 
 import (
-	"github.com/boivie/lovebeat-go/internal"
 	"github.com/boivie/lovebeat-go/lineparser"
+	"github.com/boivie/lovebeat-go/service"
 	"github.com/op/go-logging"
 	"net"
 )
 
 var log = logging.MustGetLogger("lovebeat")
-var ServiceCmdChan chan *internal.Cmd
 
 const (
 	MAX_UDP_PACKET_SIZE = 512
 )
 
-func Listener(bindAddr string, channel chan *internal.Cmd) {
-	ServiceCmdChan = channel
+func Listener(bindAddr string, iface service.ServiceIf) {
 	address, _ := net.ResolveUDPAddr("udp", bindAddr)
 	log.Info("UDP listener running on %s", address)
 	listener, err := net.ListenUDP("udp", address)
@@ -32,8 +30,6 @@ func Listener(bindAddr string, channel chan *internal.Cmd) {
 			continue
 		}
 
-		for _, p := range lineparser.Parse(message[:n]) {
-			ServiceCmdChan <- p
-		}
+		lineparser.Parse(message[:n], iface)
 	}
 }

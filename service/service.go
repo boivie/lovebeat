@@ -2,11 +2,14 @@ package service
 
 import (
 	"github.com/boivie/lovebeat-go/backend"
-	"github.com/boivie/lovebeat-go/internal"
 	"github.com/op/go-logging"
 	"regexp"
 	"strconv"
 	"time"
+)
+
+const (
+	MAX_UNPROCESSED_PACKETS = 1000
 )
 
 var (
@@ -15,9 +18,12 @@ var (
 )
 
 type Services struct {
-	be       backend.Backend
-	services map[string]*Service
-	views    map[string]*View
+	be             backend.Backend
+	services       map[string]*Service
+	views          map[string]*View
+	serviceCmdChan chan *Cmd
+	viewCmdChan    chan *ViewCmd
+	expiryInterval int64
 }
 
 type Service struct {
@@ -38,6 +44,37 @@ type View struct {
 	Regexp      string
 	LastUpdated int64
 	ree         *regexp.Regexp
+}
+
+type ServiceIf interface {
+	Beat(name string)
+	SetWarningTimeout(name string, timeout int)
+	SetErrorTimeout(name string, timeout int)
+
+	CreateOrUpdateView(name string, regexp string)
+}
+
+const (
+	ACTION_SET_WARN = "set-warn"
+	ACTION_SET_ERR  = "set-err"
+	ACTION_BEAT     = "beat"
+)
+
+const (
+	ACTION_REFRESH_VIEW = "refresh-view"
+	ACTION_UPSERT_VIEW  = "upsert-view"
+)
+
+type Cmd struct {
+	Action  string
+	Service string
+	Value   int
+}
+
+type ViewCmd struct {
+	Action string
+	View   string
+	Regexp string
 }
 
 func now() int64 { return time.Now().Unix() }
@@ -146,11 +183,11 @@ func (v *View) save(ref *View, ts int64) {
 	}
 }
 
-func (s *Service) updateViews(channel chan *internal.ViewCmd) {
+func (s *Service) updateViews() {
 	for _, view := range s.svcs.views {
 		if view.ree.Match([]byte(s.Name)) {
-			channel <- &internal.ViewCmd{
-				Action: internal.ACTION_REFRESH_VIEW,
+			s.svcs.viewCmdChan <- &ViewCmd{
+				Action: ACTION_REFRESH_VIEW,
 				View:   view.Name,
 			}
 		}
@@ -213,8 +250,65 @@ func (svcs *Services) createView(name string, expr string, ts int64) {
 	log.Info("VIEW '%s' created or updated.", name)
 }
 
-func (svcs *Services) Startup(beiface backend.Backend) {
+func (svcs *Services) Monitor() {
+	period := time.Duration(svcs.expiryInterval) * time.Second
+	ticker := time.NewTicker(period)
+	for {
+		select {
+		case <-ticker.C:
+			var ts = now()
+			for _, s := range svcs.GetServices() {
+				if s.State == backend.STATE_PAUSED || s.State == s.stateAt(ts) {
+					continue
+				}
+				var ref = *s
+				s.State = s.stateAt(ts)
+				s.save(&ref, ts)
+				s.updateViews()
+			}
+		case c := <-svcs.viewCmdChan:
+			var ts = now()
+			switch c.Action {
+			case ACTION_REFRESH_VIEW:
+				log.Debug("Refresh view %s", c.View)
+				var view = svcs.getView(c.View)
+				var ref = *view
+				view.refresh(ts)
+				view.save(&ref, ts)
+			case ACTION_UPSERT_VIEW:
+				log.Debug("Create or update view %s", c.View)
+				svcs.createView(c.View, c.Regexp, now())
+			}
+		case c := <-svcs.serviceCmdChan:
+			var ts = now()
+			var s = svcs.getService(c.Service)
+			var ref = *s
+			switch c.Action {
+			case ACTION_SET_WARN:
+				s.WarningTimeout = int64(c.Value)
+			case ACTION_SET_ERR:
+				s.ErrorTimeout = int64(c.Value)
+			case ACTION_BEAT:
+				if c.Value > 0 {
+					s.LastBeat = ts
+					var diff = ts - ref.LastBeat
+					s.Log(ts, "beat", strconv.Itoa(int(diff)))
+					log.Debug("Beat from %s", s.Name)
+				}
+			}
+			s.State = s.stateAt(ts)
+			s.save(&ref, ts)
+			s.updateViews()
+		}
+	}
+}
+
+func NewServices(beiface backend.Backend) *Services {
+	svcs := new(Services)
 	svcs.be = beiface
+	svcs.serviceCmdChan = make(chan *Cmd, MAX_UNPROCESSED_PACKETS)
+	svcs.viewCmdChan = make(chan *ViewCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.expiryInterval = 1
 	svcs.services = make(map[string]*Service)
 	svcs.views = make(map[string]*View)
 
@@ -240,59 +334,45 @@ func (svcs *Services) Startup(beiface backend.Backend) {
 			LastUpdated: v.LastUpdated,
 			ree:         ree}
 	}
+
+	return svcs
 }
 
-func (svcs *Services) Monitor(serviceCmdChan chan *internal.Cmd,
-	viewCmdChan chan *internal.ViewCmd, expiryInterval int64) {
+type client struct {
+	svcs *Services
+}
 
-	period := time.Duration(expiryInterval) * time.Second
-	ticker := time.NewTicker(period)
-	for {
-		select {
-		case <-ticker.C:
-			var ts = now()
-			for _, s := range svcs.GetServices() {
-				if s.State == backend.STATE_PAUSED || s.State == s.stateAt(ts) {
-					continue
-				}
-				var ref = *s
-				s.State = s.stateAt(ts)
-				s.save(&ref, ts)
-				s.updateViews(viewCmdChan)
-			}
-		case c := <-viewCmdChan:
-			var ts = now()
-			switch c.Action {
-			case internal.ACTION_REFRESH_VIEW:
-				log.Debug("Refresh view %s", c.View)
-				var view = svcs.getView(c.View)
-				var ref = *view
-				view.refresh(ts)
-				view.save(&ref, ts)
-			case internal.ACTION_UPSERT_VIEW:
-				log.Debug("Create or update view %s", c.View)
-				svcs.createView(c.View, c.Regexp, now())
-			}
-		case c := <-serviceCmdChan:
-			var ts = now()
-			var s = svcs.getService(c.Service)
-			var ref = *s
-			switch c.Action {
-			case internal.ACTION_SET_WARN:
-				s.WarningTimeout = int64(c.Value)
-			case internal.ACTION_SET_ERR:
-				s.ErrorTimeout = int64(c.Value)
-			case internal.ACTION_BEAT:
-				if c.Value > 0 {
-					s.LastBeat = ts
-					var diff = ts - ref.LastBeat
-					s.Log(ts, "beat", strconv.Itoa(int(diff)))
-					log.Debug("Beat from %s", s.Name)
-				}
-			}
-			s.State = s.stateAt(ts)
-			s.save(&ref, ts)
-			s.updateViews(viewCmdChan)
-		}
+func (c *client) Beat(name string) {
+	c.svcs.serviceCmdChan <- &Cmd{
+		Action:  ACTION_BEAT,
+		Service: name,
+		Value:   1,
 	}
+}
+
+func (c *client) SetWarningTimeout(name string, timeout int) {
+	c.svcs.serviceCmdChan <- &Cmd{
+		Action:  ACTION_SET_WARN,
+		Service: name,
+		Value:   timeout,
+	}
+}
+func (c *client) SetErrorTimeout(name string, timeout int) {
+	c.svcs.serviceCmdChan <- &Cmd{
+		Action:  ACTION_SET_ERR,
+		Service: name,
+		Value:   timeout,
+	}
+}
+
+func (c *client) CreateOrUpdateView(name string, regexp string) {
+	c.svcs.viewCmdChan <- &ViewCmd{
+		Action: ACTION_UPSERT_VIEW,
+		View:   name,
+		Regexp: regexp,
+	}
+}
+
+func (svcs *Services) GetClient() ServiceIf {
+	return &client{svcs: svcs}
 }

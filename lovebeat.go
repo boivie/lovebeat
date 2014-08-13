@@ -6,7 +6,6 @@ import (
 	"github.com/boivie/lovebeat-go/backend"
 	"github.com/boivie/lovebeat-go/dashboard"
 	"github.com/boivie/lovebeat-go/httpapi"
-	"github.com/boivie/lovebeat-go/internal"
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/boivie/lovebeat-go/tcpapi"
 	"github.com/boivie/lovebeat-go/udpapi"
@@ -28,17 +27,14 @@ const (
 )
 
 var (
-	udpAddr        = flag.String("udp", ":8127", "UDP service address")
-	tcpAddr        = flag.String("tcp", ":8127", "TCP service address")
-	expiryInterval = flag.Int64("expiry-interval", 1, "Expiry interval (seconds)")
-	debug          = flag.Bool("debug", false, "print statistics sent to graphite")
-	showVersion    = flag.Bool("version", false, "print version string")
+	udpAddr     = flag.String("udp", ":8127", "UDP service address")
+	tcpAddr     = flag.String("tcp", ":8127", "TCP service address")
+	debug       = flag.Bool("debug", false, "print statistics sent to graphite")
+	showVersion = flag.Bool("version", false, "print version string")
 )
 
 var (
-	ServiceCmdChan = make(chan *internal.Cmd, MAX_UNPROCESSED_PACKETS)
-	ViewCmdChan    = make(chan *internal.ViewCmd, MAX_UNPROCESSED_PACKETS)
-	signalchan     = make(chan os.Signal, 1)
+	signalchan = make(chan os.Signal, 1)
 )
 
 func signalHandler() {
@@ -53,7 +49,7 @@ func signalHandler() {
 
 func httpServer(port int16, svcs *service.Services) {
 	rtr := mux.NewRouter()
-	httpapi.Register(rtr, ServiceCmdChan, ViewCmdChan, svcs)
+	httpapi.Register(rtr, svcs)
 	dashboard.Register(rtr, svcs)
 	http.Handle("/", rtr)
 	log.Info("HTTP server running on port %d\n", port)
@@ -88,15 +84,14 @@ func main() {
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
 	var be = backend.RedisBackend{}
-	var svcs = &service.Services{}
-	svcs.Startup(be)
+	var svcs = service.NewServices(be)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 
-	go svcs.Monitor(ServiceCmdChan, ViewCmdChan, *expiryInterval)
+	go svcs.Monitor()
 	go httpServer(8080, svcs)
-	go udpapi.Listener(*udpAddr, ServiceCmdChan)
-	go tcpapi.Listener(*tcpAddr, ServiceCmdChan)
+	go udpapi.Listener(*udpAddr, svcs.GetClient())
+	go tcpapi.Listener(*tcpAddr, svcs.GetClient())
 
 	log.Info("Ready to handle incoming connections")
 
