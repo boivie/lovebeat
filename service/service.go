@@ -21,8 +21,8 @@ type Services struct {
 	be             backend.Backend
 	services       map[string]*Service
 	views          map[string]*View
-	serviceCmdChan chan *Cmd
-	viewCmdChan    chan *ViewCmd
+	serviceCmdChan chan *serviceCmd
+	viewCmdChan    chan *viewCmd
 	expiryInterval int64
 }
 
@@ -44,37 +44,6 @@ type View struct {
 	Regexp      string
 	LastUpdated int64
 	ree         *regexp.Regexp
-}
-
-type ServiceIf interface {
-	Beat(name string)
-	SetWarningTimeout(name string, timeout int)
-	SetErrorTimeout(name string, timeout int)
-
-	CreateOrUpdateView(name string, regexp string)
-}
-
-const (
-	ACTION_SET_WARN = "set-warn"
-	ACTION_SET_ERR  = "set-err"
-	ACTION_BEAT     = "beat"
-)
-
-const (
-	ACTION_REFRESH_VIEW = "refresh-view"
-	ACTION_UPSERT_VIEW  = "upsert-view"
-)
-
-type Cmd struct {
-	Action  string
-	Service string
-	Value   int
-}
-
-type ViewCmd struct {
-	Action string
-	View   string
-	Regexp string
 }
 
 func now() int64 { return time.Now().Unix() }
@@ -186,7 +155,7 @@ func (v *View) save(ref *View, ts int64) {
 func (s *Service) updateViews() {
 	for _, view := range s.svcs.views {
 		if view.ree.Match([]byte(s.Name)) {
-			s.svcs.viewCmdChan <- &ViewCmd{
+			s.svcs.viewCmdChan <- &viewCmd{
 				Action: ACTION_REFRESH_VIEW,
 				View:   view.Name,
 			}
@@ -306,8 +275,8 @@ func (svcs *Services) Monitor() {
 func NewServices(beiface backend.Backend) *Services {
 	svcs := new(Services)
 	svcs.be = beiface
-	svcs.serviceCmdChan = make(chan *Cmd, MAX_UNPROCESSED_PACKETS)
-	svcs.viewCmdChan = make(chan *ViewCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.serviceCmdChan = make(chan *serviceCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.viewCmdChan = make(chan *viewCmd, MAX_UNPROCESSED_PACKETS)
 	svcs.expiryInterval = 1
 	svcs.services = make(map[string]*Service)
 	svcs.views = make(map[string]*View)
@@ -336,43 +305,4 @@ func NewServices(beiface backend.Backend) *Services {
 	}
 
 	return svcs
-}
-
-type client struct {
-	svcs *Services
-}
-
-func (c *client) Beat(name string) {
-	c.svcs.serviceCmdChan <- &Cmd{
-		Action:  ACTION_BEAT,
-		Service: name,
-		Value:   1,
-	}
-}
-
-func (c *client) SetWarningTimeout(name string, timeout int) {
-	c.svcs.serviceCmdChan <- &Cmd{
-		Action:  ACTION_SET_WARN,
-		Service: name,
-		Value:   timeout,
-	}
-}
-func (c *client) SetErrorTimeout(name string, timeout int) {
-	c.svcs.serviceCmdChan <- &Cmd{
-		Action:  ACTION_SET_ERR,
-		Service: name,
-		Value:   timeout,
-	}
-}
-
-func (c *client) CreateOrUpdateView(name string, regexp string) {
-	c.svcs.viewCmdChan <- &ViewCmd{
-		Action: ACTION_UPSERT_VIEW,
-		View:   name,
-		Regexp: regexp,
-	}
-}
-
-func (svcs *Services) GetClient() ServiceIf {
-	return &client{svcs: svcs}
 }
