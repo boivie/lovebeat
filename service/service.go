@@ -102,6 +102,10 @@ func (s *Service) save(ref *Service, ts int64) {
 	}
 }
 
+func (s *Service) delete() {
+	s.svcs.be.DeleteService(s.Name)
+}
+
 func (s *Service) stored() *backend.StoredService {
 	return &backend.StoredService{
 		Name:           s.Name,
@@ -171,7 +175,7 @@ func (svcs *Services) getService(name string) *Service {
 	var s, ok = svcs.services[name]
 	if !ok {
 		log.Error("Asked for unknown service %s", name)
-		s := &Service{
+		s = &Service{
 			svcs:           svcs,
 			Name:           name,
 			LastValue:      -1,
@@ -190,7 +194,7 @@ func (svcs *Services) getView(name string) *View {
 	var s, ok = svcs.views[name]
 	if !ok {
 		log.Error("Asked for unknown view %s", name)
-		s := &View{
+		s = &View{
 			svcs:        svcs,
 			Name:        name,
 			State:       backend.STATE_OK,
@@ -252,6 +256,7 @@ func (svcs *Services) Monitor() {
 			var ts = now()
 			var s = svcs.getService(c.Service)
 			var ref = *s
+			var save = true
 			switch c.Action {
 			case ACTION_SET_WARN:
 				s.WarningTimeout = int64(c.Value)
@@ -264,9 +269,15 @@ func (svcs *Services) Monitor() {
 					s.Log(ts, "beat", strconv.Itoa(int(diff)))
 					log.Debug("Beat from %s", s.Name)
 				}
+			case ACTION_DELETE:
+				delete(s.svcs.services, s.Name)
+				s.delete()
+				save = false
 			}
 			s.State = s.stateAt(ts)
-			s.save(&ref, ts)
+			if save {
+				s.save(&ref, ts)
+			}
 			s.updateViews()
 		}
 	}

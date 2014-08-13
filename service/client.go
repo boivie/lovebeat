@@ -2,6 +2,7 @@ package service
 
 type ServiceIf interface {
 	Beat(name string)
+	DeleteService(name string)
 	SetWarningTimeout(name string, timeout int)
 	SetErrorTimeout(name string, timeout int)
 
@@ -12,6 +13,7 @@ const (
 	ACTION_SET_WARN = "set-warn"
 	ACTION_SET_ERR  = "set-err"
 	ACTION_BEAT     = "beat"
+	ACTION_DELETE   = "delete"
 )
 
 const (
@@ -40,6 +42,13 @@ func (c *client) Beat(name string) {
 		Action:  ACTION_BEAT,
 		Service: name,
 		Value:   1,
+	}
+}
+
+func (c *client) DeleteService(name string) {
+	c.svcs.serviceCmdChan <- &serviceCmd{
+		Action:  ACTION_DELETE,
+		Service: name,
 	}
 }
 

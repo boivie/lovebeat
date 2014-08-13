@@ -101,3 +101,7 @@ func (r RedisBackend) LoadViews() []*StoredView {
 
 	return ret
 }
+
+func (r RedisBackend) DeleteService(name string) {
+	r.client.Srem("lb.services.all", []byte(name))
+}

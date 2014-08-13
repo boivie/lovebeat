@@ -72,6 +72,17 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "ok\n")
 }
 
+func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	name := params["name"]
+
+	client.DeleteService(name)
+
+	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Length", "3")
+	io.WriteString(c, "ok\n")
+}
+
 func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	view_name := params["name"]
@@ -89,5 +100,6 @@ func Register(rtr *mux.Router, services *service.Services) {
 	client = svcs.GetClient()
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/service/{name:[a-z0-9.]+}", ServiceHandler).Methods("POST")
+	rtr.HandleFunc("/service/{name:[a-z0-9.]+}", DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
 }
