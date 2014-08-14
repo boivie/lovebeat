@@ -172,10 +172,6 @@ func (s *Service) updateViews() {
 	}
 }
 
-func (svcs *Services) GetServices() map[string]*Service {
-	return svcs.services
-}
-
 func (svcs *Services) getService(name string) *Service {
 	var s, ok = svcs.services[name]
 	if !ok {
@@ -239,7 +235,7 @@ func (svcs *Services) Monitor() {
 		select {
 		case <-ticker.C:
 			var ts = now()
-			for _, s := range svcs.GetServices() {
+			for _, s := range svcs.services {
 				if s.State == backend.STATE_PAUSED || s.State == s.stateAt(ts) {
 					continue
 				}

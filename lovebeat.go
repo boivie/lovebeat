@@ -49,8 +49,8 @@ func signalHandler() {
 
 func httpServer(port int16, svcs *service.Services) {
 	rtr := mux.NewRouter()
-	httpapi.Register(rtr, svcs)
-	dashboard.Register(rtr, svcs)
+	httpapi.Register(rtr, svcs.GetClient())
+	dashboard.Register(rtr, svcs.GetClient())
 	http.Handle("/", rtr)
 	log.Info("HTTP server running on port %d\n", port)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)

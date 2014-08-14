@@ -116,9 +116,8 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "\n")
 }
 
-func Register(rtr *mux.Router, services *service.Services) {
-	svcs = services
-	client = svcs.GetClient()
+func Register(rtr *mux.Router, client_ service.ServiceIf) {
+	client = client_
 	rtr.HandleFunc("/api/service/{name:[a-z0-9.]+}", ServiceHandler).Methods("POST")
 	rtr.HandleFunc("/api/service/{name:[a-z0-9.]+}", DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")

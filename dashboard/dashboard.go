@@ -12,13 +12,11 @@ import (
 	"strconv"
 )
 
-var svcs *service.Services
+var client service.ServiceIf
 
 func DashboardHandler(w http.ResponseWriter, r *http.Request) {
-	var services = svcs.GetServices()
-
 	tc := make(map[string]interface{})
-	tc["services"] = services
+	tc["services"] = client.GetServices("all")
 
 	templates := template.Must(template.ParseFiles("templates/base.html", "templates/index.html"))
 	if err := templates.Execute(w, tc); err != nil {
@@ -28,7 +26,7 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var buffer bytes.Buffer
-	var services = svcs.GetServices()
+	var services = client.GetServices("all")
 	var errors, warnings, ok = 0, 0, 0
 	for _, s := range services {
 		if s.State == backend.STATE_WARNING {
@@ -49,8 +47,8 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	io.WriteString(c, body)
 }
 
-func Register(rtr *mux.Router, services *service.Services) {
-	svcs = services
+func Register(rtr *mux.Router, client_ service.ServiceIf) {
+	client = client_
 	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 }
