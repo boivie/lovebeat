@@ -93,6 +93,9 @@ func main() {
 	go udpapi.Listener(*udpAddr, svcs.GetClient())
 	go tcpapi.Listener(*tcpAddr, svcs.GetClient())
 
+	// Ensure that the 'all' view exists
+	svcs.GetClient().CreateOrUpdateView("all", "")
+
 	log.Info("Ready to handle incoming connections")
 
 	signalHandler()
