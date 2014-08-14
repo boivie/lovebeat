@@ -43,7 +43,7 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 
 	c.Header().Add("Content-Type", "text/plain")
 	c.Header().Add("Content-Length", "3")
-	io.WriteString(c, "ok\n")
+	io.WriteString(c, "{}\n")
 }
 
 func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
@@ -54,7 +54,7 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 
 	c.Header().Add("Content-Type", "text/plain")
 	c.Header().Add("Content-Length", "3")
-	io.WriteString(c, "ok\n")
+	io.WriteString(c, "{}\n")
 }
 
 func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
@@ -67,6 +67,10 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 	}
 
 	client.CreateOrUpdateView(view_name, expr)
+
+	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Length", "3")
+	io.WriteString(c, "{}\n")
 }
 
 func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
@@ -77,7 +81,7 @@ func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
 
 	c.Header().Add("Content-Type", "text/plain")
 	c.Header().Add("Content-Length", "3")
-	io.WriteString(c, "ok\n")
+	io.WriteString(c, "{}\n")
 }
 
 func Register(rtr *mux.Router, services *service.Services) {
