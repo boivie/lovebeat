@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
@@ -84,6 +85,37 @@ func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "{}\n")
 }
 
+type JsonService struct {
+	Name           string `json:"name"`
+	LastBeat       int64  `json:"last_beat"`
+	WarningTimeout int64  `json:"warning_timeout"`
+	ErrorTimeout   int64  `json:"error_timeout"`
+	State          string `json:"state"`
+}
+
+func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	viewName := params["name"]
+
+	var ret []JsonService = make([]JsonService, 0)
+	for _, s := range client.GetServices(viewName) {
+		js := JsonService{
+			Name:           s.Name,
+			LastBeat:       s.LastBeat,
+			WarningTimeout: s.WarningTimeout,
+			ErrorTimeout:   s.ErrorTimeout,
+			State:          s.State,
+		}
+		ret = append(ret, js)
+	}
+	var encoded, _ = json.MarshalIndent(ret, "", "  ")
+
+	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
+	c.Write(encoded)
+	io.WriteString(c, "\n")
+}
+
 func Register(rtr *mux.Router, services *service.Services) {
 	svcs = services
 	client = svcs.GetClient()
@@ -91,4 +123,5 @@ func Register(rtr *mux.Router, services *service.Services) {
 	rtr.HandleFunc("/api/service/{name:[a-z0-9.]+}", DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
 	rtr.HandleFunc("/api/view/{name:[a-z0-9.]+}", DeleteViewHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/view/{name:[a-z0-9.]+}/services", GetServicesHandler).Methods("GET")
 }

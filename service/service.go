@@ -18,12 +18,13 @@ var (
 )
 
 type Services struct {
-	be             backend.Backend
-	services       map[string]*Service
-	views          map[string]*View
-	serviceCmdChan chan *serviceCmd
-	viewCmdChan    chan *viewCmd
-	expiryInterval int64
+	be              backend.Backend
+	services        map[string]*Service
+	views           map[string]*View
+	serviceCmdChan  chan *serviceCmd
+	viewCmdChan     chan *viewCmd
+	getServicesChan chan *getServicesCmd
+	expiryInterval  int64
 }
 
 type Service struct {
@@ -138,6 +139,10 @@ func (v *View) refresh(ts int64) {
 			}
 		}
 	}
+}
+
+func (v *View) contains(serviceName string) bool {
+	return v.ree.Match([]byte(serviceName))
 }
 
 func (v *View) Log(ts int64, action string, extra string) {
@@ -260,6 +265,17 @@ func (svcs *Services) Monitor() {
 				delete(svcs.views, c.View)
 				svcs.deleteView(c.View)
 			}
+		case c := <-svcs.getServicesChan:
+			var ret []backend.StoredService
+			var view, ok = svcs.views[c.View]
+			if ok {
+				for _, s := range svcs.services {
+					if view.contains(s.Name) {
+						ret = append(ret, *s.stored())
+					}
+				}
+			}
+			c.Reply <- ret
 		case c := <-svcs.serviceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c.Service)
@@ -296,6 +312,7 @@ func NewServices(beiface backend.Backend) *Services {
 	svcs.be = beiface
 	svcs.serviceCmdChan = make(chan *serviceCmd, MAX_UNPROCESSED_PACKETS)
 	svcs.viewCmdChan = make(chan *viewCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.getServicesChan = make(chan *getServicesCmd, 5)
 	svcs.expiryInterval = 1
 	svcs.services = make(map[string]*Service)
 	svcs.views = make(map[string]*View)

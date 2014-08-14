@@ -1,5 +1,9 @@
 package service
 
+import (
+	"github.com/boivie/lovebeat-go/backend"
+)
+
 type ServiceIf interface {
 	Beat(name string)
 	DeleteService(name string)
@@ -9,6 +13,7 @@ type ServiceIf interface {
 
 	CreateOrUpdateView(name string, regexp string)
 	DeleteView(name string)
+	GetServices(view string) []backend.StoredService
 }
 
 const (
@@ -34,6 +39,11 @@ type viewCmd struct {
 	Action string
 	View   string
 	Regexp string
+}
+
+type getServicesCmd struct {
+	View  string
+	Reply chan []backend.StoredService
 }
 
 type client struct {
@@ -83,6 +93,13 @@ func (c *client) CreateOrUpdateView(name string, regexp string) {
 		View:   name,
 		Regexp: regexp,
 	}
+}
+
+func (c *client) GetServices(view string) []backend.StoredService {
+	myc := make(chan []backend.StoredService)
+	c.svcs.getServicesChan <- &getServicesCmd{View: view, Reply: myc}
+	ret := <-myc
+	return ret
 }
 
 func (svcs *Services) GetClient() ServiceIf {
