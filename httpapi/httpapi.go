@@ -94,8 +94,11 @@ type JsonService struct {
 }
 
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	viewName := params["name"]
+	viewName := "all"
+
+	if val, ok := r.URL.Query()["view"]; ok {
+		viewName = val[0]
+	}
 
 	var ret []JsonService = make([]JsonService, 0)
 	for _, s := range client.GetServices(viewName) {
@@ -118,9 +121,9 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 
 func Register(rtr *mux.Router, client_ service.ServiceIf) {
 	client = client_
-	rtr.HandleFunc("/api/service/{name:[a-z0-9.]+}", ServiceHandler).Methods("POST")
-	rtr.HandleFunc("/api/service/{name:[a-z0-9.]+}", DeleteServiceHandler).Methods("DELETE")
-	rtr.HandleFunc("/api/view/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
-	rtr.HandleFunc("/api/view/{name:[a-z0-9.]+}", DeleteViewHandler).Methods("DELETE")
-	rtr.HandleFunc("/api/view/{name:[a-z0-9.]+}/services", GetServicesHandler).Methods("GET")
+	rtr.HandleFunc("/api/services/", GetServicesHandler).Methods("GET")
+	rtr.HandleFunc("/api/services/{name:[a-z0-9.]+}", ServiceHandler).Methods("POST")
+	rtr.HandleFunc("/api/services/{name:[a-z0-9.]+}", DeleteServiceHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/views/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
+	rtr.HandleFunc("/api/views/{name:[a-z0-9.]+}", DeleteViewHandler).Methods("DELETE")
 }
