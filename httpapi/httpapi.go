@@ -85,6 +85,28 @@ func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "{}\n")
 }
 
+type JsonView struct {
+	Name  string `json:"name"`
+	State string `json:"state"`
+}
+
+func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
+	var ret = make([]JsonView, 0)
+	for _, v := range client.GetViews() {
+		js := JsonView{
+			Name:  v.Name,
+			State: v.State,
+		}
+		ret = append(ret, js)
+	}
+	var encoded, _ = json.MarshalIndent(ret, "", "  ")
+
+	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
+	c.Write(encoded)
+	io.WriteString(c, "\n")
+}
+
 type JsonService struct {
 	Name           string `json:"name"`
 	LastBeat       int64  `json:"last_beat"`
@@ -100,7 +122,7 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 		viewName = val[0]
 	}
 
-	var ret []JsonService = make([]JsonService, 0)
+	var ret = make([]JsonService, 0)
 	for _, s := range client.GetServices(viewName) {
 		js := JsonService{
 			Name:           s.Name,
@@ -124,6 +146,7 @@ func Register(rtr *mux.Router, client_ service.ServiceIf) {
 	rtr.HandleFunc("/api/services/", GetServicesHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/{name:[a-z0-9.]+}", ServiceHandler).Methods("POST")
 	rtr.HandleFunc("/api/services/{name:[a-z0-9.]+}", DeleteServiceHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/views/", GetViewsHandler).Methods("GET")
 	rtr.HandleFunc("/api/views/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
 	rtr.HandleFunc("/api/views/{name:[a-z0-9.]+}", DeleteViewHandler).Methods("DELETE")
 }

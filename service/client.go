@@ -14,6 +14,7 @@ type ServiceIf interface {
 	CreateOrUpdateView(name string, regexp string)
 	DeleteView(name string)
 	GetServices(view string) []backend.StoredService
+	GetViews() []backend.StoredView
 }
 
 const (
@@ -44,6 +45,10 @@ type viewCmd struct {
 type getServicesCmd struct {
 	View  string
 	Reply chan []backend.StoredService
+}
+
+type getViewsCmd struct {
+	Reply chan []backend.StoredView
 }
 
 type client struct {
@@ -98,6 +103,13 @@ func (c *client) CreateOrUpdateView(name string, regexp string) {
 func (c *client) GetServices(view string) []backend.StoredService {
 	myc := make(chan []backend.StoredService)
 	c.svcs.getServicesChan <- &getServicesCmd{View: view, Reply: myc}
+	ret := <-myc
+	return ret
+}
+
+func (c *client) GetViews() []backend.StoredView {
+	myc := make(chan []backend.StoredView)
+	c.svcs.getViewsChan <- &getViewsCmd{Reply: myc}
 	ret := <-myc
 	return ret
 }
