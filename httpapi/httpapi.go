@@ -110,6 +110,7 @@ func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
 type JsonService struct {
 	Name           string `json:"name"`
 	LastBeat       int64  `json:"last_beat"`
+	LastBeatDelta  int64  `json:"last_beat_delta"`
 	WarningTimeout int64  `json:"warning_timeout"`
 	ErrorTimeout   int64  `json:"error_timeout"`
 	State          string `json:"state"`
@@ -121,12 +122,13 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	if val, ok := r.URL.Query()["view"]; ok {
 		viewName = val[0]
 	}
-
+	var now = now()
 	var ret = make([]JsonService, 0)
 	for _, s := range client.GetServices(viewName) {
 		js := JsonService{
 			Name:           s.Name,
 			LastBeat:       s.LastBeat,
+			LastBeatDelta:  now - s.LastBeat,
 			WarningTimeout: s.WarningTimeout,
 			ErrorTimeout:   s.ErrorTimeout,
 			State:          s.State,
