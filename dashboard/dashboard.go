@@ -5,24 +5,14 @@ import (
 	"fmt"
 	"github.com/boivie/lovebeat-go/backend"
 	"github.com/boivie/lovebeat-go/service"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
-	"html/template"
 	"io"
 	"net/http"
 	"strconv"
 )
 
 var client service.ServiceIf
-
-func DashboardHandler(w http.ResponseWriter, r *http.Request) {
-	tc := make(map[string]interface{})
-	tc["services"] = client.GetServices("all")
-
-	templates := template.Must(template.ParseFiles("templates/base.html", "templates/index.html"))
-	if err := templates.Execute(w, tc); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var buffer bytes.Buffer
@@ -47,8 +37,14 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	io.WriteString(c, body)
 }
 
+func RedirectHandler(c http.ResponseWriter, req *http.Request) {
+	http.Redirect(c, req, "/dashboard.html", 301)
+}
+
 func Register(rtr *mux.Router, client_ service.ServiceIf) {
 	client = client_
-	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
+	rtr.HandleFunc("/", RedirectHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
+	rtr.PathPrefix("/").Handler(http.FileServer(
+		&assetfs.AssetFS{Asset, AssetDir, "data/"}))
 }

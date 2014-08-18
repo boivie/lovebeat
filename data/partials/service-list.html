@@ -1,0 +1,105 @@
+<div class="container-fluid">
+  <div class="row header">
+    <div class="col-xs-12">
+      <div class="meta pull-left">
+        <div class="page">
+          Lovebeat Dashboard
+        </div>
+        <div class="breadcrumb-links">
+          <a href="#/">Home</a> / <a href="#/views">Views</a> / {{viewName}}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-10 col-lg-offset-1">
+      <div ng-if="(services|filter:{state:'error'}).length > 0" class="alert alert-danger" role="alert">
+	<div><span class="">There are services in 'error' state!</span></div>
+      </div>
+      <div class="row">
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="widget">
+            <div class="widget-body">
+              <div class="widget-icon red pull-left">
+                <i class="fa fa-times"></i>
+              </div>
+              <div class="widget-content pull-left">
+                <div class="title">{{(services|filter:{state:'error'}).length}}</div>
+                <div class="comment">Error</div>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="widget">
+            <div class="widget-body">
+              <div class="widget-icon orange pull-left">
+                <i class="fa fa-warning"></i>
+              </div>
+              <div class="widget-content pull-left">
+                <div class="title">{{(services|filter:{state:'warning'}).length}}</div>
+                <div class="comment">Warning</div>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="widget">
+            <div class="widget-body">
+              <div class="widget-icon green pull-left">
+                <i class="fa fa-check"></i>
+              </div>
+              <div class="widget-content pull-left">
+                <div class="title">{{(services|filter:{state:'ok'}).length}}</div>
+                <div class="comment">Good</div>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+        </div>
+        <div class="spacer visible-xs"></div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="widget">
+            <div class="widget-body">
+              <div class="widget-icon blue pull-left">
+                <i class="fa fa-wrench"></i>
+              </div>
+              <div class="widget-content pull-left">
+                <div class="title">{{(services|filter:{state:'maintenance'}).length}}</div>
+                <div class="comment">In Maintenance</div>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+	<div class="col-md-12">
+	  <div class="widget">
+	    <div class="widget-title">
+              <i class="fa fa-tasks"></i> Services
+            </div>
+	    <div class="widget-body no-padding">
+	      <table class="table">
+		<tbody>
+		  <tr ng-repeat="service in services | orderBy:'name'">
+		    <td ng-if="service.state == 'ok'"><span class="text-success ng-scope"><i class="fa fa-check"></i></span></td>
+		    <td ng-if="service.state == 'warning'">WARNING</td>
+		    <td ng-if="service.state == 'error'"><span class="text-danger ng-scope"><i class="fa fa-times"></i></span></td>
+		    <td>{{service.name}}</td>
+		    <td>{{service.warning_timeout}}</td>
+		    <td>{{service.error_timeout}}</td>
+		    <td>{{service.last_beat}}</td>
+		  </tr>
+		</tbody>
+	      </table>
+	    </div>
+	  </div>
+	</div>
+      </div>
+    </div>
+  </div>
+</div>
