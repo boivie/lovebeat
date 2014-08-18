@@ -15,8 +15,14 @@ import (
 var client service.ServiceIf
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
+	viewName := "all"
+
+	if val, ok := req.URL.Query()["view"]; ok {
+		viewName = val[0]
+	}
+
 	var buffer bytes.Buffer
-	var services = client.GetServices("all")
+	var services = client.GetServices(viewName)
 	var errors, warnings, ok = 0, 0, 0
 	for _, s := range services {
 		if s.State == backend.STATE_WARNING {
