@@ -24,7 +24,7 @@
 		<tbody>
 		  <tr ng-repeat="view in views | orderBy:'name'">
 		    <td ng-if="view.state == 'ok'"><span class="text-success ng-scope"><i class="fa fa-check"></i></span></td>
-		    <td ng-if="view.state == 'warning'">WARNING</td>
+		    <td ng-if="view.state == 'warning'"><span class="text-warning ng-scope"><i class="fa fa-warning"></i></span></td>
 		    <td ng-if="view.state == 'error'"><span class="text-danger ng-scope"><i class="fa fa-times"></i></span></td>
 		    <td><a href="#/views/{{view.name}}/services">{{view.name}}</a></td>
 		  </tr>
