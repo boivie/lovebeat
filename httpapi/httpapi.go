@@ -143,12 +143,38 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "\n")
 }
 
+func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	name := params["name"]
+
+	var now = now()
+	var s = client.GetService(name)
+	js := JsonService{
+		Name:           s.Name,
+		LastBeat:       s.LastBeat,
+		LastBeatDelta:  now - s.LastBeat,
+		WarningTimeout: s.WarningTimeout,
+		ErrorTimeout:   s.ErrorTimeout,
+		State:          s.State,
+	}
+	var encoded, _ = json.MarshalIndent(js, "", "  ")
+
+	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
+	c.Write(encoded)
+	io.WriteString(c, "\n")
+}
+
 func Register(rtr *mux.Router, client_ service.ServiceIf) {
 	client = client_
-	rtr.HandleFunc("/api/services/", GetServicesHandler).Methods("GET")
-	rtr.HandleFunc("/api/services/{name:[a-z0-9.]+}", ServiceHandler).Methods("POST")
-	rtr.HandleFunc("/api/services/{name:[a-z0-9.]+}", DeleteServiceHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/services/",
+		GetServicesHandler).Methods("GET")
+	rtr.HandleFunc("/api/services/{name:[a-z0-9.-]+}",
+		ServiceHandler).Methods("POST")
+	rtr.HandleFunc("/api/services/{name:[a-z0-9.-]+}",
+		GetServiceHandler).Methods("GET")
+	rtr.HandleFunc("/api/services/{name:[a-z0-9.-]+}", DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/", GetViewsHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/{name:[a-z0-9.]+}", CreateViewHandler).Methods("POST")
-	rtr.HandleFunc("/api/views/{name:[a-z0-9.]+}", DeleteViewHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}", CreateViewHandler).Methods("POST")
+	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}", DeleteViewHandler).Methods("DELETE")
 }

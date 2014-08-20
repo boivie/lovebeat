@@ -24,6 +24,7 @@ type Services struct {
 	serviceCmdChan  chan *serviceCmd
 	viewCmdChan     chan *viewCmd
 	getServicesChan chan *getServicesCmd
+	getServiceChan  chan *getServiceCmd
 	getViewsChan    chan *getViewsCmd
 	expiryInterval  int64
 }
@@ -273,6 +274,9 @@ func (svcs *Services) Monitor() {
 				}
 			}
 			c.Reply <- ret
+		case c := <-svcs.getServiceChan:
+			var ret = svcs.services[c.Name]
+			c.Reply <- *ret.stored()
 		case c := <-svcs.getViewsChan:
 			var ret []backend.StoredView
 			for _, v := range svcs.views {
@@ -316,6 +320,7 @@ func NewServices(beiface backend.Backend) *Services {
 	svcs.serviceCmdChan = make(chan *serviceCmd, MAX_UNPROCESSED_PACKETS)
 	svcs.viewCmdChan = make(chan *viewCmd, MAX_UNPROCESSED_PACKETS)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)
+	svcs.getServiceChan = make(chan *getServiceCmd, 5)
 	svcs.getViewsChan = make(chan *getViewsCmd, 5)
 	svcs.expiryInterval = 1
 	svcs.services = make(map[string]*Service)
