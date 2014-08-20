@@ -8,6 +8,10 @@ lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams', 'Se
   function($scope, $routeParams, Service) {
       $scope.services = Service.query({viewId: $routeParams.viewId});
       $scope.viewName = $routeParams.viewId;
+      $scope.lbTrigger = function (service) {
+	  service.$trigger();
+	  service = service.$get();
+      }
   }]);
 
 lovebeatControllers.controller('ViewListCtrl', ['$scope', 'View',

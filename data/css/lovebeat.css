@@ -18,6 +18,10 @@ text-overflow: ellipsis;
 .row.header .meta .breadcrumb-links {
 font-size: 10px;
 }
+
+td {
+    vertical-align:middle !important;
+}
 .widget {
     background: #ffffff;
     border: 1px solid transparent;

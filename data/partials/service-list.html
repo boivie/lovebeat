@@ -93,6 +93,7 @@
 		    <td><span ng-if="service.warning_timeout > 0"><i class="fa fa-warning"> {{service.warning_timeout | delta}}</span></td>
 		    <td><span ng-if="service.error_timeout > 0"><i class="fa fa-times"> {{service.error_timeout | delta}}</span></td>
 		    <td>{{service.last_beat_delta | delta_ago}}</td>
+		    <td><button class="btn btn-sm btn-info pull-right" ng-click="lbTrigger(service)">Trigger</button></td>
 		  </tr>
 		</tbody>
 	      </table>
