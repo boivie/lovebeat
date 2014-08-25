@@ -93,16 +93,21 @@
     }
     
     var defaults = {
-      format: 'short'
+      format: 'short',
+      units: 100
     };
     
     var opts = _extend(defaults, options);
     
     var units = ['years', 'months', 'days', 'hours', 'minutes', 'seconds'], values = [];
     var remaining = seconds;
-    for(var i = 0, len = units.length; i < len; i++) {
+    var active_units = 0;
+    for(var i = 0, len = units.length; i < len && active_units < opts.units; i++) {
       var unit = UNITS[units[i]];
       values[i] = Math.floor(remaining / unit.value);
+
+      if (values[i] > 0 || active_units > 0)
+        active_units++;
 
       if(opts.format === 'micro' || opts.format === 'chrono') {
         values[i] += unit.formats[opts.format];

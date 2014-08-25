@@ -40,7 +40,7 @@ lovebeatApp.filter('delta_ago', function() {
   return function(seconds) {
       if (seconds <= 0)
 	  return "now";
-      return juration.stringify(seconds, {format:'micro'}) + " ago";
+      return juration.stringify(seconds, {format:'micro', units: 2}) + " ago";
   }
 });
 
