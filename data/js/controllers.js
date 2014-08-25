@@ -48,6 +48,22 @@ lovebeatControllers.controller('AddServiceCtrl', ['$scope', '$http',
 	  })
       }}]);
 
+lovebeatControllers.controller('AddViewCtrl', ['$scope', '$http',
+  function($scope, $http) {
+      $scope.view = {}
+      $scope.createView = function() {
+          $http({
+              method : 'POST',
+              url : '/api/views/' + $scope.view.name,
+              data : 'regexp=' + $scope.view.regexp,
+              headers : {
+                  'Content-Type' : 'application/x-www-form-urlencoded'
+              }
+          }).success(function(data, status, headers, config) {
+	      window.location = "#/"
+	  })
+      }}]);
+
 lovebeatControllers.controller('ServiceDetailCtrl', ['$scope', '$routeParams', 'Service',
   function($scope, $routeParams, Phone) {
     $scope.service = Service.get({serviceId: $routeParams.serviceId}, function(service) {
