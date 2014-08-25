@@ -42,7 +42,7 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		client.SetWarningTimeout(name, val)
 	}
 
-	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
 	io.WriteString(c, "{}\n")
 }
@@ -53,7 +53,7 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 
 	client.DeleteService(name)
 
-	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
 	io.WriteString(c, "{}\n")
 }
@@ -69,7 +69,7 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 
 	client.CreateOrUpdateView(view_name, expr)
 
-	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
 	io.WriteString(c, "{}\n")
 }
@@ -80,7 +80,7 @@ func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
 
 	client.DeleteView(name)
 
-	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
 	io.WriteString(c, "{}\n")
 }
@@ -101,7 +101,7 @@ func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
 	}
 	var encoded, _ = json.MarshalIndent(ret, "", "  ")
 
-	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
 	c.Write(encoded)
 	io.WriteString(c, "\n")
@@ -137,7 +137,7 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	}
 	var encoded, _ = json.MarshalIndent(ret, "", "  ")
 
-	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
 	c.Write(encoded)
 	io.WriteString(c, "\n")
@@ -159,7 +159,7 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 	}
 	var encoded, _ = json.MarshalIndent(js, "", "  ")
 
-	c.Header().Add("Content-Type", "text/plain")
+	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
 	c.Write(encoded)
 	io.WriteString(c, "\n")
