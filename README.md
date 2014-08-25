@@ -9,3 +9,6 @@ Beats should be counters, and warn/err should be gauges
 It's best to use gauges instead of counters as the values will be left untouched
 in case you have a statsd proxy between the client and the lovebeat server.
 
+Includes:
+
+ * juration.js from https://github.com/domchristie/juration/pull/9
