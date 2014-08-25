@@ -23,6 +23,10 @@ lovebeatApp.config(['$routeProvider',
         templateUrl: 'partials/service-detail.html',
         controller: 'ServiceDetailCtrl'
       }).
+      when('/add-service', {
+        templateUrl: 'partials/add-service.html',
+        controller: 'AddServiceCtrl'
+      }).
       otherwise({
         redirectTo: '/views'
       });
