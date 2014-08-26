@@ -7,6 +7,7 @@ import (
 	"github.com/op/go-logging"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -107,13 +108,18 @@ func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "\n")
 }
 
+type JsonViewRef struct {
+	Name string `json:"name"`
+}
+
 type JsonService struct {
-	Name           string `json:"name"`
-	LastBeat       int64  `json:"last_beat"`
-	LastBeatDelta  int64  `json:"last_beat_delta"`
-	WarningTimeout int64  `json:"warning_timeout"`
-	ErrorTimeout   int64  `json:"error_timeout"`
-	State          string `json:"state"`
+	Name           string        `json:"name"`
+	LastBeat       int64         `json:"last_beat"`
+	LastBeatDelta  int64         `json:"last_beat_delta"`
+	WarningTimeout int64         `json:"warning_timeout"`
+	ErrorTimeout   int64         `json:"error_timeout"`
+	State          string        `json:"state"`
+	Views          []JsonViewRef `json:"views,omitempty"`
 }
 
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
@@ -156,6 +162,16 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 		WarningTimeout: s.WarningTimeout,
 		ErrorTimeout:   s.ErrorTimeout,
 		State:          s.State,
+	}
+
+	if _, ok := r.URL.Query()["details"]; ok {
+		js.Views = make([]JsonViewRef, 0)
+		for _, view := range client.GetViews() {
+			matched, err := regexp.MatchString(view.Regexp, s.Name)
+			if err == nil && matched {
+				js.Views = append(js.Views, JsonViewRef{Name: view.Name})
+			}
+		}
 	}
 	var encoded, _ = json.MarshalIndent(js, "", "  ")
 
