@@ -7,10 +7,13 @@ const (
 	STATE_ERROR   = "error"
 )
 
+const PREVIOUS_BEATS_COUNT = 20
+
 type StoredService struct {
 	Name           string
 	LastValue      int
 	LastBeat       int64
+	PreviousBeats  []int64
 	LastUpdated    int64
 	WarningTimeout int64
 	ErrorTimeout   int64
@@ -27,9 +30,6 @@ type StoredView struct {
 type Backend interface {
 	LoadServices() []*StoredService
 	LoadViews() []*StoredView
-
-	AddServiceLog(name string, ts int64, action string, extra string)
-	AddViewLog(name string, ts int64, action string, extra string)
 
 	SaveService(service *StoredService)
 	SaveView(view *StoredView)

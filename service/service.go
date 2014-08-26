@@ -4,7 +4,6 @@ import (
 	"github.com/boivie/lovebeat-go/backend"
 	"github.com/op/go-logging"
 	"regexp"
-	"strconv"
 	"time"
 )
 
@@ -34,6 +33,7 @@ type Service struct {
 	Name           string
 	LastValue      int
 	LastBeat       int64
+	PreviousBeats  []int64
 	LastUpdated    int64
 	WarningTimeout int64
 	ErrorTimeout   int64
@@ -71,8 +71,8 @@ func (s *Service) stateAt(ts int64) string {
 	return state
 }
 
-func (s *Service) Log(ts int64, action string, extra string) {
-	s.svcs.be.AddServiceLog(s.Name, ts, action, extra)
+func (s *Service) registerBeat(ts int64) {
+	s.PreviousBeats = append(s.PreviousBeats[1:], ts)
 }
 
 func (s *Service) Equals(other *Service) bool {
@@ -88,17 +88,14 @@ func (s *Service) save(ref *Service, ts int64) {
 		if s.State != ref.State {
 			log.Info("SERVICE '%s', state %s -> %s",
 				s.Name, ref.State, s.State)
-			s.Log(ts, "state", s.State)
 		}
 		if s.WarningTimeout != ref.WarningTimeout {
 			log.Info("SERVICE '%s', warn %d -> %d",
 				s.Name, ref.WarningTimeout, s.WarningTimeout)
-			s.Log(ts, "warn-tmo", strconv.Itoa(int(ref.WarningTimeout)))
 		}
 		if s.ErrorTimeout != ref.ErrorTimeout {
 			log.Info("SERVICE '%s', err %d -> %d",
 				s.Name, ref.ErrorTimeout, s.ErrorTimeout)
-			s.Log(ts, "err-tmo", strconv.Itoa(int(ref.ErrorTimeout)))
 		}
 		s.LastUpdated = ts
 		s.svcs.be.SaveService(s.stored())
@@ -114,6 +111,7 @@ func (s *Service) stored() *backend.StoredService {
 		Name:           s.Name,
 		LastValue:      s.LastValue,
 		LastBeat:       s.LastBeat,
+		PreviousBeats:  s.PreviousBeats,
 		LastUpdated:    s.LastUpdated,
 		WarningTimeout: s.WarningTimeout,
 		ErrorTimeout:   s.ErrorTimeout,
@@ -147,16 +145,11 @@ func (v *View) contains(serviceName string) bool {
 	return v.ree.Match([]byte(serviceName))
 }
 
-func (v *View) Log(ts int64, action string, extra string) {
-	v.svcs.be.AddViewLog(v.Name, ts, action, extra)
-}
-
 func (v *View) save(ref *View, ts int64) {
 	if !v.Equals(ref) {
 		if v.State != ref.State {
 			log.Info("VIEW '%s', state %s -> %s",
 				v.Name, ref.State, v.State)
-			v.Log(ts, "state", v.State)
 		}
 		v.LastUpdated = ts
 		v.svcs.be.SaveView(v.stored())
@@ -183,6 +176,7 @@ func (svcs *Services) getService(name string) *Service {
 			Name:           name,
 			LastValue:      -1,
 			LastBeat:       -1,
+			PreviousBeats:  make([]int64, backend.PREVIOUS_BEATS_COUNT),
 			LastUpdated:    -1,
 			WarningTimeout: -1,
 			ErrorTimeout:   -1,
@@ -296,8 +290,7 @@ func (svcs *Services) Monitor() {
 			case ACTION_BEAT:
 				if c.Value > 0 {
 					s.LastBeat = ts
-					var diff = ts - ref.LastBeat
-					s.Log(ts, "beat", strconv.Itoa(int(diff)))
+					s.registerBeat(ts)
 					log.Debug("Beat from %s", s.Name)
 				}
 			case ACTION_DELETE:
@@ -327,15 +320,20 @@ func NewServices(beiface backend.Backend) *Services {
 	svcs.views = make(map[string]*View)
 
 	for _, s := range svcs.be.LoadServices() {
-		svcs.services[s.Name] = &Service{
+		var svc = &Service{
 			svcs:           svcs,
 			Name:           s.Name,
 			LastValue:      s.LastValue,
 			LastBeat:       s.LastBeat,
+			PreviousBeats:  s.PreviousBeats,
 			LastUpdated:    s.LastUpdated,
 			WarningTimeout: s.WarningTimeout,
 			ErrorTimeout:   s.ErrorTimeout,
 			State:          s.State}
+		if svc.PreviousBeats == nil || len(svc.PreviousBeats) != backend.PREVIOUS_BEATS_COUNT {
+			svc.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
+		}
+		svcs.services[s.Name] = svc
 	}
 
 	for _, v := range svcs.be.LoadViews() {

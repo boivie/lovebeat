@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/hoisie/redis"
 	"github.com/op/go-logging"
 )
@@ -42,22 +41,6 @@ func (r RedisBackend) SaveView(view *StoredView) {
 	b, _ := json.Marshal(view)
 	r.client.Set("lb.view."+view.Name, b)
 	r.client.Sadd("lb.views.all", []byte(view.Name))
-}
-
-func (r RedisBackend) AddServiceLog(name string, ts int64, action string, extra string) {
-	var key = "lb.service-log." + name
-	var log = fmt.Sprintf("%d|%s|%s", ts, action, extra)
-	r.client.Lpush(key, []byte(log))
-	r.client.Ltrim(key, 0, MAX_LOG_ENTRIES)
-
-}
-
-func (r RedisBackend) AddViewLog(name string, ts int64, action string, extra string) {
-	var key = "lb.view-log." + name
-	var log = fmt.Sprintf("%d|%s|%s", ts, action, extra)
-	r.client.Lpush(key, []byte(log))
-	r.client.Ltrim(key, 0, MAX_LOG_ENTRIES)
-
 }
 
 func (r RedisBackend) loadService(name string) *StoredService {
