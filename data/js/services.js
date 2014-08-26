@@ -4,8 +4,7 @@ lovebeatServices.factory('Service', ['$resource',
   function($resource){
       return $resource('/api/services/:serviceId?view=:viewId', {serviceId: '@name'}, {
 	get: {method:'GET'},
-	query: {method:'GET', isArray:true},
-	trigger: {method:'POST'}
+	query: {method:'GET', isArray:true}
     });
   }]);
 

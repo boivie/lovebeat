@@ -4,13 +4,21 @@
 
 var lovebeatControllers = angular.module('lovebeatControllers', []);
 
-lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams', 'Service',
-  function($scope, $routeParams, Service) {
+lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams', 'Service', '$http',
+    function($scope, $routeParams, Service, $http) {
       $scope.services = Service.query({viewId: $routeParams.viewId});
       $scope.viewName = $routeParams.viewId;
       $scope.lbTrigger = function (service) {
-	  service.$trigger();
-	  service = service.$get();
+	  $http({
+              method : 'POST',
+              url : '/api/services/' + service.name,
+              data : '',
+              headers : {
+                  'Content-Type' : 'application/x-www-form-urlencoded'
+              }
+          }).success(function(data, status, headers, config) {
+	      service = service.$get();
+	  })
       }
   }]);
 
