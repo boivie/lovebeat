@@ -16,6 +16,7 @@ type ServiceIf interface {
 	GetServices(view string) []backend.StoredService
 	GetService(name string) backend.StoredService
 	GetViews() []backend.StoredView
+	GetView(name string) backend.StoredView
 }
 
 const (
@@ -55,6 +56,11 @@ type getServiceCmd struct {
 
 type getViewsCmd struct {
 	Reply chan []backend.StoredView
+}
+
+type getViewCmd struct {
+	Name  string
+	Reply chan backend.StoredView
 }
 
 type client struct {
@@ -123,6 +129,13 @@ func (c *client) GetService(name string) backend.StoredService {
 func (c *client) GetViews() []backend.StoredView {
 	myc := make(chan []backend.StoredView)
 	c.svcs.getViewsChan <- &getViewsCmd{Reply: myc}
+	ret := <-myc
+	return ret
+}
+
+func (c *client) GetView(name string) backend.StoredView {
+	myc := make(chan backend.StoredView)
+	c.svcs.getViewChan <- &getViewCmd{Name: name, Reply: myc}
 	ret := <-myc
 	return ret
 }
