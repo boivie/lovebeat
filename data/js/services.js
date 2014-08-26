@@ -10,7 +10,7 @@ lovebeatServices.factory('Service', ['$resource',
 
 lovebeatServices.factory('View', ['$resource',
   function($resource){
-    return $resource('/api/views/?', {}, {
+    return $resource('/api/views/:viewId?', {viewId: '@name'}, {
       query: {method:'GET', isArray:true}
     });
   }]);

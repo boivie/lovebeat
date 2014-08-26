@@ -117,3 +117,29 @@ lovebeatControllers.controller('EditServiceCtrl', ['$scope', '$routeParams', 'Se
       }
 
   }]);
+
+lovebeatControllers.controller('EditViewCtrl', ['$scope', '$routeParams', 'View', '$http',
+  function($scope, $routeParams, View, $http) {
+      $scope.view = View.get({viewId: $routeParams.viewId}),
+      $scope.editView = function() {
+          $http({
+              method : 'POST',
+              url : '/api/views/' + $scope.view.name,
+              data : 'regexp=' + $scope.view.regexp,
+              headers : {
+                  'Content-Type' : 'application/x-www-form-urlencoded'
+              }
+          }).success(function(data, status, headers, config) {
+	      window.location = "#/"
+	  })
+      },
+      $scope.deleteView = function() {
+          $http({
+              method : 'DELETE',
+              url : '/api/views/' + $scope.view.name
+          }).success(function(data, status, headers, config) {
+	      window.location = "#/"
+	  })
+      }
+
+  }]);
