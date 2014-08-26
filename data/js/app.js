@@ -20,8 +20,8 @@ lovebeatApp.config(['$routeProvider',
         controller: 'ViewListCtrl'
       }).
       when('/services/:serviceId', {
-        templateUrl: 'partials/service-detail.html',
-        controller: 'ServiceDetailCtrl'
+        templateUrl: 'partials/edit-service.html',
+        controller: 'EditServiceCtrl'
       }).
       when('/add-service', {
         templateUrl: 'partials/add-service.html',

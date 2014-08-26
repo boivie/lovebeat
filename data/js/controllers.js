@@ -72,13 +72,48 @@ lovebeatControllers.controller('AddViewCtrl', ['$scope', '$http',
 	  })
       }}]);
 
-lovebeatControllers.controller('ServiceDetailCtrl', ['$scope', '$routeParams', 'Service',
-  function($scope, $routeParams, Phone) {
-    $scope.service = Service.get({serviceId: $routeParams.serviceId}, function(service) {
-      $scope.mainImageUrl = phone.images[0];
-    });
+lovebeatControllers.controller('EditServiceCtrl', ['$scope', '$routeParams', 'Service', '$http',
+  function($scope, $routeParams, Service, $http) {
+      $scope.service = Service.get({serviceId: $routeParams.serviceId}, function (service) {
+	  if (service.warning_timeout > 0) {
+	      $scope.service.warn_tmo_hr = juration.stringify(service.warning_timeout);
+	  }
+	  if (service.error_timeout > 0) {
+	      $scope.service.err_tmo_hr = juration.stringify(service.error_timeout);
+	  }
+      }),
+      $scope.editService = function() {
+	  var err_tmo = -1
+	  var warn_tmo = -1
 
-    $scope.setImage = function(imageUrl) {
-      $scope.mainImageUrl = imageUrl;
-    }
+	  try {
+	      err_tmo = juration.parse($scope.service.err_tmo_hr)
+	  } catch (e) {
+	  }
+
+	  try {
+	      warn_tmo = juration.parse($scope.service.warn_tmo_hr)
+	  } catch (e) {
+	  }
+
+          $http({
+              method : 'POST',
+              url : '/api/services/' + $scope.service.name,
+              data : 'err-tmo=' + err_tmo + '&warn-tmo=' + warn_tmo,
+              headers : {
+                  'Content-Type' : 'application/x-www-form-urlencoded'
+              }
+          }).success(function(data, status, headers, config) {
+	      window.location = "#/"
+	  })
+      },
+      $scope.deleteService = function() {
+          $http({
+              method : 'DELETE',
+              url : '/api/services/' + $scope.service.name
+          }).success(function(data, status, headers, config) {
+	      window.location = "#/"
+	  })
+      }
+
   }]);
