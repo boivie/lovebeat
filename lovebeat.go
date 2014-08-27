@@ -31,6 +31,7 @@ var (
 	tcpAddr     = flag.String("tcp", ":8127", "TCP service address")
 	debug       = flag.Bool("debug", false, "print statistics sent to graphite")
 	showVersion = flag.Bool("version", false, "print version string")
+	workDir     = flag.String("workdir", "work", "working directory")
 )
 
 var (
@@ -83,7 +84,7 @@ func main() {
 	var hostname = getHostname()
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
-	var be = backend.RedisBackend{}
+	var be = backend.NewFileBackend(*workDir)
 	var svcs = service.NewServices(be)
 
 	signal.Notify(signalchan, syscall.SIGTERM)

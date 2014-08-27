@@ -7,11 +7,7 @@ import (
 )
 
 var (
-	log = logging.MustGetLogger("lovebeat")
-)
-
-const (
-	MAX_LOG_ENTRIES = 1000
+	flog = logging.MustGetLogger("lovebeat")
 )
 
 type RedisBackend struct {
@@ -67,7 +63,7 @@ func (r RedisBackend) LoadServices() []*StoredService {
 	for _, nameByte := range namesBytes {
 		var name = string(nameByte)
 		ret = append(ret, r.loadService(name))
-		log.Debug("Found service %s", name)
+		flog.Debug("Found service %s", name)
 	}
 	return ret
 }
@@ -79,7 +75,7 @@ func (r RedisBackend) LoadViews() []*StoredView {
 	for _, nameByte := range namesBytes {
 		var name = string(nameByte)
 		ret = append(ret, r.loadView(name))
-		log.Debug("Found view %s", name)
+		flog.Debug("Found view %s", name)
 	}
 
 	return ret
