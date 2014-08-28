@@ -4,8 +4,8 @@
 
 var lovebeatControllers = angular.module('lovebeatControllers', []);
 
-lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams', 'Service', '$http',
-    function($scope, $routeParams, Service, $http) {
+lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams', 'Service', '$http', '$interval',
+    function($scope, $routeParams, Service, $http, $interval) {
       $scope.services = Service.query({viewId: $routeParams.viewId});
       $scope.viewName = $routeParams.viewId;
       $scope.lbTrigger = function (service) {
@@ -19,7 +19,10 @@ lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams', 'Se
           }).success(function(data, status, headers, config) {
 	      service = service.$get();
 	  })
-      }
+      },
+      $scope.updater = $interval(function() {
+	  $scope.services = Service.query({viewId: $routeParams.viewId});
+      }, 60000);
   }]);
 
 lovebeatControllers.controller('ViewListCtrl', ['$scope', 'View',
