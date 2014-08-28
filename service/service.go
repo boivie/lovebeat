@@ -131,7 +131,7 @@ func (s *Service) updateViews() {
 func (svcs *Services) getService(name string) *Service {
 	var s, ok = svcs.services[name]
 	if !ok {
-		log.Error("Asked for unknown service %s", name)
+		log.Debug("Asked for unknown service %s", name)
 		s = &Service{
 			svcs: svcs,
 			data: backend.StoredService{
@@ -153,7 +153,7 @@ func (svcs *Services) getService(name string) *Service {
 func (svcs *Services) getView(name string) *View {
 	var s, ok = svcs.views[name]
 	if !ok {
-		log.Error("Asked for unknown view %s", name)
+		log.Debug("Asked for unknown view %s", name)
 		s = &View{
 			svcs: svcs,
 			data: backend.StoredView{
