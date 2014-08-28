@@ -9,6 +9,7 @@ import (
 
 const (
 	MAX_UNPROCESSED_PACKETS = 1000
+	EXPIRY_INTERVAL         = 1
 )
 
 var (
@@ -26,28 +27,17 @@ type Services struct {
 	getServiceChan  chan *getServiceCmd
 	getViewsChan    chan *getViewsCmd
 	getViewChan     chan *getViewCmd
-	expiryInterval  int64
 }
 
 type Service struct {
-	svcs           *Services
-	Name           string
-	LastValue      int
-	LastBeat       int64
-	PreviousBeats  []int64
-	LastUpdated    int64
-	WarningTimeout int64
-	ErrorTimeout   int64
-	State          string
+	svcs *Services
+	data backend.StoredService
 }
 
 type View struct {
-	svcs        *Services
-	Name        string
-	State       string
-	Regexp      string
-	LastUpdated int64
-	ree         *regexp.Regexp
+	svcs *Services
+	data backend.StoredView
+	ree  *regexp.Regexp
 }
 
 func now() int64 { return time.Now().Unix() }
@@ -56,13 +46,16 @@ func (s *Service) getExpiry(timeout int64) int64 {
 	if timeout <= 0 {
 		return 0
 	}
-	return s.LastBeat + timeout
+	return s.data.LastBeat + timeout
 }
+
+func (s *Service) name() string { return s.data.Name }
+func (v *View) name() string    { return v.data.Name }
 
 func (s *Service) stateAt(ts int64) string {
 	var state = backend.STATE_OK
-	var warningExpiry = s.getExpiry(s.WarningTimeout)
-	var errorExpiry = s.getExpiry(s.ErrorTimeout)
+	var warningExpiry = s.getExpiry(s.data.WarningTimeout)
+	var errorExpiry = s.getExpiry(s.data.ErrorTimeout)
 	if warningExpiry > 0 && ts >= warningExpiry {
 		state = backend.STATE_WARNING
 	}
@@ -73,70 +66,37 @@ func (s *Service) stateAt(ts int64) string {
 }
 
 func (s *Service) registerBeat(ts int64) {
-	s.PreviousBeats = append(s.PreviousBeats[1:], ts)
-}
-
-func (s *Service) Equals(other *Service) bool {
-	return s.stored() == other.stored()
-}
-
-func (v *View) Equals(other *View) bool {
-	return v.stored() == other.stored()
+	s.data.LastBeat = ts
+	s.data.PreviousBeats = append(s.data.PreviousBeats[1:], ts)
 }
 
 func (s *Service) save(ref *Service, ts int64) {
-	if !s.Equals(ref) {
-		if s.State != ref.State {
-			log.Info("SERVICE '%s', state %s -> %s",
-				s.Name, ref.State, s.State)
-		}
-		if s.WarningTimeout != ref.WarningTimeout {
-			log.Info("SERVICE '%s', warn %d -> %d",
-				s.Name, ref.WarningTimeout, s.WarningTimeout)
-		}
-		if s.ErrorTimeout != ref.ErrorTimeout {
-			log.Info("SERVICE '%s', err %d -> %d",
-				s.Name, ref.ErrorTimeout, s.ErrorTimeout)
-		}
-		s.LastUpdated = ts
-		s.svcs.be.SaveService(s.stored())
+	if s.data.State != ref.data.State {
+		log.Info("SERVICE '%s', state %s -> %s",
+			s.name(), ref.data.State, s.data.State)
 	}
-}
-
-func (s *Service) delete() {
-	s.svcs.be.DeleteService(s.Name)
-}
-
-func (s *Service) stored() *backend.StoredService {
-	return &backend.StoredService{
-		Name:           s.Name,
-		LastValue:      s.LastValue,
-		LastBeat:       s.LastBeat,
-		PreviousBeats:  s.PreviousBeats,
-		LastUpdated:    s.LastUpdated,
-		WarningTimeout: s.WarningTimeout,
-		ErrorTimeout:   s.ErrorTimeout,
-		State:          s.State,
+	if s.data.WarningTimeout != ref.data.WarningTimeout {
+		log.Info("SERVICE '%s', warn %d -> %d",
+			s.name(), ref.data.WarningTimeout,
+			s.data.WarningTimeout)
 	}
-}
-
-func (v *View) stored() *backend.StoredView {
-	return &backend.StoredView{
-		Name:        v.Name,
-		State:       v.State,
-		Regexp:      v.Regexp,
-		LastUpdated: v.LastUpdated,
+	if s.data.ErrorTimeout != ref.data.ErrorTimeout {
+		log.Info("SERVICE '%s', err %d -> %d",
+			s.name(), ref.data.ErrorTimeout,
+			s.data.ErrorTimeout)
 	}
+	s.data.LastUpdated = ts
+	s.svcs.be.SaveService(&s.data)
 }
 
 func (v *View) refresh(ts int64) {
-	v.State = backend.STATE_OK
+	v.data.State = backend.STATE_OK
 	for _, s := range v.svcs.services {
-		if v.ree.Match([]byte(s.Name)) {
-			if s.State == backend.STATE_WARNING && v.State == backend.STATE_OK {
-				v.State = backend.STATE_WARNING
-			} else if s.State == backend.STATE_ERROR {
-				v.State = backend.STATE_ERROR
+		if v.ree.Match([]byte(s.name())) {
+			if s.data.State == backend.STATE_WARNING && v.data.State == backend.STATE_OK {
+				v.data.State = backend.STATE_WARNING
+			} else if s.data.State == backend.STATE_ERROR {
+				v.data.State = backend.STATE_ERROR
 			}
 		}
 	}
@@ -147,22 +107,22 @@ func (v *View) contains(serviceName string) bool {
 }
 
 func (v *View) save(ref *View, ts int64) {
-	if !v.Equals(ref) {
-		if v.State != ref.State {
+	if v.data.State != ref.data.State {
+		if v.data.State != ref.data.State {
 			log.Info("VIEW '%s', state %s -> %s",
-				v.Name, ref.State, v.State)
+				v.name(), ref.data.State, v.data.State)
 		}
-		v.LastUpdated = ts
-		v.svcs.be.SaveView(v.stored())
+		v.data.LastUpdated = ts
+		v.svcs.be.SaveView(&v.data)
 	}
 }
 
 func (s *Service) updateViews() {
 	for _, view := range s.svcs.views {
-		if view.ree.Match([]byte(s.Name)) {
+		if view.ree.Match([]byte(s.name())) {
 			s.svcs.viewCmdChan <- &viewCmd{
 				Action: ACTION_REFRESH_VIEW,
-				View:   view.Name,
+				View:   view.name(),
 			}
 		}
 	}
@@ -173,15 +133,17 @@ func (svcs *Services) getService(name string) *Service {
 	if !ok {
 		log.Error("Asked for unknown service %s", name)
 		s = &Service{
-			svcs:           svcs,
-			Name:           name,
-			LastValue:      -1,
-			LastBeat:       -1,
-			PreviousBeats:  make([]int64, backend.PREVIOUS_BEATS_COUNT),
-			LastUpdated:    -1,
-			WarningTimeout: -1,
-			ErrorTimeout:   -1,
-			State:          backend.STATE_PAUSED,
+			svcs: svcs,
+			data: backend.StoredService{
+				Name:           name,
+				LastValue:      -1,
+				LastBeat:       -1,
+				PreviousBeats:  make([]int64, backend.PREVIOUS_BEATS_COUNT),
+				LastUpdated:    -1,
+				WarningTimeout: -1,
+				ErrorTimeout:   -1,
+				State:          backend.STATE_PAUSED,
+			},
 		}
 		svcs.services[name] = s
 	}
@@ -193,12 +155,14 @@ func (svcs *Services) getView(name string) *View {
 	if !ok {
 		log.Error("Asked for unknown view %s", name)
 		s = &View{
-			svcs:        svcs,
-			Name:        name,
-			State:       backend.STATE_OK,
-			LastUpdated: -1,
-			Regexp:      "^$",
-			ree:         EMPTY_REGEXP}
+			svcs: svcs,
+			data: backend.StoredView{
+				Name:        name,
+				State:       backend.STATE_OK,
+				LastUpdated: -1,
+				Regexp:      "^$",
+			},
+			ree: EMPTY_REGEXP}
 		svcs.views[name] = s
 	}
 	return s
@@ -213,7 +177,7 @@ func (svcs *Services) createView(name string, expr string, ts int64) {
 
 	var view = svcs.getView(name)
 	var ref = *view
-	view.Regexp = expr
+	view.data.Regexp = expr
 	view.ree = ree
 	view.refresh(ts)
 	view.save(&ref, ts)
@@ -221,23 +185,19 @@ func (svcs *Services) createView(name string, expr string, ts int64) {
 	log.Info("VIEW '%s' created or updated.", name)
 }
 
-func (svcs *Services) deleteView(name string) {
-	svcs.be.DeleteView(name)
-}
-
 func (svcs *Services) Monitor() {
-	period := time.Duration(svcs.expiryInterval) * time.Second
+	period := time.Duration(EXPIRY_INTERVAL) * time.Second
 	ticker := time.NewTicker(period)
 	for {
 		select {
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range svcs.services {
-				if s.State == backend.STATE_PAUSED || s.State == s.stateAt(ts) {
+				if s.data.State == backend.STATE_PAUSED || s.data.State == s.stateAt(ts) {
 					continue
 				}
 				var ref = *s
-				s.State = s.stateAt(ts)
+				s.data.State = s.stateAt(ts)
 				s.save(&ref, ts)
 				s.updateViews()
 			}
@@ -256,31 +216,31 @@ func (svcs *Services) Monitor() {
 			case ACTION_DELETE_VIEW:
 				log.Debug("Delete view %s", c.View)
 				delete(svcs.views, c.View)
-				svcs.deleteView(c.View)
+				svcs.be.DeleteView(c.View)
 			}
 		case c := <-svcs.getServicesChan:
 			var ret []backend.StoredService
 			var view, ok = svcs.views[c.View]
 			if ok {
 				for _, s := range svcs.services {
-					if view.contains(s.Name) {
-						ret = append(ret, *s.stored())
+					if view.contains(s.name()) {
+						ret = append(ret, s.data)
 					}
 				}
 			}
 			c.Reply <- ret
 		case c := <-svcs.getServiceChan:
 			var ret = svcs.services[c.Name]
-			c.Reply <- *ret.stored()
+			c.Reply <- ret.data
 		case c := <-svcs.getViewsChan:
 			var ret []backend.StoredView
 			for _, v := range svcs.views {
-				ret = append(ret, *v.stored())
+				ret = append(ret, v.data)
 			}
 			c.Reply <- ret
 		case c := <-svcs.getViewChan:
 			var ret = svcs.views[c.Name]
-			c.Reply <- *ret.stored()
+			c.Reply <- ret.data
 		case c := <-svcs.serviceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c.Service)
@@ -288,21 +248,20 @@ func (svcs *Services) Monitor() {
 			var save = true
 			switch c.Action {
 			case ACTION_SET_WARN:
-				s.WarningTimeout = int64(c.Value)
+				s.data.WarningTimeout = int64(c.Value)
 			case ACTION_SET_ERR:
-				s.ErrorTimeout = int64(c.Value)
+				s.data.ErrorTimeout = int64(c.Value)
 			case ACTION_BEAT:
 				if c.Value > 0 {
-					s.LastBeat = ts
 					s.registerBeat(ts)
-					log.Debug("Beat from %s", s.Name)
+					log.Debug("Beat from %s", s.name())
 				}
 			case ACTION_DELETE:
-				delete(s.svcs.services, s.Name)
-				s.delete()
+				delete(s.svcs.services, s.name())
+				s.svcs.be.DeleteService(s.name())
 				save = false
 			}
-			s.State = s.stateAt(ts)
+			s.data.State = s.stateAt(ts)
 			if save {
 				s.save(&ref, ts)
 			}
@@ -320,36 +279,20 @@ func NewServices(beiface backend.Backend) *Services {
 	svcs.getServiceChan = make(chan *getServiceCmd, 5)
 	svcs.getViewsChan = make(chan *getViewsCmd, 5)
 	svcs.getViewChan = make(chan *getViewCmd, 5)
-	svcs.expiryInterval = 1
 	svcs.services = make(map[string]*Service)
 	svcs.views = make(map[string]*View)
 
 	for _, s := range svcs.be.LoadServices() {
-		var svc = &Service{
-			svcs:           svcs,
-			Name:           s.Name,
-			LastValue:      s.LastValue,
-			LastBeat:       s.LastBeat,
-			PreviousBeats:  s.PreviousBeats,
-			LastUpdated:    s.LastUpdated,
-			WarningTimeout: s.WarningTimeout,
-			ErrorTimeout:   s.ErrorTimeout,
-			State:          s.State}
-		if svc.PreviousBeats == nil || len(svc.PreviousBeats) != backend.PREVIOUS_BEATS_COUNT {
-			svc.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
+		var svc = &Service{svcs: svcs, data: *s}
+		if svc.data.PreviousBeats == nil || len(svc.data.PreviousBeats) != backend.PREVIOUS_BEATS_COUNT {
+			svc.data.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
 		}
 		svcs.services[s.Name] = svc
 	}
 
 	for _, v := range svcs.be.LoadViews() {
 		var ree, _ = regexp.Compile(v.Regexp)
-		svcs.views[v.Name] = &View{
-			svcs:        svcs,
-			Name:        v.Name,
-			State:       v.State,
-			Regexp:      v.Regexp,
-			LastUpdated: v.LastUpdated,
-			ree:         ree}
+		svcs.views[v.Name] = &View{svcs: svcs, data: *v, ree: ree}
 	}
 
 	return svcs
