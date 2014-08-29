@@ -66,7 +66,8 @@ lovebeatControllers.controller('AddViewCtrl', ['$scope', '$http',
           $http({
               method : 'POST',
               url : '/api/views/' + $scope.view.name,
-              data : 'regexp=' + $scope.view.regexp,
+              data : 'regexp=' + $scope.view.regexp +
+		  '&alert_mail=' + $scope.view.alert_mail,
               headers : {
                   'Content-Type' : 'application/x-www-form-urlencoded'
               }
@@ -128,7 +129,8 @@ lovebeatControllers.controller('EditViewCtrl', ['$scope', '$routeParams', 'View'
           $http({
               method : 'POST',
               url : '/api/views/' + $scope.view.name,
-              data : 'regexp=' + $scope.view.regexp,
+              data : 'regexp=' + $scope.view.regexp +
+		  '&alert_mail=' + $scope.view.alert_mail,
               headers : {
                   'Content-Type' : 'application/x-www-form-urlencoded'
               }
