@@ -108,13 +108,14 @@ func (v *View) contains(serviceName string) bool {
 
 func (v *View) save(ref *View, ts int64) {
 	if v.data.State != ref.data.State {
-		if v.data.State != ref.data.State {
-			log.Info("VIEW '%s', state %s -> %s",
-				v.name(), ref.data.State, v.data.State)
+		log.Info("VIEW '%s', state %s -> %s",
+			v.name(), ref.data.State, v.data.State)
+		if v.data.AlertMail != "" {
+			log.Info("Sending email to %s", v.data.AlertMail)
 		}
-		v.data.LastUpdated = ts
-		v.svcs.be.SaveView(&v.data)
 	}
+	v.data.LastUpdated = ts
+	v.svcs.be.SaveView(&v.data)
 }
 
 func (s *Service) updateViews() {
@@ -168,7 +169,8 @@ func (svcs *Services) getView(name string) *View {
 	return s
 }
 
-func (svcs *Services) createView(name string, expr string, ts int64) {
+func (svcs *Services) createView(name string, expr string, alertMail string,
+	ts int64) {
 	var ree, err = regexp.Compile(expr)
 	if err != nil {
 		log.Error("Invalid regexp: %s", err)
@@ -179,6 +181,7 @@ func (svcs *Services) createView(name string, expr string, ts int64) {
 	var ref = *view
 	view.data.Regexp = expr
 	view.ree = ree
+	view.data.AlertMail = alertMail
 	view.refresh(ts)
 	view.save(&ref, ts)
 
@@ -212,7 +215,7 @@ func (svcs *Services) Monitor() {
 				view.save(&ref, ts)
 			case ACTION_UPSERT_VIEW:
 				log.Debug("Create or update view %s", c.View)
-				svcs.createView(c.View, c.Regexp, now())
+				svcs.createView(c.View, c.Regexp, c.AlertMail, now())
 			case ACTION_DELETE_VIEW:
 				log.Debug("Delete view %s", c.View)
 				delete(svcs.views, c.View)

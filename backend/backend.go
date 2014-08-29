@@ -25,6 +25,7 @@ type StoredView struct {
 	State       string
 	Regexp      string
 	LastUpdated int64
+	AlertMail   string
 }
 
 type Backend interface {

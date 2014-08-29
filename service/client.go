@@ -11,7 +11,7 @@ type ServiceIf interface {
 	SetWarningTimeout(name string, timeout int)
 	SetErrorTimeout(name string, timeout int)
 
-	CreateOrUpdateView(name string, regexp string)
+	CreateOrUpdateView(name string, regexp string, alertMail string)
 	DeleteView(name string)
 	GetServices(view string) []backend.StoredService
 	GetService(name string) backend.StoredService
@@ -39,9 +39,10 @@ type serviceCmd struct {
 }
 
 type viewCmd struct {
-	Action string
-	View   string
-	Regexp string
+	Action    string
+	View      string
+	Regexp    string
+	AlertMail string
 }
 
 type getServicesCmd struct {
@@ -104,11 +105,12 @@ func (c *client) SetErrorTimeout(name string, timeout int) {
 	}
 }
 
-func (c *client) CreateOrUpdateView(name string, regexp string) {
+func (c *client) CreateOrUpdateView(name string, regexp string, alertMail string) {
 	c.svcs.viewCmdChan <- &viewCmd{
-		Action: ACTION_UPSERT_VIEW,
-		View:   name,
-		Regexp: regexp,
+		Action:    ACTION_UPSERT_VIEW,
+		View:      name,
+		Regexp:    regexp,
+		AlertMail: alertMail,
 	}
 }
 

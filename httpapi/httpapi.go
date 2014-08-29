@@ -68,7 +68,7 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client.CreateOrUpdateView(view_name, expr)
+	client.CreateOrUpdateView(view_name, expr, r.FormValue("alert_mail"))
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -87,9 +87,10 @@ func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 type JsonView struct {
-	Name   string `json:"name"`
-	State  string `json:"state"`
-	Regexp string `json:"regexp,omitempty"`
+	Name      string `json:"name"`
+	State     string `json:"state"`
+	Regexp    string `json:"regexp,omitempty"`
+	AlertMail string `json:"alert_mail"`
 }
 
 func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
@@ -114,9 +115,10 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 	name := params["name"]
 	v := client.GetView(name)
 	js := JsonView{
-		Name:   v.Name,
-		State:  v.State,
-		Regexp: v.Regexp,
+		Name:      v.Name,
+		State:     v.State,
+		Regexp:    v.Regexp,
+		AlertMail: v.AlertMail,
 	}
 
 	var encoded, _ = json.MarshalIndent(js, "", "  ")
