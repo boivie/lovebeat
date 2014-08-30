@@ -23,7 +23,7 @@ func Parse(data []byte, iface service.ServiceIf) {
 			continue
 		}
 
-		var value int
+		var value int64
 		modifier := string(item[4])
 		switch modifier {
 		case "c":
@@ -32,21 +32,21 @@ func Parse(data []byte, iface service.ServiceIf) {
 				log.Error("failed to ParseInt %s - %s", item[3], err)
 				continue
 			}
-			value = int(vali)
+			value = int64(vali)
 		default:
 			var valu, err = strconv.ParseUint(string(item[3]), 10, 64)
 			if err != nil {
 				log.Error("failed to ParseUint %s - %s", item[3], err)
 				continue
 			}
-			value = int(valu)
+			value = int64(valu)
 		}
 		var name = string(item[1])
 		switch string(item[2]) {
 		case "warn":
-			iface.SetWarningTimeout(name, value)
+			iface.ConfigureService(name, value, 0)
 		case "err":
-			iface.SetErrorTimeout(name, value)
+			iface.ConfigureService(name, 0, value)
 		case "beat":
 			iface.Beat(name)
 		}

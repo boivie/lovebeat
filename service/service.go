@@ -18,16 +18,18 @@ var (
 )
 
 type Services struct {
-	be                backend.Backend
-	services          map[string]*Service
-	views             map[string]*View
-	serviceCmdChan    chan *serviceCmd
-	deleteViewCmdChan chan string
-	upsertViewCmdChan chan *upsertViewCmd
-	getServicesChan   chan *getServicesCmd
-	getServiceChan    chan *getServiceCmd
-	getViewsChan      chan *getViewsCmd
-	getViewChan       chan *getViewCmd
+	be                   backend.Backend
+	services             map[string]*Service
+	views                map[string]*View
+	beatCmdChan          chan string
+	upsertServiceCmdChan chan *upsertServiceCmd
+	deleteServiceCmdChan chan string
+	deleteViewCmdChan    chan string
+	upsertViewCmdChan    chan *upsertViewCmd
+	getServicesChan      chan *getServicesCmd
+	getServiceChan       chan *getServiceCmd
+	getViewsChan         chan *getViewsCmd
+	getViewChan          chan *getViewCmd
 }
 
 type Service struct {
@@ -234,30 +236,33 @@ func (svcs *Services) Monitor() {
 		case c := <-svcs.getViewChan:
 			var ret = svcs.views[c.Name]
 			c.Reply <- ret.data
-		case c := <-svcs.serviceCmdChan:
+		case c := <-svcs.beatCmdChan:
+			var ts = now()
+			var s = svcs.getService(c)
+			var ref = *s
+			s.registerBeat(ts)
+			log.Debug("Beat from %s", s.name())
+			s.data.State = s.stateAt(ts)
+			s.save(&ref, ts)
+			s.updateViews(ts)
+		case c := <-svcs.deleteServiceCmdChan:
+			var ts = now()
+			var s = svcs.getService(c)
+			delete(s.svcs.services, s.name())
+			s.svcs.be.DeleteService(s.name())
+			s.updateViews(ts)
+		case c := <-svcs.upsertServiceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c.Service)
 			var ref = *s
-			var save = true
-			switch c.Action {
-			case ACTION_SET_WARN:
-				s.data.WarningTimeout = int64(c.Value)
-			case ACTION_SET_ERR:
-				s.data.ErrorTimeout = int64(c.Value)
-			case ACTION_BEAT:
-				if c.Value > 0 {
-					s.registerBeat(ts)
-					log.Debug("Beat from %s", s.name())
-				}
-			case ACTION_DELETE:
-				delete(s.svcs.services, s.name())
-				s.svcs.be.DeleteService(s.name())
-				save = false
+			if c.WarningTimeout != 0 {
+				s.data.WarningTimeout = c.WarningTimeout
+			}
+			if c.ErrorTimeout != 0 {
+				s.data.ErrorTimeout = c.ErrorTimeout
 			}
 			s.data.State = s.stateAt(ts)
-			if save {
-				s.save(&ref, ts)
-			}
+			s.save(&ref, ts)
 			s.updateViews(ts)
 		}
 	}
@@ -266,7 +271,9 @@ func (svcs *Services) Monitor() {
 func NewServices(beiface backend.Backend) *Services {
 	svcs := new(Services)
 	svcs.be = beiface
-	svcs.serviceCmdChan = make(chan *serviceCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.beatCmdChan = make(chan string, MAX_UNPROCESSED_PACKETS)
+	svcs.deleteServiceCmdChan = make(chan string, 5)
+	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, 5)
 	svcs.deleteViewCmdChan = make(chan string, 5)
 	svcs.upsertViewCmdChan = make(chan *upsertViewCmd, 5)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)

@@ -35,12 +35,11 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 
 	client.Beat(name)
 
-	if val, err := strconv.Atoi(errtmo); err == nil {
-		client.SetErrorTimeout(name, val)
-	}
+	errval, err := strconv.Atoi(errtmo)
+	warnval, err := strconv.Atoi(warntmo)
 
-	if val, err := strconv.Atoi(warntmo); err == nil {
-		client.SetWarningTimeout(name, val)
+	if errval != 0 || warnval != 0 {
+		client.ConfigureService(name, int64(warnval), int64(errval))
 	}
 
 	c.Header().Add("Content-Type", "application/json")

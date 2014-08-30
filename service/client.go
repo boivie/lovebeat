@@ -8,8 +8,7 @@ type ServiceIf interface {
 	Beat(name string)
 	DeleteService(name string)
 
-	SetWarningTimeout(name string, timeout int)
-	SetErrorTimeout(name string, timeout int)
+	ConfigureService(name string, warningTimeout int64, errorTimeout int64)
 
 	CreateOrUpdateView(name string, regexp string, alertMail string)
 	DeleteView(name string)
@@ -19,17 +18,10 @@ type ServiceIf interface {
 	GetView(name string) backend.StoredView
 }
 
-const (
-	ACTION_SET_WARN = "set-warn"
-	ACTION_SET_ERR  = "set-err"
-	ACTION_BEAT     = "beat"
-	ACTION_DELETE   = "delete"
-)
-
-type serviceCmd struct {
-	Action  string
-	Service string
-	Value   int
+type upsertServiceCmd struct {
+	Service        string
+	WarningTimeout int64
+	ErrorTimeout   int64
 }
 
 type upsertViewCmd struct {
@@ -62,36 +54,22 @@ type client struct {
 }
 
 func (c *client) Beat(name string) {
-	c.svcs.serviceCmdChan <- &serviceCmd{
-		Action:  ACTION_BEAT,
-		Service: name,
-		Value:   1,
-	}
+	c.svcs.beatCmdChan <- name
 }
 
 func (c *client) DeleteService(name string) {
-	c.svcs.serviceCmdChan <- &serviceCmd{
-		Action:  ACTION_DELETE,
-		Service: name,
-	}
+	c.svcs.deleteServiceCmdChan <- name
 }
 
 func (c *client) DeleteView(name string) {
 	c.svcs.deleteViewCmdChan <- name
 }
 
-func (c *client) SetWarningTimeout(name string, timeout int) {
-	c.svcs.serviceCmdChan <- &serviceCmd{
-		Action:  ACTION_SET_WARN,
-		Service: name,
-		Value:   timeout,
-	}
-}
-func (c *client) SetErrorTimeout(name string, timeout int) {
-	c.svcs.serviceCmdChan <- &serviceCmd{
-		Action:  ACTION_SET_ERR,
-		Service: name,
-		Value:   timeout,
+func (c *client) ConfigureService(name string, warningTimeout int64, errorTimeout int64) {
+	c.svcs.upsertServiceCmdChan <- &upsertServiceCmd{
+		Service:        name,
+		WarningTimeout: warningTimeout,
+		ErrorTimeout:   errorTimeout,
 	}
 }
 
