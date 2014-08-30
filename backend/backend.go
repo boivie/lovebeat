@@ -26,6 +26,7 @@ type StoredView struct {
 	Regexp      string
 	LastUpdated int64
 	AlertMail   string
+	IncidentNbr int
 }
 
 type Backend interface {

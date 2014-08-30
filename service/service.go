@@ -111,8 +111,12 @@ func (v *View) contains(serviceName string) bool {
 
 func (v *View) save(ref *View, ts int64) {
 	if v.data.State != ref.data.State {
-		log.Info("VIEW '%s', state %s -> %s",
-			v.name(), ref.data.State, v.data.State)
+		if ref.data.State == backend.STATE_OK {
+			v.data.IncidentNbr += 1
+		}
+		log.Info("VIEW '%s', %d: state %s -> %s",
+			v.name(), v.data.IncidentNbr, ref.data.State,
+			v.data.State)
 		if v.data.AlertMail != "" {
 			log.Info("Sending email to %s", v.data.AlertMail)
 		}
