@@ -18,15 +18,17 @@ var (
 )
 
 type Services struct {
-	be              backend.Backend
-	services        map[string]*Service
-	views           map[string]*View
-	serviceCmdChan  chan *serviceCmd
-	viewCmdChan     chan *viewCmd
-	getServicesChan chan *getServicesCmd
-	getServiceChan  chan *getServiceCmd
-	getViewsChan    chan *getViewsCmd
-	getViewChan     chan *getViewCmd
+	be                 backend.Backend
+	services           map[string]*Service
+	views              map[string]*View
+	serviceCmdChan     chan *serviceCmd
+	refreshViewCmdChan chan string
+	deleteViewCmdChan  chan string
+	upsertViewCmdChan  chan *upsertViewCmd
+	getServicesChan    chan *getServicesCmd
+	getServiceChan     chan *getServiceCmd
+	getViewsChan       chan *getViewsCmd
+	getViewChan        chan *getViewCmd
 }
 
 type Service struct {
@@ -121,10 +123,7 @@ func (v *View) save(ref *View, ts int64) {
 func (s *Service) updateViews() {
 	for _, view := range s.svcs.views {
 		if view.ree.Match([]byte(s.name())) {
-			s.svcs.viewCmdChan <- &viewCmd{
-				Action: ACTION_REFRESH_VIEW,
-				View:   view.name(),
-			}
+			s.svcs.refreshViewCmdChan <- view.name()
 		}
 	}
 }
@@ -204,23 +203,20 @@ func (svcs *Services) Monitor() {
 				s.save(&ref, ts)
 				s.updateViews()
 			}
-		case c := <-svcs.viewCmdChan:
+		case c := <-svcs.refreshViewCmdChan:
 			var ts = now()
-			switch c.Action {
-			case ACTION_REFRESH_VIEW:
-				log.Debug("Refresh view %s", c.View)
-				var view = svcs.getView(c.View)
-				var ref = *view
-				view.refresh(ts)
-				view.save(&ref, ts)
-			case ACTION_UPSERT_VIEW:
-				log.Debug("Create or update view %s", c.View)
-				svcs.createView(c.View, c.Regexp, c.AlertMail, now())
-			case ACTION_DELETE_VIEW:
-				log.Debug("Delete view %s", c.View)
-				delete(svcs.views, c.View)
-				svcs.be.DeleteView(c.View)
-			}
+			log.Debug("Refresh view %s", c)
+			var view = svcs.getView(c)
+			var ref = *view
+			view.refresh(ts)
+			view.save(&ref, ts)
+		case c := <-svcs.upsertViewCmdChan:
+			log.Debug("Create or update view %s", c.View)
+			svcs.createView(c.View, c.Regexp, c.AlertMail, now())
+		case c := <-svcs.deleteViewCmdChan:
+			log.Debug("Delete view %s", c)
+			delete(svcs.views, c)
+			svcs.be.DeleteView(c)
 		case c := <-svcs.getServicesChan:
 			var ret []backend.StoredService
 			var view, ok = svcs.views[c.View]
@@ -277,7 +273,9 @@ func NewServices(beiface backend.Backend) *Services {
 	svcs := new(Services)
 	svcs.be = beiface
 	svcs.serviceCmdChan = make(chan *serviceCmd, MAX_UNPROCESSED_PACKETS)
-	svcs.viewCmdChan = make(chan *viewCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.refreshViewCmdChan = make(chan string, 5)
+	svcs.deleteViewCmdChan = make(chan string, 5)
+	svcs.upsertViewCmdChan = make(chan *upsertViewCmd, 5)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)
 	svcs.getServiceChan = make(chan *getServiceCmd, 5)
 	svcs.getViewsChan = make(chan *getViewsCmd, 5)

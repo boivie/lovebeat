@@ -26,20 +26,13 @@ const (
 	ACTION_DELETE   = "delete"
 )
 
-const (
-	ACTION_REFRESH_VIEW = "refresh-view"
-	ACTION_UPSERT_VIEW  = "upsert-view"
-	ACTION_DELETE_VIEW  = "delete"
-)
-
 type serviceCmd struct {
 	Action  string
 	Service string
 	Value   int
 }
 
-type viewCmd struct {
-	Action    string
+type upsertViewCmd struct {
 	View      string
 	Regexp    string
 	AlertMail string
@@ -84,10 +77,7 @@ func (c *client) DeleteService(name string) {
 }
 
 func (c *client) DeleteView(name string) {
-	c.svcs.viewCmdChan <- &viewCmd{
-		Action: ACTION_DELETE_VIEW,
-		View:   name,
-	}
+	c.svcs.deleteViewCmdChan <- name
 }
 
 func (c *client) SetWarningTimeout(name string, timeout int) {
@@ -106,8 +96,7 @@ func (c *client) SetErrorTimeout(name string, timeout int) {
 }
 
 func (c *client) CreateOrUpdateView(name string, regexp string, alertMail string) {
-	c.svcs.viewCmdChan <- &viewCmd{
-		Action:    ACTION_UPSERT_VIEW,
+	c.svcs.upsertViewCmdChan <- &upsertViewCmd{
 		View:      name,
 		Regexp:    regexp,
 		AlertMail: alertMail,
