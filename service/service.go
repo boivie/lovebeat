@@ -18,17 +18,16 @@ var (
 )
 
 type Services struct {
-	be                 backend.Backend
-	services           map[string]*Service
-	views              map[string]*View
-	serviceCmdChan     chan *serviceCmd
-	refreshViewCmdChan chan string
-	deleteViewCmdChan  chan string
-	upsertViewCmdChan  chan *upsertViewCmd
-	getServicesChan    chan *getServicesCmd
-	getServiceChan     chan *getServiceCmd
-	getViewsChan       chan *getViewsCmd
-	getViewChan        chan *getViewCmd
+	be                backend.Backend
+	services          map[string]*Service
+	views             map[string]*View
+	serviceCmdChan    chan *serviceCmd
+	deleteViewCmdChan chan string
+	upsertViewCmdChan chan *upsertViewCmd
+	getServicesChan   chan *getServicesCmd
+	getServiceChan    chan *getServiceCmd
+	getViewsChan      chan *getViewsCmd
+	getViewChan       chan *getViewCmd
 }
 
 type Service struct {
@@ -120,10 +119,12 @@ func (v *View) save(ref *View, ts int64) {
 	v.svcs.be.SaveView(&v.data)
 }
 
-func (s *Service) updateViews() {
+func (s *Service) updateViews(ts int64) {
 	for _, view := range s.svcs.views {
 		if view.ree.Match([]byte(s.name())) {
-			s.svcs.refreshViewCmdChan <- view.name()
+			var ref = *view
+			view.refresh(ts)
+			view.save(&ref, ts)
 		}
 	}
 }
@@ -201,15 +202,8 @@ func (svcs *Services) Monitor() {
 				var ref = *s
 				s.data.State = s.stateAt(ts)
 				s.save(&ref, ts)
-				s.updateViews()
+				s.updateViews(ts)
 			}
-		case c := <-svcs.refreshViewCmdChan:
-			var ts = now()
-			log.Debug("Refresh view %s", c)
-			var view = svcs.getView(c)
-			var ref = *view
-			view.refresh(ts)
-			view.save(&ref, ts)
 		case c := <-svcs.upsertViewCmdChan:
 			log.Debug("Create or update view %s", c.View)
 			svcs.createView(c.View, c.Regexp, c.AlertMail, now())
@@ -264,7 +258,7 @@ func (svcs *Services) Monitor() {
 			if save {
 				s.save(&ref, ts)
 			}
-			s.updateViews()
+			s.updateViews(ts)
 		}
 	}
 }
@@ -273,7 +267,6 @@ func NewServices(beiface backend.Backend) *Services {
 	svcs := new(Services)
 	svcs.be = beiface
 	svcs.serviceCmdChan = make(chan *serviceCmd, MAX_UNPROCESSED_PACKETS)
-	svcs.refreshViewCmdChan = make(chan string, 5)
 	svcs.deleteViewCmdChan = make(chan string, 5)
 	svcs.upsertViewCmdChan = make(chan *upsertViewCmd, 5)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)
