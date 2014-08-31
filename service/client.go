@@ -10,7 +10,7 @@ type ServiceIf interface {
 
 	ConfigureService(name string, warningTimeout int64, errorTimeout int64)
 
-	CreateOrUpdateView(name string, regexp string, alertMail string)
+	CreateOrUpdateView(name string, regexp string, alertMail string, webhooks string)
 	DeleteView(name string)
 	GetServices(view string) []backend.StoredService
 	GetService(name string) backend.StoredService
@@ -28,6 +28,7 @@ type upsertViewCmd struct {
 	View      string
 	Regexp    string
 	AlertMail string
+	Webhooks  string
 }
 
 type getServicesCmd struct {
@@ -73,11 +74,12 @@ func (c *client) ConfigureService(name string, warningTimeout int64, errorTimeou
 	}
 }
 
-func (c *client) CreateOrUpdateView(name string, regexp string, alertMail string) {
+func (c *client) CreateOrUpdateView(name string, regexp string, alertMail string, webhooks string) {
 	c.svcs.upsertViewCmdChan <- &upsertViewCmd{
 		View:      name,
 		Regexp:    regexp,
 		AlertMail: alertMail,
+		Webhooks:  webhooks,
 	}
 }
 

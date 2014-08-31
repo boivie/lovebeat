@@ -26,6 +26,7 @@ type StoredView struct {
 	Regexp      string
 	LastUpdated int64
 	AlertMail   string
+	Webhooks    string
 	IncidentNbr int
 }
 

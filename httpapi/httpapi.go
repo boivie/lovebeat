@@ -67,7 +67,8 @@ func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client.CreateOrUpdateView(view_name, expr, r.FormValue("alert_mail"))
+	client.CreateOrUpdateView(view_name, expr, r.FormValue("alert_mail"),
+		r.FormValue("webhooks"))
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -90,6 +91,7 @@ type JsonView struct {
 	State     string `json:"state"`
 	Regexp    string `json:"regexp,omitempty"`
 	AlertMail string `json:"alert_mail"`
+	Webhooks  string `json:"webhooks"`
 }
 
 func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
@@ -118,6 +120,7 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 		State:     v.State,
 		Regexp:    v.Regexp,
 		AlertMail: v.AlertMail,
+		Webhooks:  v.Webhooks,
 	}
 
 	var encoded, _ = json.MarshalIndent(js, "", "  ")

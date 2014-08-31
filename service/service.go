@@ -197,7 +197,7 @@ func (svcs *Services) getView(name string) *View {
 }
 
 func (svcs *Services) createView(name string, expr string, alertMail string,
-	ts int64) {
+	webhooks string, ts int64) {
 	var ree, err = regexp.Compile(expr)
 	if err != nil {
 		log.Error("Invalid regexp: %s", err)
@@ -209,6 +209,7 @@ func (svcs *Services) createView(name string, expr string, alertMail string,
 	view.data.Regexp = expr
 	view.ree = ree
 	view.data.AlertMail = alertMail
+	view.data.Webhooks = webhooks
 	view.refresh(ts)
 	view.save(&ref, ts)
 
@@ -233,7 +234,8 @@ func (svcs *Services) Monitor() {
 			}
 		case c := <-svcs.upsertViewCmdChan:
 			log.Debug("Create or update view %s", c.View)
-			svcs.createView(c.View, c.Regexp, c.AlertMail, now())
+			svcs.createView(c.View, c.Regexp, c.AlertMail,
+				c.Webhooks, now())
 		case c := <-svcs.deleteViewCmdChan:
 			log.Debug("Delete view %s", c)
 			delete(svcs.views, c)
