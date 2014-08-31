@@ -91,7 +91,8 @@ func main() {
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
 	var be = backend.NewFileBackend(*workDir)
-	var alerters = []alert.Alerter{alert.NewMailAlerter(&cfg.Mail)}
+	var alerters = []alert.Alerter{alert.NewMailAlerter(&cfg.Mail),
+		alert.NewWebhooksAlerter()}
 	var svcs = service.NewServices(be, alerters)
 
 	signal.Notify(signalchan, syscall.SIGTERM)

@@ -4,15 +4,10 @@ import (
 	"bytes"
 	"github.com/boivie/lovebeat-go/backend"
 	"github.com/boivie/lovebeat-go/config"
-	"github.com/op/go-logging"
 	"net/smtp"
 	"strconv"
 	"strings"
 	"text/template"
-)
-
-var (
-	log = logging.MustGetLogger("lovebeat")
 )
 
 type mail struct {

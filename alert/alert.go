@@ -2,6 +2,11 @@ package alert
 
 import (
 	"github.com/boivie/lovebeat-go/backend"
+	"github.com/op/go-logging"
+)
+
+var (
+	log = logging.MustGetLogger("lovebeat")
 )
 
 type Alerter interface {
