@@ -5,6 +5,7 @@ import (
 	"github.com/boivie/lovebeat-go/backend"
 	"github.com/boivie/lovebeat-go/config"
 	"github.com/op/go-logging"
+	"net/smtp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -68,13 +69,43 @@ func (m mailAlerter) Notify(previous backend.StoredView,
 func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 	for {
 		select {
-		case c := <-q:
+		case mail := <-q:
 			log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
-			log.Info("Sending email to %s with subject %s and body %s",
-				c.To, c.Subject, c.Body)
+			parameters := struct {
+				From    string
+				To      string
+				Subject string
+				Message string
+			}{
+				cfg.From,
+				mail.To,
+				mail.Subject,
+				mail.Body,
+			}
+
+			buffer := new(bytes.Buffer)
+
+			template := template.Must(template.New("emailTemplate").Parse(emailScript()))
+			template.Execute(buffer, &parameters)
+
+			var to = strings.Split(mail.To, ",")
+			var err = smtp.SendMail(cfg.Server, nil, cfg.From, to, buffer.Bytes())
+			if err != nil {
+				log.Error("Failed to send e-mail", err)
+			}
 		}
 	}
 
+}
+
+func emailScript() (script string) {
+	return `From: {{.From}}
+To: {{.To}}
+Subject: {{.Subject}}
+MIME-version: 1.0
+Content-Type: text/html; charset="UTF-8"
+
+{{.Message}}`
 }
 
 func NewMailAlerter(cfg *config.ConfigMail) Alerter {
