@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/boivie/lovebeat-go/alert"
 	"github.com/boivie/lovebeat-go/backend"
+	"github.com/boivie/lovebeat-go/config"
 	"github.com/boivie/lovebeat-go/dashboard"
 	"github.com/boivie/lovebeat-go/httpapi"
 	"github.com/boivie/lovebeat-go/service"
@@ -33,6 +34,7 @@ var (
 	debug       = flag.Bool("debug", false, "print statistics sent to graphite")
 	showVersion = flag.Bool("version", false, "print version string")
 	workDir     = flag.String("workdir", "work", "working directory")
+	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "configuration file")
 )
 
 var (
@@ -82,11 +84,14 @@ func main() {
 		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
 		return
 	}
+
+	var cfg = config.ReadConfig(*cfgFile)
+
 	var hostname = getHostname()
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
 	var be = backend.NewFileBackend(*workDir)
-	var alerters = []alert.Alerter{alert.NewMailAlerter()}
+	var alerters = []alert.Alerter{alert.NewMailAlerter(&cfg.Mail)}
 	var svcs = service.NewServices(be, alerters)
 
 	signal.Notify(signalchan, syscall.SIGTERM)

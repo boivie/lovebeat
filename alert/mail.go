@@ -3,6 +3,7 @@ package alert
 import (
 	"bytes"
 	"github.com/boivie/lovebeat-go/backend"
+	"github.com/boivie/lovebeat-go/config"
 	"github.com/op/go-logging"
 	"strconv"
 	"strings"
@@ -64,10 +65,11 @@ func (m mailAlerter) Notify(previous backend.StoredView,
 	}
 }
 
-func (m mailAlerter) Worker(q chan mail) {
+func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 	for {
 		select {
 		case c := <-q:
+			log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
 			log.Info("Sending email to %s with subject %s and body %s",
 				c.To, c.Subject, c.Body)
 		}
@@ -75,9 +77,9 @@ func (m mailAlerter) Worker(q chan mail) {
 
 }
 
-func NewMailAlerter() Alerter {
+func NewMailAlerter(cfg *config.ConfigMail) Alerter {
 	var q = make(chan mail, 100)
 	var ma = mailAlerter{cmds: q}
-	go ma.Worker(q)
+	go ma.Worker(q, cfg)
 	return &ma
 }
