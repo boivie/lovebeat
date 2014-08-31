@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/boivie/lovebeat-go/alert"
 	"github.com/boivie/lovebeat-go/backend"
 	"github.com/op/go-logging"
 	"regexp"
@@ -19,6 +20,7 @@ var (
 
 type Services struct {
 	be                   backend.Backend
+	alerters             []alert.Alerter
 	services             map[string]*Service
 	views                map[string]*View
 	beatCmdChan          chan string
@@ -114,15 +116,33 @@ func (v *View) save(ref *View, ts int64) {
 		if ref.data.State == backend.STATE_OK {
 			v.data.IncidentNbr += 1
 		}
-		log.Info("VIEW '%s', %d: state %s -> %s",
-			v.name(), v.data.IncidentNbr, ref.data.State,
-			v.data.State)
-		if v.data.AlertMail != "" {
-			log.Info("Sending email to %s", v.data.AlertMail)
-		}
 	}
 	v.data.LastUpdated = ts
 	v.svcs.be.SaveView(&v.data)
+}
+
+func (v *View) sendAlerts(ref *View, ts int64) {
+	if v.data.State != ref.data.State {
+		log.Info("VIEW '%s', %d: state %s -> %s",
+			v.name(), v.data.IncidentNbr, ref.data.State,
+			v.data.State)
+
+		var services = make([]backend.StoredService, 0, 10)
+		for _, s := range v.svcs.services {
+			if (s.data.State == backend.STATE_WARNING ||
+				s.data.State == backend.STATE_ERROR) &&
+				v.contains(s.name()) {
+				services = append(services, s.data)
+				if len(services) == 10 {
+					break
+				}
+			}
+		}
+
+		for _, a := range v.svcs.alerters {
+			a.Notify(ref.data, v.data, services)
+		}
+	}
 }
 
 func (s *Service) updateViews(ts int64) {
@@ -131,6 +151,7 @@ func (s *Service) updateViews(ts int64) {
 			var ref = *view
 			view.refresh(ts)
 			view.save(&ref, ts)
+			view.sendAlerts(&ref, ts)
 		}
 	}
 }
@@ -272,9 +293,10 @@ func (svcs *Services) Monitor() {
 	}
 }
 
-func NewServices(beiface backend.Backend) *Services {
+func NewServices(beiface backend.Backend, alerters []alert.Alerter) *Services {
 	svcs := new(Services)
 	svcs.be = beiface
+	svcs.alerters = alerters
 	svcs.beatCmdChan = make(chan string, MAX_UNPROCESSED_PACKETS)
 	svcs.deleteServiceCmdChan = make(chan string, 5)
 	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, 5)
