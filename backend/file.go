@@ -44,12 +44,16 @@ func (r FileBackend) loadView(name string) *StoredView {
 
 func (r FileBackend) SaveService(service *StoredService) {
 	b, _ := json.Marshal(service)
-	ioutil.WriteFile(r.serviceFile(service.Name), b, 0644)
+	filename := r.serviceFile(service.Name)
+	log.Debug("Writing %s", filename)
+	ioutil.WriteFile(filename, b, 0644)
 }
 
 func (r FileBackend) SaveView(view *StoredView) {
 	b, _ := json.Marshal(view)
-	ioutil.WriteFile(r.viewFile(view.Name), b, 0644)
+	filename := r.viewFile(view.Name)
+	log.Debug("Writing %s", filename)
+	ioutil.WriteFile(filename, b, 0644)
 }
 
 func (r FileBackend) readServiceFile(name string, fname string) *StoredService {
