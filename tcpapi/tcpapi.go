@@ -16,7 +16,7 @@ func tcpHandle(c *net.TCPConn, iface service.ServiceIf) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		var buf = scanner.Bytes()
-		lineparser.Parse(buf, iface)
+		lineparser.Execute(lineparser.Parse(buf), iface)
 	}
 }
 

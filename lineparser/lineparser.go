@@ -8,11 +8,19 @@ import (
 	"strconv"
 )
 
+type LineCommand struct {
+	Action string
+	Name   string
+	Value  int64
+}
+
 var log = logging.MustGetLogger("lovebeat")
 
 var packetRegexp = regexp.MustCompile("^([^:]+)\\.(beat|warn|err):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
-func Parse(data []byte, iface service.ServiceIf) {
+func Parse(data []byte) []LineCommand {
+	var commands []LineCommand
+
 	for _, line := range bytes.Split(data, []byte("\n")) {
 		if len(line) == 0 {
 			continue
@@ -23,21 +31,29 @@ func Parse(data []byte, iface service.ServiceIf) {
 			continue
 		}
 
-		var value int64
 		var vali, err = strconv.ParseInt(string(item[3]), 10, 64)
 		if err != nil {
 			log.Error("failed to ParseInt %s - %s", item[3], err)
 			continue
 		}
-		value = int64(vali)
-		var name = string(item[1])
-		switch string(item[2]) {
+		cmd := LineCommand{
+			Action: string(item[2]),
+			Name:   string(item[1]),
+			Value:  int64(vali)}
+		commands = append(commands, cmd)
+	}
+	return commands
+}
+
+func Execute(commands []LineCommand, iface service.ServiceIf) {
+	for _, cmd := range commands {
+		switch cmd.Action {
 		case "warn":
-			iface.ConfigureService(name, value, 0)
+			iface.ConfigureService(cmd.Name, cmd.Value, 0)
 		case "err":
-			iface.ConfigureService(name, 0, value)
+			iface.ConfigureService(cmd.Name, 0, cmd.Value)
 		case "beat":
-			iface.Beat(name)
+			iface.Beat(cmd.Name)
 		}
 	}
 }

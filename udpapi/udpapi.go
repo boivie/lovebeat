@@ -30,6 +30,6 @@ func Listener(bindAddr string, iface service.ServiceIf) {
 			continue
 		}
 
-		lineparser.Parse(message[:n], iface)
+		lineparser.Execute(lineparser.Parse(message[:n]), iface)
 	}
 }
