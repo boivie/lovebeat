@@ -101,7 +101,10 @@ func median(numbers []int64) int64 {
 	return result
 }
 
-func (s *Service) updateAutoTimeouts() {
+// Called before saving - to update internal states
+func (s *Service) update(ts int64) {
+	s.data.State = s.stateAt(ts)
+
 	if s.data.WarningTimeout == TIMEOUT_AUTO {
 		s.data.WarningTimeout = calcTimeout(s.data.PreviousBeats)
 	}
@@ -281,7 +284,7 @@ func (svcs *Services) Monitor() {
 					continue
 				}
 				var ref = *s
-				s.data.State = s.stateAt(ts)
+				s.update(ts)
 				s.save(&ref, ts)
 				s.updateViews(ts)
 			}
@@ -322,8 +325,7 @@ func (svcs *Services) Monitor() {
 			var ref = *s
 			s.registerBeat(ts)
 			log.Debug("Beat from %s", s.name())
-			s.updateAutoTimeouts()
-			s.data.State = s.stateAt(ts)
+			s.update(ts)
 			s.save(&ref, ts)
 			s.updateViews(ts)
 		case c := <-svcs.deleteServiceCmdChan:
@@ -355,8 +357,7 @@ func (svcs *Services) Monitor() {
 			} else if c.ErrorTimeout > 0 {
 				s.data.ErrorTimeout = c.ErrorTimeout
 			}
-			s.updateAutoTimeouts()
-			s.data.State = s.stateAt(ts)
+			s.update(ts)
 			s.save(&ref, ts)
 			s.updateViews(ts)
 		}
