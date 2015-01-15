@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/boivie/lovebeat-go/config"
 	"net/smtp"
-	"strconv"
 	"strings"
 	"text/template"
 )
@@ -20,15 +19,14 @@ type mailAlerter struct {
 }
 
 const (
-	TMPL_BODY = `The status for view '{{.Name}}' has changed from '{{.PrevState}}' to '{{.CurrentState}}'
+	TMPL_BODY = `The status for view '{{.Current.Name}}' has changed from '{{.Previous.State | ToUpper}}' to '{{.Current.State | ToUpper}}'
 
 Services with failures (max 10):
 
 {{range .Services}}  * {{.Name}} - {{.State | ToUpper}}
 {{else}}  None. All are OK.{{end}}
-
 `
-	TMPL_SUBJECT = `[LOVEBEAT] {{.Name}}-{{.IncidentNbr}}`
+	TMPL_SUBJECT = `[LOVEBEAT] {{.Current.Name}}-{{.Current.IncidentNbr}}`
 	TMPL_EMAIL   = `From: {{.From}}
 To: {{.To}}
 Subject: {{.Subject}}
@@ -59,10 +57,8 @@ func renderTemplate(tmpl string, context map[string]interface{}) string {
 
 func createMail(alert Alert) mail {
 	var context = make(map[string]interface{})
-	context["Name"] = alert.Current.Name
-	context["PrevState"] = strings.ToUpper(alert.Previous.State)
-	context["CurrentState"] = strings.ToUpper(alert.Current.State)
-	context["IncidentNbr"] = strconv.Itoa(alert.Current.IncidentNbr)
+	context["Previous"] = alert.Previous
+	context["Current"] = alert.Current
 	context["Services"] = alert.ServicesInError
 
 	var body = renderTemplate(TMPL_BODY, context)
