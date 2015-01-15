@@ -211,9 +211,11 @@ func (svcs *Services) updateViews(ts int64, serviceName string) {
 		if view.contains(serviceName) {
 			var ref = *view
 			view.update(ts)
-			view.save(svcs.be, &ref, ts)
-			if view.hasAlert(&ref) {
-				svcs.sendAlert(view.getAlert(&ref))
+			if view.data.State != ref.data.State {
+				view.save(svcs.be, &ref, ts)
+				if view.hasAlert(&ref) {
+					svcs.sendAlert(view.getAlert(&ref))
+				}
 			}
 		}
 	}
@@ -248,7 +250,7 @@ func (svcs *Services) getView(name string) *View {
 			services: svcs.services,
 			data: backend.StoredView{
 				Name:        name,
-				State:       backend.STATE_OK,
+				State:       backend.STATE_PAUSED,
 				LastUpdated: -1,
 				Regexp:      "^$",
 			},
