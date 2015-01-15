@@ -167,13 +167,13 @@ func (v *View) contains(serviceName string) bool {
 	return v.ree.Match([]byte(serviceName))
 }
 
-func (v *View) save(ref *View, ts int64) {
+func (v *View) save(be backend.Backend, ref *View, ts int64) {
 	if v.data.State != ref.data.State {
 		if ref.data.State == backend.STATE_OK {
 			v.data.IncidentNbr += 1
 		}
 	}
-	v.svcs.be.SaveView(&v.data)
+	be.SaveView(&v.data)
 }
 
 func (v *View) sendAlerts(ref *View, ts int64) {
@@ -205,7 +205,7 @@ func (svcs *Services) updateViews(ts int64, serviceName string) {
 		if view.ree.Match([]byte(serviceName)) {
 			var ref = *view
 			view.update(ts)
-			view.save(&ref, ts)
+			view.save(svcs.be, &ref, ts)
 			view.sendAlerts(&ref, ts)
 		}
 	}
@@ -265,7 +265,7 @@ func (svcs *Services) createView(name string, expr string, alertMail string,
 	view.data.AlertMail = alertMail
 	view.data.Webhooks = webhooks
 	view.update(ts)
-	view.save(&ref, ts)
+	view.save(svcs.be, &ref, ts)
 
 	log.Info("VIEW '%s' created or updated.", name)
 }
