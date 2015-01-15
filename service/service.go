@@ -4,13 +4,19 @@ import (
 	"github.com/boivie/lovebeat-go/alert"
 	"github.com/boivie/lovebeat-go/backend"
 	"github.com/op/go-logging"
+	"math"
 	"regexp"
+	"sort"
 	"time"
 )
 
 const (
 	MAX_UNPROCESSED_PACKETS = 1000
 	EXPIRY_INTERVAL         = 1
+
+	// Number of samples (diffs) we require to be able to
+	// properly calculate an "auto" timeout
+	AUTO_MIN_SAMPLES = 5
 )
 
 var (
@@ -56,6 +62,53 @@ func (s *Service) getExpiry(timeout int64) int64 {
 
 func (s *Service) name() string { return s.data.Name }
 func (v *View) name() string    { return v.data.Name }
+
+func calcTimeout(values []int64) int64 {
+	diffs := calcDiffs(values)
+	if len(diffs) < AUTO_MIN_SAMPLES {
+		log.Debug("AUTO-TIMEOUT: Not enough samples to calculate")
+		return TIMEOUT_AUTO
+	}
+
+	ret := int64(math.Ceil(float64(median(diffs)) * 1.5))
+	log.Debug("AUTO-TIMEOUT: vale calculated as %d", ret)
+	return ret
+}
+
+func calcDiffs(values []int64) []int64 {
+	var p []int64
+	for i := 1; i < len(values); i++ {
+		if values[i-1] != 0 && values[i] != 0 {
+			p = append(p, values[i]-values[i-1])
+		}
+	}
+	return p
+}
+
+type int64arr []int64
+
+func (a int64arr) Len() int           { return len(a) }
+func (a int64arr) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a int64arr) Less(i, j int) bool { return a[i] < a[j] }
+
+func median(numbers []int64) int64 {
+	sort.Sort(int64arr(numbers))
+	middle := len(numbers) / 2
+	result := numbers[middle]
+	if len(numbers)%2 == 0 {
+		result = (result + numbers[middle-1]) / 2
+	}
+	return result
+}
+
+func (s *Service) updateAutoTimeouts() {
+	if s.data.WarningTimeout == TIMEOUT_AUTO {
+		s.data.WarningTimeout = calcTimeout(s.data.PreviousBeats)
+	}
+	if s.data.ErrorTimeout == TIMEOUT_AUTO {
+		s.data.ErrorTimeout = calcTimeout(s.data.PreviousBeats)
+	}
+}
 
 func (s *Service) stateAt(ts int64) string {
 	var state = backend.STATE_OK
@@ -269,6 +322,7 @@ func (svcs *Services) Monitor() {
 			var ref = *s
 			s.registerBeat(ts)
 			log.Debug("Beat from %s", s.name())
+			s.updateAutoTimeouts()
 			s.data.State = s.stateAt(ts)
 			s.save(&ref, ts)
 			s.updateViews(ts)
@@ -282,12 +336,26 @@ func (svcs *Services) Monitor() {
 			var ts = now()
 			var s = svcs.getService(c.Service)
 			var ref = *s
-			if c.WarningTimeout != 0 {
+			// Don't re-calculate 'auto' if we already have values
+			if c.WarningTimeout == TIMEOUT_AUTO &&
+				s.data.WarningTimeout == -1 {
+				s.data.WarningTimeout = TIMEOUT_AUTO
+				s.data.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
+			} else if c.WarningTimeout == TIMEOUT_CLEAR {
+				s.data.WarningTimeout = TIMEOUT_CLEAR
+			} else if c.WarningTimeout > 0 {
 				s.data.WarningTimeout = c.WarningTimeout
 			}
-			if c.ErrorTimeout != 0 {
+			if c.ErrorTimeout == TIMEOUT_AUTO &&
+				s.data.ErrorTimeout == -1 {
+				s.data.ErrorTimeout = TIMEOUT_AUTO
+				s.data.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
+			} else if c.ErrorTimeout == TIMEOUT_CLEAR {
+				s.data.ErrorTimeout = TIMEOUT_CLEAR
+			} else if c.ErrorTimeout > 0 {
 				s.data.ErrorTimeout = c.ErrorTimeout
 			}
+			s.updateAutoTimeouts()
 			s.data.State = s.stateAt(ts)
 			s.save(&ref, ts)
 			s.updateViews(ts)

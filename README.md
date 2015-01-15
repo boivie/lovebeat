@@ -41,6 +41,13 @@ Key Concepts
     The service will change state into WARNING or ERROR when the timeouts have
     expired. Both timeouts are optional.
 
+    The timeouts can also be automatically calculated based on the frequency
+    of the heartbeats. The algorithm is currently quite basic - when it has
+    gathered at least 6 samples, it will take the median time between the
+    heartbeats and add an additional 50%. So if the hearbeats are generated
+    every ten seconds, the timeout will be set to 15. Please see the examples
+    below for details.
+
   * *view*
     A view shows a filtered subset of your services. You specify a regular expression
     and all services whose identifiers match this regexp will be part of the view.
@@ -73,6 +80,8 @@ if the lovebeat server isn't running for any reason.
   * To trigger a heartbeat, send a counter value >= 0 to "<service>.beat"
   * To set a warning timeout (in seconds), set the gauge value of "<service>.warn"
   * To set an error timeout (in seconds), set the gauge value of "<service>.err"
+  * To clear a value, set the timeout to -1.
+  * To set the timeout to be automatically calculated, set the timeout to -2.
 
 Examples:
 
@@ -80,7 +89,10 @@ Examples:
     $ echo "invoice.mailer.beat:1|c" | nc -u -w0 localhost 8127
     
     # TCP
-    $ echo "invoice.mailer.warn:3600|g" | nc localhost 8127
+    $ echo "invoice.mailer.warn:3600|g" | nc -c localhost 8127
+
+    # TCP, setting warn to 'auto'
+    $ echo -e "invoice.mailer.warn:-2|g\ninvoice.mailer.beat:1|c" | nc -c localhost 8127
 
 You can even put a statsd proxy in front of lovebeat if you don't want to send
 UDP packets outside your localhost.
@@ -98,6 +110,8 @@ The most important ones include:
   * To set a warning timeout, add the form field "warn-tmo"
   * To set an error timeout, add the form field "err-tmo"
   * To get status of all services in a view, GET /status?view=something
+  * ... and some more. Not everything is unfortunately documented yet.
+
 
 Examples:
 
@@ -118,7 +132,7 @@ Notable software included
 License
 =======
 
-Copyright 2014 Victor Boivie <<victor@boivie.com>>
+Copyright 2014-2015 Victor Boivie <<victor@boivie.com>>
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 

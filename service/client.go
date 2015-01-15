@@ -4,6 +4,10 @@ import (
 	"github.com/boivie/lovebeat-go/backend"
 )
 
+// Special values for error and warning timeouts
+const TIMEOUT_CLEAR int64 = -1
+const TIMEOUT_AUTO int64 = -2
+
 type ServiceIf interface {
 	Beat(name string)
 	DeleteService(name string)

@@ -24,23 +24,12 @@ func Parse(data []byte, iface service.ServiceIf) {
 		}
 
 		var value int64
-		modifier := string(item[4])
-		switch modifier {
-		case "c":
-			var vali, err = strconv.ParseInt(string(item[3]), 10, 64)
-			if err != nil {
-				log.Error("failed to ParseInt %s - %s", item[3], err)
-				continue
-			}
-			value = int64(vali)
-		default:
-			var valu, err = strconv.ParseUint(string(item[3]), 10, 64)
-			if err != nil {
-				log.Error("failed to ParseUint %s - %s", item[3], err)
-				continue
-			}
-			value = int64(valu)
+		var vali, err = strconv.ParseInt(string(item[3]), 10, 64)
+		if err != nil {
+			log.Error("failed to ParseInt %s - %s", item[3], err)
+			continue
 		}
+		value = int64(vali)
 		var name = string(item[1])
 		switch string(item[2]) {
 		case "warn":

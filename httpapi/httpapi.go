@@ -21,6 +21,15 @@ func now() int64 { return time.Now().Unix() }
 
 var log = logging.MustGetLogger("lovebeat")
 
+func parseTimeout(tmo string) int64 {
+	if tmo == "auto" {
+		return service.TIMEOUT_AUTO
+	} else {
+		val, _ := strconv.Atoi(tmo)
+		return int64(val)
+	}
+}
+
 func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
@@ -31,15 +40,13 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var errtmo, warntmo = r.FormValue("err-tmo"), r.FormValue("warn-tmo")
-
 	client.Beat(name)
 
-	errval, err := strconv.Atoi(errtmo)
-	warnval, err := strconv.Atoi(warntmo)
+	errval := parseTimeout(r.FormValue("err-tmo"))
+	warnval := parseTimeout(r.FormValue("warn-tmo"))
 
 	if errval != 0 || warnval != 0 {
-		client.ConfigureService(name, int64(warnval), int64(errval))
+		client.ConfigureService(name, warnval, errval)
 	}
 
 	c.Header().Add("Content-Type", "application/json")
