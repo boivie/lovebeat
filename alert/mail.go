@@ -20,8 +20,15 @@ type mailAlerter struct {
 }
 
 const (
-	TMPL_BODY    = `The status for view '{{.Name}}' has changed from '{{.PrevState}}' to '{{.CurrentState}}'`
-	TMPL_SUBJECT = `[LOVEBEAT][{{.Name}}-{{.IncidentNbr}}]`
+	TMPL_BODY = `The status for view '{{.Name}}' has changed from '{{.PrevState}}' to '{{.CurrentState}}'
+
+Services with failures (max 10):
+
+{{range .Services}}  * {{.Name}} - {{.State | ToUpper}}
+{{else}}  None. All are OK.{{end}}
+
+`
+	TMPL_SUBJECT = `[LOVEBEAT] {{.Name}}-{{.IncidentNbr}}`
 	TMPL_EMAIL   = `From: {{.From}}
 To: {{.To}}
 Subject: {{.Subject}}
@@ -31,10 +38,11 @@ Content-Type: text/html; charset="UTF-8"
 {{.Message}}`
 )
 
-func renderTemplate(tmpl string, context map[string]string) string {
-	t := template.New("template")
-	var err error
-	t, err = t.Parse(tmpl)
+func renderTemplate(tmpl string, context map[string]interface{}) string {
+	funcMap := template.FuncMap{
+		"ToUpper": strings.ToUpper,
+	}
+	t, err := template.New("template").Funcs(funcMap).Parse(tmpl)
 	if err != nil {
 		log.Error("error trying to parse mail template", err)
 		return ""
@@ -50,11 +58,12 @@ func renderTemplate(tmpl string, context map[string]string) string {
 }
 
 func createMail(alert Alert) mail {
-	var context = make(map[string]string)
+	var context = make(map[string]interface{})
 	context["Name"] = alert.Current.Name
 	context["PrevState"] = strings.ToUpper(alert.Previous.State)
 	context["CurrentState"] = strings.ToUpper(alert.Current.State)
 	context["IncidentNbr"] = strconv.Itoa(alert.Current.IncidentNbr)
+	context["Services"] = alert.ServicesInError
 
 	var body = renderTemplate(TMPL_BODY, context)
 	var subject = renderTemplate(TMPL_SUBJECT, context)
@@ -74,7 +83,7 @@ func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 		select {
 		case mail := <-q:
 			log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
-			var context = make(map[string]string)
+			var context = make(map[string]interface{})
 			context["From"] = cfg.From
 			context["To"] = mail.To
 			context["Subject"] = mail.Subject
