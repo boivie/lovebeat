@@ -201,9 +201,9 @@ func (v *View) sendAlerts(ref *View, ts int64) {
 	}
 }
 
-func (s *Service) updateViews(ts int64) {
-	for _, view := range s.svcs.views {
-		if view.ree.Match([]byte(s.name())) {
+func (svcs *Services) updateViews(ts int64, serviceName string) {
+	for _, view := range svcs.views {
+		if view.ree.Match([]byte(serviceName)) {
 			var ref = *view
 			view.refresh(ts)
 			view.save(&ref, ts)
@@ -286,7 +286,7 @@ func (svcs *Services) Monitor() {
 				var ref = *s
 				s.update(ts)
 				s.save(&ref, ts)
-				s.updateViews(ts)
+				svcs.updateViews(ts, s.name())
 			}
 		case c := <-svcs.upsertViewCmdChan:
 			log.Debug("Create or update view %s", c.View)
@@ -327,13 +327,13 @@ func (svcs *Services) Monitor() {
 			log.Debug("Beat from %s", s.name())
 			s.update(ts)
 			s.save(&ref, ts)
-			s.updateViews(ts)
+			svcs.updateViews(ts, s.name())
 		case c := <-svcs.deleteServiceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c)
 			delete(svcs.services, s.name())
 			svcs.be.DeleteService(s.name())
-			s.updateViews(ts)
+			svcs.updateViews(ts, s.name())
 		case c := <-svcs.upsertServiceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c.Service)
@@ -359,7 +359,7 @@ func (svcs *Services) Monitor() {
 			}
 			s.update(ts)
 			s.save(&ref, ts)
-			s.updateViews(ts)
+			svcs.updateViews(ts, s.name())
 		}
 	}
 }
