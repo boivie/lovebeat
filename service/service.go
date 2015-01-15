@@ -45,9 +45,9 @@ type Service struct {
 }
 
 type View struct {
-	svcs *Services
-	data backend.StoredView
-	ree  *regexp.Regexp
+	services map[string]*Service
+	data     backend.StoredView
+	ree      *regexp.Regexp
 }
 
 func now() int64 { return time.Now().Unix() }
@@ -152,7 +152,7 @@ func (s *Service) save(be backend.Backend, ref *Service, ts int64) {
 func (v *View) update(ts int64) {
 	v.data.State = backend.STATE_OK
 	v.data.LastUpdated = ts
-	for _, s := range v.svcs.services {
+	for _, s := range v.services {
 		if v.contains(s.name()) {
 			if s.data.State == backend.STATE_WARNING && v.data.State == backend.STATE_OK {
 				v.data.State = backend.STATE_WARNING
@@ -185,7 +185,7 @@ func (v *View) hasAlert(ref *View) bool {
 
 func (v *View) getAlert(ref *View) alert.Alert {
 	var services = make([]backend.StoredService, 0, 10)
-	for _, s := range v.svcs.services {
+	for _, s := range v.services {
 		if (s.data.State == backend.STATE_WARNING ||
 			s.data.State == backend.STATE_ERROR) &&
 			v.contains(s.name()) {
@@ -245,7 +245,7 @@ func (svcs *Services) getView(name string) *View {
 	if !ok {
 		log.Debug("Asked for unknown view %s", name)
 		s = &View{
-			svcs: svcs,
+			services: svcs.services,
 			data: backend.StoredView{
 				Name:        name,
 				State:       backend.STATE_OK,
@@ -396,7 +396,7 @@ func NewServices(beiface backend.Backend, alerters []alert.Alerter) *Services {
 
 	for _, v := range svcs.be.LoadViews() {
 		var ree, _ = regexp.Compile(v.Regexp)
-		svcs.views[v.Name] = &View{svcs: svcs, data: *v, ree: ree}
+		svcs.views[v.Name] = &View{services: svcs.services, data: *v, ree: ree}
 	}
 
 	return svcs
