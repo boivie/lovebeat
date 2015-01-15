@@ -153,7 +153,7 @@ func (v *View) update(ts int64) {
 	v.data.State = backend.STATE_OK
 	v.data.LastUpdated = ts
 	for _, s := range v.svcs.services {
-		if v.ree.Match([]byte(s.name())) {
+		if v.contains(s.name()) {
 			if s.data.State == backend.STATE_WARNING && v.data.State == backend.STATE_OK {
 				v.data.State = backend.STATE_WARNING
 			} else if s.data.State == backend.STATE_ERROR {
@@ -202,7 +202,7 @@ func (v *View) sendAlerts(ref *View, ts int64) {
 
 func (svcs *Services) updateViews(ts int64, serviceName string) {
 	for _, view := range svcs.views {
-		if view.ree.Match([]byte(serviceName)) {
+		if view.contains(serviceName) {
 			var ref = *view
 			view.update(ts)
 			view.save(svcs.be, &ref, ts)
