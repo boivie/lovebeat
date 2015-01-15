@@ -41,7 +41,6 @@ type Services struct {
 }
 
 type Service struct {
-	svcs *Services
 	data backend.StoredService
 }
 
@@ -111,6 +110,7 @@ func (s *Service) update(ts int64) {
 	if s.data.ErrorTimeout == TIMEOUT_AUTO {
 		s.data.ErrorTimeout = calcTimeout(s.data.PreviousBeats)
 	}
+	s.data.LastUpdated = ts
 }
 
 func (s *Service) stateAt(ts int64) string {
@@ -131,7 +131,7 @@ func (s *Service) registerBeat(ts int64) {
 	s.data.PreviousBeats = append(s.data.PreviousBeats[1:], ts)
 }
 
-func (s *Service) save(ref *Service, ts int64) {
+func (s *Service) save(be backend.Backend, ref *Service, ts int64) {
 	if s.data.State != ref.data.State {
 		log.Info("SERVICE '%s', state %s -> %s",
 			s.name(), ref.data.State, s.data.State)
@@ -146,8 +146,7 @@ func (s *Service) save(ref *Service, ts int64) {
 			s.name(), ref.data.ErrorTimeout,
 			s.data.ErrorTimeout)
 	}
-	s.data.LastUpdated = ts
-	s.svcs.be.SaveService(&s.data)
+	be.SaveService(&s.data)
 }
 
 func (v *View) refresh(ts int64) {
@@ -217,7 +216,6 @@ func (svcs *Services) getService(name string) *Service {
 	if !ok {
 		log.Debug("Asked for unknown service %s", name)
 		s = &Service{
-			svcs: svcs,
 			data: backend.StoredService{
 				Name:           name,
 				LastValue:      -1,
@@ -285,7 +283,7 @@ func (svcs *Services) Monitor() {
 				}
 				var ref = *s
 				s.update(ts)
-				s.save(&ref, ts)
+				s.save(svcs.be, &ref, ts)
 				svcs.updateViews(ts, s.name())
 			}
 		case c := <-svcs.upsertViewCmdChan:
@@ -326,7 +324,7 @@ func (svcs *Services) Monitor() {
 			s.registerBeat(ts)
 			log.Debug("Beat from %s", s.name())
 			s.update(ts)
-			s.save(&ref, ts)
+			s.save(svcs.be, &ref, ts)
 			svcs.updateViews(ts, s.name())
 		case c := <-svcs.deleteServiceCmdChan:
 			var ts = now()
@@ -358,7 +356,7 @@ func (svcs *Services) Monitor() {
 				s.data.ErrorTimeout = c.ErrorTimeout
 			}
 			s.update(ts)
-			s.save(&ref, ts)
+			s.save(svcs.be, &ref, ts)
 			svcs.updateViews(ts, s.name())
 		}
 	}
@@ -381,7 +379,7 @@ func NewServices(beiface backend.Backend, alerters []alert.Alerter) *Services {
 	svcs.views = make(map[string]*View)
 
 	for _, s := range svcs.be.LoadServices() {
-		var svc = &Service{svcs: svcs, data: *s}
+		var svc = &Service{data: *s}
 		if svc.data.PreviousBeats == nil || len(svc.data.PreviousBeats) != backend.PREVIOUS_BEATS_COUNT {
 			svc.data.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
 		}
