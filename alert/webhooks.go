@@ -1,7 +1,6 @@
 package alert
 
 import (
-	"github.com/boivie/lovebeat-go/backend"
 	"github.com/franela/goreq"
 	"strings"
 	"time"
@@ -23,15 +22,13 @@ type webhookData struct {
 	IncidentNbr int    `json:"incident_number"`
 }
 
-func (m webhooksAlerter) Notify(previous backend.StoredView,
-	current backend.StoredView,
-	servicesInError []backend.StoredService) {
-	if current.Webhooks != "" {
-		js := webhookData{Name: current.Name,
-			FromState:   strings.ToUpper(previous.State),
-			ToState:     strings.ToUpper(current.State),
-			IncidentNbr: current.IncidentNbr}
-		m.cmds <- webhook{Url: current.Webhooks, Data: js}
+func (m webhooksAlerter) Notify(alert Alert) {
+	if alert.Current.Webhooks != "" {
+		js := webhookData{Name: alert.Current.Name,
+			FromState:   strings.ToUpper(alert.Previous.State),
+			ToState:     strings.ToUpper(alert.Current.State),
+			IncidentNbr: alert.Current.IncidentNbr}
+		m.cmds <- webhook{Url: alert.Current.Webhooks, Data: js}
 	}
 }
 

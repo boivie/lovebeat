@@ -172,32 +172,38 @@ func (v *View) save(be backend.Backend, ref *View, ts int64) {
 		if ref.data.State == backend.STATE_OK {
 			v.data.IncidentNbr += 1
 		}
+		log.Info("VIEW '%s', %d: state %s -> %s",
+			v.name(), v.data.IncidentNbr, ref.data.State,
+			v.data.State)
 	}
 	be.SaveView(&v.data)
 }
 
-func (v *View) sendAlerts(ref *View, ts int64) {
-	if v.data.State != ref.data.State {
-		log.Info("VIEW '%s', %d: state %s -> %s",
-			v.name(), v.data.IncidentNbr, ref.data.State,
-			v.data.State)
+func (v *View) hasAlert(ref *View) bool {
+	return v.data.State != ref.data.State
+}
 
-		var services = make([]backend.StoredService, 0, 10)
-		for _, s := range v.svcs.services {
-			if (s.data.State == backend.STATE_WARNING ||
-				s.data.State == backend.STATE_ERROR) &&
-				v.contains(s.name()) {
-				services = append(services, s.data)
-				if len(services) == 10 {
-					break
-				}
+func (v *View) getAlert(ref *View) alert.Alert {
+	var services = make([]backend.StoredService, 0, 10)
+	for _, s := range v.svcs.services {
+		if (s.data.State == backend.STATE_WARNING ||
+			s.data.State == backend.STATE_ERROR) &&
+			v.contains(s.name()) {
+			services = append(services, s.data)
+			if len(services) == 10 {
+				break
 			}
 		}
-
-		for _, a := range v.svcs.alerters {
-			a.Notify(ref.data, v.data, services)
-		}
 	}
+
+	return alert.Alert{ref.data, v.data, services}
+}
+
+func (svcs *Services) sendAlert(a alert.Alert) {
+	for _, alerter := range svcs.alerters {
+		alerter.Notify(a)
+	}
+
 }
 
 func (svcs *Services) updateViews(ts int64, serviceName string) {
@@ -206,7 +212,9 @@ func (svcs *Services) updateViews(ts int64, serviceName string) {
 			var ref = *view
 			view.update(ts)
 			view.save(svcs.be, &ref, ts)
-			view.sendAlerts(&ref, ts)
+			if view.hasAlert(&ref) {
+				svcs.sendAlert(view.getAlert(&ref))
+			}
 		}
 	}
 }

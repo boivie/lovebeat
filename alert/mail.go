@@ -2,7 +2,6 @@ package alert
 
 import (
 	"bytes"
-	"github.com/boivie/lovebeat-go/backend"
 	"github.com/boivie/lovebeat-go/config"
 	"net/smtp"
 	"strconv"
@@ -43,19 +42,17 @@ func renderTemplate(tmpl string, context map[string]string) string {
 	return doc.String()
 }
 
-func (m mailAlerter) Notify(previous backend.StoredView,
-	current backend.StoredView,
-	servicesInError []backend.StoredService) {
-	if current.AlertMail != "" {
+func (m mailAlerter) Notify(alert Alert) {
+	if alert.Current.AlertMail != "" {
 		var context = make(map[string]string)
-		context["Name"] = current.Name
-		context["PrevState"] = strings.ToUpper(previous.State)
-		context["CurrentState"] = strings.ToUpper(current.State)
-		context["IncidentNbr"] = strconv.Itoa(current.IncidentNbr)
+		context["Name"] = alert.Current.Name
+		context["PrevState"] = strings.ToUpper(alert.Previous.State)
+		context["CurrentState"] = strings.ToUpper(alert.Current.State)
+		context["IncidentNbr"] = strconv.Itoa(alert.Current.IncidentNbr)
 
 		var body = renderTemplate(TMPL_BODY, context)
 		var subject = renderTemplate(TMPL_SUBJECT, context)
-		m.cmds <- mail{To: current.AlertMail,
+		m.cmds <- mail{To: alert.Current.AlertMail,
 			Subject: subject,
 			Body:    body}
 	}

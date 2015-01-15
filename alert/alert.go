@@ -9,8 +9,12 @@ var (
 	log = logging.MustGetLogger("lovebeat")
 )
 
+type Alert struct {
+	Previous        backend.StoredView
+	Current         backend.StoredView
+	ServicesInError []backend.StoredService
+}
+
 type Alerter interface {
-	Notify(previous backend.StoredView,
-		current backend.StoredView,
-		servicesInError []backend.StoredService)
+	Notify(alert Alert)
 }
