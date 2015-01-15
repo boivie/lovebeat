@@ -22,6 +22,13 @@ type mailAlerter struct {
 const (
 	TMPL_BODY    = `The status for view '{{.Name}}' has changed from '{{.PrevState}}' to '{{.CurrentState}}'`
 	TMPL_SUBJECT = `[LOVEBEAT][{{.Name}}-{{.IncidentNbr}}]`
+	TMPL_EMAIL   = `From: {{.From}}
+To: {{.To}}
+Subject: {{.Subject}}
+MIME-version: 1.0
+Content-Type: text/html; charset="UTF-8"
+
+{{.Message}}`
 )
 
 func renderTemplate(tmpl string, context map[string]string) string {
@@ -42,19 +49,23 @@ func renderTemplate(tmpl string, context map[string]string) string {
 	return doc.String()
 }
 
+func createMail(alert Alert) mail {
+	var context = make(map[string]string)
+	context["Name"] = alert.Current.Name
+	context["PrevState"] = strings.ToUpper(alert.Previous.State)
+	context["CurrentState"] = strings.ToUpper(alert.Current.State)
+	context["IncidentNbr"] = strconv.Itoa(alert.Current.IncidentNbr)
+
+	var body = renderTemplate(TMPL_BODY, context)
+	var subject = renderTemplate(TMPL_SUBJECT, context)
+	return mail{To: alert.Current.AlertMail,
+		Subject: subject,
+		Body:    body}
+}
+
 func (m mailAlerter) Notify(alert Alert) {
 	if alert.Current.AlertMail != "" {
-		var context = make(map[string]string)
-		context["Name"] = alert.Current.Name
-		context["PrevState"] = strings.ToUpper(alert.Previous.State)
-		context["CurrentState"] = strings.ToUpper(alert.Current.State)
-		context["IncidentNbr"] = strconv.Itoa(alert.Current.IncidentNbr)
-
-		var body = renderTemplate(TMPL_BODY, context)
-		var subject = renderTemplate(TMPL_SUBJECT, context)
-		m.cmds <- mail{To: alert.Current.AlertMail,
-			Subject: subject,
-			Body:    body}
+		m.cmds <- createMail(alert)
 	}
 }
 
@@ -63,41 +74,22 @@ func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 		select {
 		case mail := <-q:
 			log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
-			parameters := struct {
-				From    string
-				To      string
-				Subject string
-				Message string
-			}{
-				cfg.From,
-				mail.To,
-				mail.Subject,
-				mail.Body,
-			}
+			var context = make(map[string]string)
+			context["From"] = cfg.From
+			context["To"] = mail.To
+			context["Subject"] = mail.Subject
+			context["Message"] = mail.Body
 
-			buffer := new(bytes.Buffer)
-
-			template := template.Must(template.New("emailTemplate").Parse(emailScript()))
-			template.Execute(buffer, &parameters)
-
+			contents := renderTemplate(TMPL_EMAIL, context)
 			var to = strings.Split(mail.To, ",")
-			var err = smtp.SendMail(cfg.Server, nil, cfg.From, to, buffer.Bytes())
+			var err = smtp.SendMail(cfg.Server, nil, cfg.From, to,
+				[]byte(contents))
 			if err != nil {
 				log.Error("Failed to send e-mail", err)
 			}
 		}
 	}
 
-}
-
-func emailScript() (script string) {
-	return `From: {{.From}}
-To: {{.To}}
-Subject: {{.Subject}}
-MIME-version: 1.0
-Content-Type: text/html; charset="UTF-8"
-
-{{.Message}}`
 }
 
 func NewMailAlerter(cfg *config.ConfigMail) Alerter {
