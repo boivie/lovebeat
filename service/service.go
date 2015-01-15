@@ -331,8 +331,8 @@ func (svcs *Services) Monitor() {
 		case c := <-svcs.deleteServiceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c)
-			delete(s.svcs.services, s.name())
-			s.svcs.be.DeleteService(s.name())
+			delete(svcs.services, s.name())
+			svcs.be.DeleteService(s.name())
 			s.updateViews(ts)
 		case c := <-svcs.upsertServiceCmdChan:
 			var ts = now()
