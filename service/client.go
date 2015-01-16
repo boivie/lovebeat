@@ -9,10 +9,9 @@ const TIMEOUT_CLEAR int64 = -1
 const TIMEOUT_AUTO int64 = -2
 
 type ServiceIf interface {
-	Beat(name string)
 	DeleteService(name string)
 
-	ConfigureService(name string, warningTimeout int64, errorTimeout int64)
+	UpdateService(name string, registerBeat bool, warningTimeout int64, errorTimeout int64)
 
 	CreateOrUpdateView(name string, regexp string, alertMail string, webhooks string)
 	DeleteView(name string)
@@ -23,6 +22,7 @@ type ServiceIf interface {
 }
 
 type upsertServiceCmd struct {
+	RegisterBeat   bool
 	Service        string
 	WarningTimeout int64
 	ErrorTimeout   int64
@@ -58,10 +58,6 @@ type client struct {
 	svcs *Services
 }
 
-func (c *client) Beat(name string) {
-	c.svcs.beatCmdChan <- name
-}
-
 func (c *client) DeleteService(name string) {
 	c.svcs.deleteServiceCmdChan <- name
 }
@@ -70,9 +66,10 @@ func (c *client) DeleteView(name string) {
 	c.svcs.deleteViewCmdChan <- name
 }
 
-func (c *client) ConfigureService(name string, warningTimeout int64, errorTimeout int64) {
+func (c *client) UpdateService(name string, registerBeat bool, warningTimeout int64, errorTimeout int64) {
 	c.svcs.upsertServiceCmdChan <- &upsertServiceCmd{
 		Service:        name,
+		RegisterBeat:   registerBeat,
 		WarningTimeout: warningTimeout,
 		ErrorTimeout:   errorTimeout,
 	}

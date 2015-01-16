@@ -12,7 +12,6 @@ type Services struct {
 	alerters             []alert.Alerter
 	services             map[string]*Service
 	views                map[string]*View
-	beatCmdChan          chan string
 	upsertServiceCmdChan chan *upsertServiceCmd
 	deleteServiceCmdChan chan string
 	deleteViewCmdChan    chan string
@@ -138,15 +137,6 @@ func (svcs *Services) Monitor() {
 		case c := <-svcs.getViewChan:
 			var ret = svcs.views[c.Name]
 			c.Reply <- ret.data
-		case c := <-svcs.beatCmdChan:
-			var ts = now()
-			var s = svcs.getService(c)
-			var ref = *s
-			s.registerBeat(ts)
-			log.Debug("Beat from %s", s.name())
-			s.update(ts)
-			s.save(svcs.be, &ref, ts)
-			svcs.updateViews(ts, s.name())
 		case c := <-svcs.deleteServiceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c)
@@ -157,6 +147,11 @@ func (svcs *Services) Monitor() {
 			var ts = now()
 			var s = svcs.getService(c.Service)
 			var ref = *s
+
+			if c.RegisterBeat {
+				s.registerBeat(ts)
+			}
+
 			// Don't re-calculate 'auto' if we already have values
 			if c.WarningTimeout == TIMEOUT_AUTO &&
 				s.data.WarningTimeout == -1 {
@@ -187,9 +182,8 @@ func NewServices(beiface backend.Backend, alerters []alert.Alerter) *Services {
 	svcs := new(Services)
 	svcs.be = beiface
 	svcs.alerters = alerters
-	svcs.beatCmdChan = make(chan string, MAX_UNPROCESSED_PACKETS)
 	svcs.deleteServiceCmdChan = make(chan string, 5)
-	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, 5)
+	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
 	svcs.deleteViewCmdChan = make(chan string, 5)
 	svcs.upsertViewCmdChan = make(chan *upsertViewCmd, 5)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)

@@ -36,28 +36,12 @@ func Parse(data []byte) []LineCommand {
 			log.Error("failed to ParseInt %s - %s", item[3], err)
 			continue
 		}
-		action := string(item[2])
 
-		// Special handling of 'autobeat'
-		if action == "autobeat" {
-			cmd := LineCommand{
-				Action: "beat",
-				Name:   string(item[1]),
-				Value:  int64(vali)}
-			commands = append(commands, cmd)
-			cmd = LineCommand{
-				Action: "err",
-				Name:   string(item[1]),
-				Value:  service.TIMEOUT_AUTO}
-			commands = append(commands, cmd)
-
-		} else {
-			cmd := LineCommand{
-				Action: action,
-				Name:   string(item[1]),
-				Value:  int64(vali)}
-			commands = append(commands, cmd)
-		}
+		cmd := LineCommand{
+			Action: string(item[2]),
+			Name:   string(item[1]),
+			Value:  int64(vali)}
+		commands = append(commands, cmd)
 	}
 	return commands
 }
@@ -66,11 +50,13 @@ func Execute(commands []LineCommand, iface service.ServiceIf) {
 	for _, cmd := range commands {
 		switch cmd.Action {
 		case "warn":
-			iface.ConfigureService(cmd.Name, cmd.Value, 0)
+			iface.UpdateService(cmd.Name, false, cmd.Value, 0)
 		case "err":
-			iface.ConfigureService(cmd.Name, 0, cmd.Value)
+			iface.UpdateService(cmd.Name, false, 0, cmd.Value)
 		case "beat":
-			iface.Beat(cmd.Name)
+			iface.UpdateService(cmd.Name, true, 0, 0)
+		case "autobeat":
+			iface.UpdateService(cmd.Name, true, 0, service.TIMEOUT_AUTO)
 		}
 	}
 }

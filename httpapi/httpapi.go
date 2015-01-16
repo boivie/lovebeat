@@ -40,14 +40,10 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client.Beat(name)
-
 	errval := parseTimeout(r.FormValue("err-tmo"))
 	warnval := parseTimeout(r.FormValue("warn-tmo"))
 
-	if errval != 0 || warnval != 0 {
-		client.ConfigureService(name, warnval, errval)
-	}
+	client.UpdateService(name, true, warnval, errval)
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
