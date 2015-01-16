@@ -16,7 +16,7 @@ type LineCommand struct {
 
 var log = logging.MustGetLogger("lovebeat")
 
-var packetRegexp = regexp.MustCompile("^([^:]+)\\.(beat|warn|err):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
+var packetRegexp = regexp.MustCompile("^([^:]+)\\.(beat|warn|err|autobeat):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
 func Parse(data []byte) []LineCommand {
 	var commands []LineCommand
@@ -36,11 +36,28 @@ func Parse(data []byte) []LineCommand {
 			log.Error("failed to ParseInt %s - %s", item[3], err)
 			continue
 		}
-		cmd := LineCommand{
-			Action: string(item[2]),
-			Name:   string(item[1]),
-			Value:  int64(vali)}
-		commands = append(commands, cmd)
+		action := string(item[2])
+
+		// Special handling of 'autobeat'
+		if action == "autobeat" {
+			cmd := LineCommand{
+				Action: "beat",
+				Name:   string(item[1]),
+				Value:  int64(vali)}
+			commands = append(commands, cmd)
+			cmd = LineCommand{
+				Action: "err",
+				Name:   string(item[1]),
+				Value:  service.TIMEOUT_AUTO}
+			commands = append(commands, cmd)
+
+		} else {
+			cmd := LineCommand{
+				Action: action,
+				Name:   string(item[1]),
+				Value:  int64(vali)}
+			commands = append(commands, cmd)
+		}
 	}
 	return commands
 }

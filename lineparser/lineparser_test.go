@@ -51,6 +51,15 @@ func TestParseWarn(t *testing.T) {
 	}
 }
 
+func TestParseAutoBeat(t *testing.T) {
+	cmds := Parse([]byte("foo.bar.autobeat:1|c"))
+	ref := []LineCommand{LineCommand{"beat", "foo.bar", 1},
+		LineCommand{"err", "foo.bar", -2}}
+	if !testEq(cmds, ref) {
+		t.Errorf("Failed %v %v", cmds, ref)
+	}
+}
+
 func TestParseInvalid(t *testing.T) {
 	cmds := Parse([]byte("foo.bar.invalid:1|c"))
 	if len(cmds) != 0 {

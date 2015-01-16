@@ -82,6 +82,8 @@ if the lovebeat server isn't running for any reason.
   * To set an error timeout (in seconds), set the gauge value of "<service>.err"
   * To clear a value, set the timeout to -1.
   * To set the timeout to be automatically calculated, set the timeout to -2.
+  * A shortcut for setting 'err' to -2 and issuing a beat (since this is a
+    fairly common pattern), send a counter to "<service>.autobeat"
 
 Examples:
 
@@ -93,6 +95,9 @@ Examples:
 
     # TCP, setting warn to 'auto'
     $ echo -e "invoice.mailer.warn:-2|g\ninvoice.mailer.beat:1|c" | nc -c localhost 8127
+
+    # UDP, sending a beat and auto-generating an error threshold
+    $ echo "invoice.mailer.autobeat:1|c" | nc -u -w0 localhost 8127
 
 You can even put a statsd proxy in front of lovebeat if you don't want to send
 UDP packets outside your localhost.
