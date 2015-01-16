@@ -124,6 +124,17 @@ Web UI
 
 Just point your browser to [http://localhost:8080/](http://localhost:8080)
 
+Configuration
+=============
+
+There is not much configuration needed. But if you want to send alert emails,
+you will need to specify the SMTP server to use as well as the sender
+email address. Please see 'lovebeat.cfg' in the root directory.
+
+Note that lovebeat by default reads /etc/lovebeat.cfg but you can override
+this by specifying the '-config <file>' argument when starting lovebeat. If
+no configuration file is specified, sensible defaults are used.
+
 Notable software included
 =========================
 

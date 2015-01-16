@@ -98,6 +98,7 @@ func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 }
 
 func NewMailAlerter(cfg *config.ConfigMail) Alerter {
+	log.Debug("Sending mail via %s, from %s", cfg.Server, cfg.From)
 	var q = make(chan mail, 100)
 	var ma = mailAlerter{cmds: q}
 	go ma.Worker(q, cfg)
