@@ -29,8 +29,15 @@ var (
 type FileBackend struct {
 	path     string
 	q        chan update
+	sync     chan chan bool
 	services map[string]*StoredService
 	views    map[string]*StoredView
+}
+
+func (f FileBackend) Sync() {
+	reply := make(chan bool)
+	f.sync <- reply
+	<-reply
 }
 
 func (f FileBackend) SaveService(service *StoredService) {
@@ -165,6 +172,9 @@ func (f FileBackend) fileSaver() {
 		select {
 		case <-ticker.C:
 			f.saveAll()
+		case reply := <-f.sync:
+			f.saveAll()
+			reply <- true
 		case upd := <-f.q:
 			if upd.setService != nil {
 				f.services[upd.setService.Name] = upd.setService
@@ -187,6 +197,7 @@ func NewFileBackend(path string) Backend {
 	be := FileBackend{
 		path:     path,
 		q:        q,
+		sync:     make(chan chan bool),
 		services: make(map[string]*StoredService),
 		views:    make(map[string]*StoredView),
 	}

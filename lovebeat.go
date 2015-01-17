@@ -41,11 +41,12 @@ var (
 	signalchan = make(chan os.Signal, 1)
 )
 
-func signalHandler() {
+func signalHandler(be backend.Backend) {
 	for {
 		select {
 		case sig := <-signalchan:
 			fmt.Printf("!! Caught signal %d... shutting down\n", sig)
+			be.Sync()
 			return
 		}
 	}
@@ -96,6 +97,7 @@ func main() {
 	var svcs = service.NewServices(be, alerters)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
+	signal.Notify(signalchan, os.Interrupt)
 
 	go svcs.Monitor()
 	go httpServer(8080, svcs)
@@ -107,5 +109,5 @@ func main() {
 
 	log.Info("Ready to handle incoming connections")
 
-	signalHandler()
+	signalHandler(be)
 }

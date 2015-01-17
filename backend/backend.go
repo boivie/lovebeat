@@ -39,4 +39,5 @@ type Backend interface {
 
 	DeleteService(name string)
 	DeleteView(name string)
+	Sync()
 }
