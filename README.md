@@ -58,8 +58,9 @@ Key Concepts
 
   * *alarms*
     If it possible (and recommended) to have an external monitoring system check
-    the status of lovebeat. There is an API endpoint, /api/status, that you can
-    let e.g. nagios monitor.
+    the status of lovebeat. There is an API endpoint, /status?view=name,
+    that you can let e.g. nagios monitor. (check the 'contrib' directory for
+    a provided nagios plugin)
 
     Another option is to let lovebeat send mails or do a HTTP POST to your web
     service whenever a view changes state. Every view allows you to set these
