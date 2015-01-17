@@ -111,7 +111,7 @@ func (svcs *Services) Monitor() {
 			svcs.createView(c.View, c.Regexp, c.AlertMail,
 				c.Webhooks, now())
 		case c := <-svcs.deleteViewCmdChan:
-			log.Debug("Delete view %s", c)
+			log.Info("VIEW '%s', deleted", c)
 			delete(svcs.views, c)
 			svcs.be.DeleteView(c)
 		case c := <-svcs.getServicesChan:
@@ -138,6 +138,7 @@ func (svcs *Services) Monitor() {
 			var ret = svcs.views[c.Name]
 			c.Reply <- ret.data
 		case c := <-svcs.deleteServiceCmdChan:
+			log.Info("SERVICE '%s', deleted", c)
 			var ts = now()
 			var s = svcs.getService(c)
 			delete(svcs.services, s.name())
