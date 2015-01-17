@@ -67,6 +67,11 @@ func (s *Service) stateAt(ts int64) string {
 }
 
 func (s *Service) registerBeat(ts int64) {
+	if s.data.LastBeat > 0 {
+		log.Debug("Beat from %s (prev %d secs ago)", s.name(), ts-s.data.LastBeat)
+	} else {
+		log.Debug("Beat from %s (first!)", s.name())
+	}
 	s.data.LastBeat = ts
 	s.data.PreviousBeats = append(s.data.PreviousBeats[1:], ts)
 }
