@@ -1,11 +1,25 @@
 package backend
 
 import (
+	"bufio"
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"github.com/op/go-logging"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
+)
+
+const (
+	EXPIRY_INTERVAL    = 60
+	MAX_PENDING_WRITES = 1000
+)
+
+var (
+	RECORD_SERVICE = []byte("SERV\t")
+	RECORD_VIEW    = []byte("VIEW\t")
+	NEWLINE        = []byte("\n")
 )
 
 var (
@@ -13,106 +27,170 @@ var (
 )
 
 type FileBackend struct {
-	path string
+	path     string
+	q        chan update
+	services map[string]*StoredService
+	views    map[string]*StoredView
 }
 
-func (r FileBackend) viewFile(name string) string {
-	return filepath.Join(r.path, "views", name+".json")
-}
-func (r FileBackend) serviceFile(name string) string {
-	return filepath.Join(r.path, "services", name+".json")
+func (f FileBackend) SaveService(service *StoredService) {
+	f.q <- update{setService: service}
 }
 
-func (r FileBackend) readViewFile(name string, fname string) *StoredView {
-	view := &StoredView{
-		Name:   name,
-		State:  STATE_OK,
-		Regexp: "^$",
-	}
-
-	data, err := ioutil.ReadFile(fname)
-	if err == nil {
-		json.Unmarshal(data, &view)
-	}
-
-	return view
-}
-
-func (r FileBackend) loadView(name string) *StoredView {
-	return r.readViewFile(name, r.viewFile(name))
-}
-
-func (r FileBackend) SaveService(service *StoredService) {
-	b, _ := json.Marshal(service)
-	filename := r.serviceFile(service.Name)
-	log.Debug("Writing %s", filename)
-	ioutil.WriteFile(filename, b, 0644)
-}
-
-func (r FileBackend) SaveView(view *StoredView) {
-	b, _ := json.Marshal(view)
-	filename := r.viewFile(view.Name)
-	log.Debug("Writing %s", filename)
-	ioutil.WriteFile(filename, b, 0644)
-}
-
-func (r FileBackend) readServiceFile(name string, fname string) *StoredService {
-	service := &StoredService{
-		Name:           name,
-		LastValue:      -1,
-		LastBeat:       -1,
-		LastUpdated:    -1,
-		WarningTimeout: -1,
-		ErrorTimeout:   -1,
-		State:          STATE_PAUSED,
-	}
-
-	data, err := ioutil.ReadFile(fname)
-	if err == nil {
-		json.Unmarshal(data, &service)
-	}
-
-	return service
-}
-
-func (r FileBackend) loadService(name string) *StoredService {
-	return r.readServiceFile(name, r.serviceFile(name))
+func (f FileBackend) SaveView(view *StoredView) {
+	f.q <- update{setView: view}
 }
 
 func (r FileBackend) LoadServices() []*StoredService {
-	var ret []*StoredService
-
-	matches, _ := filepath.Glob(filepath.Join(r.path, "services", "*.json"))
-	for _, fname := range matches {
-		svc := r.readServiceFile("", fname)
-		ret = append(ret, svc)
-		log.Debug("Found service %s", svc.Name)
+	v := make([]*StoredService, len(r.services))
+	idx := 0
+	for _, value := range r.services {
+		v[idx] = value
+		idx++
 	}
-	return ret
+	return v
 }
 
 func (r FileBackend) LoadViews() []*StoredView {
-	var ret []*StoredView
-
-	matches, _ := filepath.Glob(filepath.Join(r.path, "views", "*.json"))
-	for _, fname := range matches {
-		view := r.readViewFile("", fname)
-		ret = append(ret, view)
-		log.Debug("Found view %s", view.Name)
+	v := make([]*StoredView, len(r.views))
+	idx := 0
+	for _, value := range r.views {
+		v[idx] = value
+		idx++
 	}
-	return ret
+	return v
 }
 
-func (r FileBackend) DeleteService(name string) {
-	os.Remove(r.serviceFile(name))
+func (f FileBackend) DeleteService(name string) {
+	f.q <- update{deleteService: name}
 }
 
-func (r FileBackend) DeleteView(name string) {
-	os.Remove(r.viewFile(name))
+func (f FileBackend) DeleteView(name string) {
+	f.q <- update{deleteView: name}
+}
+
+func (f FileBackend) loadService(data []byte) {
+	service := &StoredService{}
+	json.Unmarshal(data, &service)
+	f.services[service.Name] = service
+}
+
+func (f FileBackend) loadView(data []byte) {
+	view := &StoredView{}
+	json.Unmarshal(data, &view)
+	f.views[view.Name] = view
+}
+
+func (f FileBackend) filename() string {
+	return filepath.Join(f.path, "lovebeat-data.gz")
+}
+
+func (f FileBackend) readAll() {
+	start := time.Now()
+	s := f.filename()
+	fi, err := os.Open(s)
+	if err != nil {
+		log.Error("Couldn't find any old database to read\n")
+		return
+	}
+	gz, err := gzip.NewReader(fi)
+	if err != nil {
+		log.Error("Couldn't read from database\n")
+		return
+	}
+
+	buf := bufio.NewReader(gz)
+	for {
+		line, err := buf.ReadBytes('\n')
+		if err != nil {
+			break
+		}
+		if bytes.HasPrefix(line, RECORD_SERVICE) {
+			f.loadService(line[5:])
+		} else if bytes.HasPrefix(line, RECORD_VIEW) {
+			f.loadView(line[5:])
+		} else {
+			log.Info("Found unexpected line in database - skipping")
+		}
+	}
+	duration := time.Since(start)
+	log.Info("Loaded %d items in %d ms", len(f.services)+len(f.views),
+		duration.Nanoseconds()/1000000)
+}
+
+func (f FileBackend) saveAll() {
+	start := time.Now()
+	s := f.filename() + ".new"
+	fi, err := os.OpenFile(s, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		log.Error("Error creating file\n")
+		return
+	}
+	gz := gzip.NewWriter(fi)
+
+	for _, service := range f.services {
+		b, _ := json.Marshal(service)
+		gz.Write(RECORD_SERVICE)
+		gz.Write(b)
+		gz.Write(NEWLINE)
+	}
+	for _, view := range f.views {
+		b, _ := json.Marshal(view)
+		gz.Write(RECORD_VIEW)
+		gz.Write(b)
+		gz.Write(NEWLINE)
+	}
+	gz.Close()
+	fi.Close()
+	if err = os.Rename(s, f.filename()); err != nil {
+		log.Error("Failed to overwrite database")
+		return
+	}
+	duration := time.Since(start)
+	log.Info("Saved %d items in %d ms", len(f.services)+len(f.views),
+		duration.Nanoseconds()/1000000)
+}
+
+type update struct {
+	setService    *StoredService
+	setView       *StoredView
+	deleteService string
+	deleteView    string
+}
+
+func (f FileBackend) fileSaver() {
+	period := time.Duration(EXPIRY_INTERVAL) * time.Second
+	ticker := time.NewTicker(period)
+	for {
+		select {
+		case <-ticker.C:
+			f.saveAll()
+		case upd := <-f.q:
+			if upd.setService != nil {
+				f.services[upd.setService.Name] = upd.setService
+			}
+			if upd.deleteService != "" {
+				delete(f.services, upd.deleteService)
+			}
+			if upd.setView != nil {
+				f.views[upd.setView.Name] = upd.setView
+			}
+			if upd.deleteView != "" {
+				delete(f.views, upd.deleteView)
+			}
+		}
+	}
 }
 
 func NewFileBackend(path string) Backend {
-	os.MkdirAll(filepath.Join(path, "views"), 0755)
-	os.MkdirAll(filepath.Join(path, "services"), 0755)
-	return &FileBackend{path: path}
+	var q = make(chan update, MAX_PENDING_WRITES)
+	be := FileBackend{
+		path:     path,
+		q:        q,
+		services: make(map[string]*StoredService),
+		views:    make(map[string]*StoredView),
+	}
+	be.readAll()
+	go be.fileSaver()
+	return be
 }
