@@ -106,7 +106,5 @@ func main() {
 	// Ensure that the 'all' view exists
 	svcs.GetClient().CreateOrUpdateView("all", "", "", "")
 
-	log.Info("Ready to handle incoming connections")
-
 	signalHandler(be)
 }

@@ -93,7 +93,6 @@ func (f FileBackend) filename() string {
 }
 
 func (f FileBackend) readAll() {
-	start := time.Now()
 	s := f.filename()
 	fi, err := os.Open(s)
 	if err != nil {
@@ -120,9 +119,8 @@ func (f FileBackend) readAll() {
 			log.Info("Found unexpected line in database - skipping")
 		}
 	}
-	duration := time.Since(start)
-	log.Info("Loaded %d items in %d ms", len(f.services)+len(f.views),
-		duration.Nanoseconds()/1000000)
+	log.Info("Loaded %d services and %d views",
+		len(f.services), len(f.views))
 }
 
 func (f FileBackend) saveAll() {
@@ -154,7 +152,7 @@ func (f FileBackend) saveAll() {
 		return
 	}
 	duration := time.Since(start)
-	log.Info("Saved %d items in %d ms", len(f.services)+len(f.views),
+	log.Debug("Saved %d items in %d ms", len(f.services)+len(f.views),
 		duration.Nanoseconds()/1000000)
 }
 

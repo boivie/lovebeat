@@ -22,7 +22,7 @@ func tcpHandle(c *net.TCPConn, iface service.ServiceIf) {
 
 func Listener(bindAddr string, iface service.ServiceIf) {
 	address, _ := net.ResolveTCPAddr("tcp", bindAddr)
-	log.Info("TCP listener running on %s", address)
+	log.Info("TCP listening on %s", address)
 	listener, err := net.ListenTCP("tcp", address)
 	if err != nil {
 		log.Fatalf("ListenTCP - %s", err)

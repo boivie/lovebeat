@@ -15,7 +15,7 @@ const (
 
 func Listener(bindAddr string, iface service.ServiceIf) {
 	address, _ := net.ResolveUDPAddr("udp", bindAddr)
-	log.Info("UDP listener running on %s", address)
+	log.Info("UDP listening on %s", address)
 	listener, err := net.ListenUDP("udp", address)
 	if err != nil {
 		log.Fatalf("ListenUDP - %s", err)
