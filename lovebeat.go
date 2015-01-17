@@ -31,10 +31,10 @@ const (
 var (
 	udpAddr     = flag.String("udp", ":8127", "UDP service address")
 	tcpAddr     = flag.String("tcp", ":8127", "TCP service address")
-	debug       = flag.Bool("debug", false, "print statistics sent to graphite")
-	showVersion = flag.Bool("version", false, "print version string")
-	workDir     = flag.String("workdir", "work", "working directory")
-	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "configuration file")
+	debug       = flag.Bool("debug", false, "Enable debug printouts")
+	showVersion = flag.Bool("version", false, "Print version string")
+	workDir     = flag.String("workdir", "work", "Working directory")
+	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
 )
 
 var (
