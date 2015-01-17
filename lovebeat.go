@@ -24,8 +24,7 @@ import (
 var log = logging.MustGetLogger("lovebeat")
 
 const (
-	VERSION                 = "0.1.0"
-	MAX_UNPROCESSED_PACKETS = 1000
+	VERSION = "0.8.0"
 )
 
 var (
