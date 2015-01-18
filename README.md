@@ -89,7 +89,7 @@ if the lovebeat server isn't running for any reason.
 Examples:
 
     # UDP
-    $ echo "invoice.mailer.beat:1|c" | nc -u -w0 localhost 8127
+    $ echo "invoice.mailer.beat:1|c" | nc -4u -w0 localhost 8127
     
     # TCP
     $ echo "invoice.mailer.warn:3600|g" | nc -c localhost 8127
@@ -98,7 +98,7 @@ Examples:
     $ echo -e "invoice.mailer.warn:-2|g\ninvoice.mailer.beat:1|c" | nc -c localhost 8127
 
     # UDP, sending a beat and auto-generating an error threshold
-    $ echo "invoice.mailer.autobeat:1|c" | nc -u -w0 localhost 8127
+    $ echo "invoice.mailer.autobeat:1|c" | nc -4u -w0 localhost 8127
 
 You can even put a statsd proxy in front of lovebeat if you don't want to send
 UDP packets outside your localhost.
