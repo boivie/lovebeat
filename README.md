@@ -144,7 +144,7 @@ no configuration file is specified, sensible defaults are used.
 Notable software included
 =========================
 
- * juration.js from https://github.com/domchristie/juration/pull/9
+ * juration.js from https://github.com/domchristie/juration
 
 License
 =======
