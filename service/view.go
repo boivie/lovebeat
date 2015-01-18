@@ -56,6 +56,7 @@ func (v *View) save(be backend.Backend, ref *View, ts int64) {
 		log.Info("VIEW '%s', %d: state %s -> %s",
 			v.name(), v.data.IncidentNbr, ref.data.State,
 			v.data.State)
+		counters.SetGauge("view.state."+v.name(), int(StateMap[v.data.State]))
 	}
 	be.SaveView(&v.data)
 }

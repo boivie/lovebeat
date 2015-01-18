@@ -2,12 +2,7 @@ package service
 
 import (
 	"github.com/boivie/lovebeat-go/backend"
-	"github.com/op/go-logging"
 	"time"
-)
-
-var (
-	log = logging.MustGetLogger("lovebeat")
 )
 
 type Service struct {
@@ -80,6 +75,7 @@ func (s *Service) save(be backend.Backend, ref *Service, ts int64) {
 	if s.data.State != ref.data.State {
 		log.Info("SERVICE '%s', state %s -> %s",
 			s.name(), ref.data.State, s.data.State)
+		counters.SetGauge("service.state."+s.name(), int(StateMap[s.data.State]))
 	}
 	if s.data.WarningTimeout != ref.data.WarningTimeout {
 		log.Info("SERVICE '%s', warn %d -> %d",

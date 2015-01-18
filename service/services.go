@@ -3,6 +3,9 @@ package service
 import (
 	"github.com/boivie/lovebeat-go/alert"
 	"github.com/boivie/lovebeat-go/backend"
+	"github.com/boivie/lovebeat-go/metrics"
+	"github.com/op/go-logging"
+
 	"regexp"
 	"time"
 )
@@ -25,6 +28,17 @@ type Services struct {
 const (
 	MAX_UNPROCESSED_PACKETS = 1000
 	EXPIRY_INTERVAL         = 1
+)
+
+var (
+	log      = logging.MustGetLogger("lovebeat")
+	counters = metrics.NopMetrics()
+	StateMap = map[string]int{
+		backend.STATE_PAUSED:  0,
+		backend.STATE_OK:      1,
+		backend.STATE_WARNING: 2,
+		backend.STATE_ERROR:   3,
+	}
 )
 
 func (svcs *Services) sendAlert(a alert.Alert) {
@@ -179,7 +193,8 @@ func (svcs *Services) Monitor() {
 	}
 }
 
-func NewServices(beiface backend.Backend, alerters []alert.Alerter) *Services {
+func NewServices(beiface backend.Backend, alerters []alert.Alerter, m metrics.Metrics) *Services {
+	counters = m
 	svcs := new(Services)
 	svcs.be = beiface
 	svcs.alerters = alerters

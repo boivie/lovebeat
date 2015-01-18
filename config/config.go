@@ -12,6 +12,7 @@ type Config struct {
 	Tcp      ConfigBind
 	Http     ConfigBind
 	Database ConfigDatabase
+	Metrics  ConfigMetrics
 }
 
 type ConfigMail struct {
@@ -22,9 +23,15 @@ type ConfigMail struct {
 type ConfigBind struct {
 	Listen string
 }
+
 type ConfigDatabase struct {
 	Filename string
 	Interval int
+}
+
+type ConfigMetrics struct {
+	Server string
+	Prefix string
 }
 
 var log = logging.MustGetLogger("lovebeat")
@@ -57,6 +64,10 @@ func ReadConfig(fname string) Config {
 		Database: ConfigDatabase{
 			Filename: "lovebeat-data.gz",
 			Interval: 60,
+		},
+		Metrics: ConfigMetrics{
+			Server: "",
+			Prefix: "lovebeat",
 		},
 	}
 	if e, _ := exists(fname); e {

@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"github.com/boivie/lovebeat-go/config"
+	"github.com/boivie/lovebeat-go/metrics"
 	"github.com/op/go-logging"
 	"os"
 	"time"
@@ -22,7 +23,8 @@ var (
 )
 
 var (
-	log = logging.MustGetLogger("lovebeat")
+	log      = logging.MustGetLogger("lovebeat")
+	counters = metrics.NopMetrics()
 )
 
 type FileBackend struct {
@@ -149,6 +151,11 @@ func (f FileBackend) saveAll() {
 	duration := time.Since(start)
 	log.Debug("Saved %d items in %d ms", len(f.services)+len(f.views),
 		duration.Nanoseconds()/1000000)
+
+	counters.IncCounter("db.save.count")
+	counters.SetGauge("db.save.duration", int(duration.Nanoseconds()/1000000))
+	counters.SetGauge("service.count", len(f.services))
+	counters.SetGauge("view.count", len(f.views))
 }
 
 type update struct {
@@ -185,7 +192,8 @@ func (f FileBackend) fileSaver() {
 	}
 }
 
-func NewFileBackend(cfg *config.ConfigDatabase) Backend {
+func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics) Backend {
+	counters = m
 	var q = make(chan update, MAX_PENDING_WRITES)
 	be := FileBackend{
 		cfg:      cfg,

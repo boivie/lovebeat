@@ -8,6 +8,7 @@ import (
 	"github.com/boivie/lovebeat-go/config"
 	"github.com/boivie/lovebeat-go/dashboard"
 	"github.com/boivie/lovebeat-go/httpapi"
+	"github.com/boivie/lovebeat-go/metrics"
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/boivie/lovebeat-go/tcpapi"
 	"github.com/boivie/lovebeat-go/udpapi"
@@ -87,10 +88,12 @@ func main() {
 	var hostname = getHostname()
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
-	var be = backend.NewFileBackend(&cfg.Database)
+	m := metrics.New(&cfg.Metrics)
+
+	var be = backend.NewFileBackend(&cfg.Database, m)
 	var alerters = []alert.Alerter{alert.NewMailAlerter(&cfg.Mail),
 		alert.NewWebhooksAlerter()}
-	var svcs = service.NewServices(be, alerters)
+	var svcs = service.NewServices(be, alerters, m)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
@@ -102,6 +105,8 @@ func main() {
 
 	// Ensure that the 'all' view exists
 	svcs.GetClient().CreateOrUpdateView("all", "", "", "")
+
+	m.IncCounter("started.count")
 
 	signalHandler(be)
 }
