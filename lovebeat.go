@@ -30,6 +30,7 @@ const (
 var (
 	udpAddr     = flag.String("udp", ":8127", "UDP service address")
 	tcpAddr     = flag.String("tcp", ":8127", "TCP service address")
+	httpAddr    = flag.String("http", ":8080", "HTTP service address")
 	debug       = flag.Bool("debug", false, "Enable debug printouts")
 	showVersion = flag.Bool("version", false, "Print version string")
 	workDir     = flag.String("workdir", "work", "Working directory")
@@ -51,13 +52,13 @@ func signalHandler(be backend.Backend) {
 	}
 }
 
-func httpServer(port int16, svcs *service.Services) {
+func httpServer(bindAddr string, svcs *service.Services) {
 	rtr := mux.NewRouter()
 	httpapi.Register(rtr, svcs.GetClient())
 	dashboard.Register(rtr, svcs.GetClient())
 	http.Handle("/", rtr)
-	log.Info("HTTP server running on port %d\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	log.Info("HTTP listening on %s\n", bindAddr)
+	http.ListenAndServe(bindAddr, nil)
 }
 
 func getHostname() string {
@@ -99,7 +100,7 @@ func main() {
 	signal.Notify(signalchan, os.Interrupt)
 
 	go svcs.Monitor()
-	go httpServer(8080, svcs)
+	go httpServer(*httpAddr, svcs)
 	go udpapi.Listener(*udpAddr, svcs.GetClient())
 	go tcpapi.Listener(*tcpAddr, svcs.GetClient())
 
