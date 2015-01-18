@@ -28,12 +28,8 @@ const (
 )
 
 var (
-	udpAddr     = flag.String("udp", ":8127", "UDP service address")
-	tcpAddr     = flag.String("tcp", ":8127", "TCP service address")
-	httpAddr    = flag.String("http", ":8080", "HTTP service address")
 	debug       = flag.Bool("debug", false, "Enable debug printouts")
 	showVersion = flag.Bool("version", false, "Print version string")
-	workDir     = flag.String("workdir", "work", "Working directory")
 	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
 )
 
@@ -52,13 +48,13 @@ func signalHandler(be backend.Backend) {
 	}
 }
 
-func httpServer(bindAddr string, svcs *service.Services) {
+func httpServer(cfg *config.ConfigBind, svcs *service.Services) {
 	rtr := mux.NewRouter()
 	httpapi.Register(rtr, svcs.GetClient())
 	dashboard.Register(rtr, svcs.GetClient())
 	http.Handle("/", rtr)
-	log.Info("HTTP listening on %s\n", bindAddr)
-	http.ListenAndServe(bindAddr, nil)
+	log.Info("HTTP listening on %s\n", cfg.Listen)
+	http.ListenAndServe(cfg.Listen, nil)
 }
 
 func getHostname() string {
@@ -91,7 +87,7 @@ func main() {
 	var hostname = getHostname()
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 
-	var be = backend.NewFileBackend(*workDir)
+	var be = backend.NewFileBackend(&cfg.Database)
 	var alerters = []alert.Alerter{alert.NewMailAlerter(&cfg.Mail),
 		alert.NewWebhooksAlerter()}
 	var svcs = service.NewServices(be, alerters)
@@ -100,9 +96,9 @@ func main() {
 	signal.Notify(signalchan, os.Interrupt)
 
 	go svcs.Monitor()
-	go httpServer(*httpAddr, svcs)
-	go udpapi.Listener(*udpAddr, svcs.GetClient())
-	go tcpapi.Listener(*tcpAddr, svcs.GetClient())
+	go httpServer(&cfg.Http, svcs)
+	go udpapi.Listener(&cfg.Udp, svcs.GetClient())
+	go tcpapi.Listener(&cfg.Tcp, svcs.GetClient())
 
 	// Ensure that the 'all' view exists
 	svcs.GetClient().CreateOrUpdateView("all", "", "", "")

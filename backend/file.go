@@ -5,14 +5,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"github.com/boivie/lovebeat-go/config"
 	"github.com/op/go-logging"
 	"os"
-	"path/filepath"
 	"time"
 )
 
 const (
-	EXPIRY_INTERVAL    = 60
 	MAX_PENDING_WRITES = 1000
 )
 
@@ -27,7 +26,7 @@ var (
 )
 
 type FileBackend struct {
-	path     string
+	cfg      *config.ConfigDatabase
 	q        chan update
 	sync     chan chan bool
 	services map[string]*StoredService
@@ -88,20 +87,16 @@ func (f FileBackend) loadView(data []byte) {
 	f.views[view.Name] = view
 }
 
-func (f FileBackend) filename() string {
-	return filepath.Join(f.path, "lovebeat-data.gz")
-}
-
 func (f FileBackend) readAll() {
-	s := f.filename()
+	s := f.cfg.Filename
 	fi, err := os.Open(s)
 	if err != nil {
-		log.Error("Couldn't find any old database to read\n")
+		log.Error("Couldn't open '%s'\n", s)
 		return
 	}
 	gz, err := gzip.NewReader(fi)
 	if err != nil {
-		log.Error("Couldn't read from database\n")
+		log.Error("Couldn't read from '%s'\n", s)
 		return
 	}
 
@@ -119,13 +114,13 @@ func (f FileBackend) readAll() {
 			log.Info("Found unexpected line in database - skipping")
 		}
 	}
-	log.Info("Loaded %d services and %d views",
-		len(f.services), len(f.views))
+	log.Info("Loaded %d services and %d views from '%s'",
+		len(f.services), len(f.views), s)
 }
 
 func (f FileBackend) saveAll() {
 	start := time.Now()
-	s := f.filename() + ".new"
+	s := f.cfg.Filename + ".new"
 	fi, err := os.OpenFile(s, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
 		log.Error("Error creating file\n")
@@ -147,7 +142,7 @@ func (f FileBackend) saveAll() {
 	}
 	gz.Close()
 	fi.Close()
-	if err = os.Rename(s, f.filename()); err != nil {
+	if err = os.Rename(s, f.cfg.Filename); err != nil {
 		log.Error("Failed to overwrite database")
 		return
 	}
@@ -164,7 +159,7 @@ type update struct {
 }
 
 func (f FileBackend) fileSaver() {
-	period := time.Duration(EXPIRY_INTERVAL) * time.Second
+	period := time.Duration(f.cfg.Interval) * time.Second
 	ticker := time.NewTicker(period)
 	for {
 		select {
@@ -190,10 +185,10 @@ func (f FileBackend) fileSaver() {
 	}
 }
 
-func NewFileBackend(path string) Backend {
+func NewFileBackend(cfg *config.ConfigDatabase) Backend {
 	var q = make(chan update, MAX_PENDING_WRITES)
 	be := FileBackend{
-		path:     path,
+		cfg:      cfg,
 		q:        q,
 		sync:     make(chan chan bool),
 		services: make(map[string]*StoredService),

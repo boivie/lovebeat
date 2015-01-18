@@ -2,6 +2,7 @@ package tcpapi
 
 import (
 	"bufio"
+	"github.com/boivie/lovebeat-go/config"
 	"github.com/boivie/lovebeat-go/lineparser"
 	"github.com/boivie/lovebeat-go/service"
 	"github.com/op/go-logging"
@@ -20,8 +21,8 @@ func tcpHandle(c *net.TCPConn, iface service.ServiceIf) {
 	}
 }
 
-func Listener(bindAddr string, iface service.ServiceIf) {
-	address, _ := net.ResolveTCPAddr("tcp", bindAddr)
+func Listener(cfg *config.ConfigBind, iface service.ServiceIf) {
+	address, _ := net.ResolveTCPAddr("tcp", cfg.Listen)
 	log.Info("TCP listening on %s", address)
 	listener, err := net.ListenTCP("tcp", address)
 	if err != nil {
