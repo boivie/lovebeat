@@ -62,7 +62,7 @@ func ReadConfig(fname string) Config {
 			Listen: ":8080",
 		},
 		Database: ConfigDatabase{
-			Filename: "lovebeat-data.gz",
+			Filename: "lovebeat.db",
 			Interval: 60,
 		},
 		Metrics: ConfigMetrics{
