@@ -14,6 +14,7 @@ import (
 	"github.com/boivie/lovebeat-go/udpapi"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
+	"log/syslog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,9 +30,10 @@ const (
 )
 
 var (
-	debug       = flag.Bool("debug", false, "Enable debug printouts")
+	debug       = flag.Bool("debug", false, "Enable debug logs")
 	showVersion = flag.Bool("version", false, "Print version string")
 	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
+	useSyslog   = flag.Bool("syslog", false, "Log to syslog instead of stderr")
 )
 
 var (
@@ -69,12 +71,20 @@ func getHostname() string {
 func main() {
 	flag.Parse()
 
-	var format = logging.MustStringFormatter("%{level} %{message}")
-	logging.SetFormatter(format)
 	if *debug {
 		logging.SetLevel(logging.DEBUG, "lovebeat")
 	} else {
 		logging.SetLevel(logging.INFO, "lovebeat")
+	}
+	if *useSyslog {
+		var backend, err = logging.NewSyslogBackendPriority("lovebeat", syslog.LOG_DAEMON)
+		if err != nil {
+			panic(err)
+		}
+		logging.SetBackend(logging.AddModuleLevel(backend))
+	} else {
+		var format = logging.MustStringFormatter("%{level} %{message}")
+		logging.SetFormatter(format)
 	}
 	log.Debug("Debug logs enabled")
 
