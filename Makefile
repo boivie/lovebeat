@@ -1,3 +1,4 @@
+.PHONY: all
 all: lovebeat
 
 ASSETS := $(shell find data -print)
@@ -10,5 +11,6 @@ GO_FILES := $(shell find . -name "*.go" -print)
 lovebeat: dashboard/assets.go $(GO_FILES)
 	go build
 
+.PHONY: clean
 clean:
 	rm -f lovebeat dashboard/assets.go
