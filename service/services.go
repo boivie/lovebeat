@@ -141,7 +141,11 @@ func (svcs *Services) Monitor() {
 			c.Reply <- ret
 		case c := <-svcs.getServiceChan:
 			var ret = svcs.services[c.Name]
-			c.Reply <- ret.data
+			if ret == nil {
+				c.Reply <- nil
+			} else {
+				c.Reply <- &ret.data
+			}
 		case c := <-svcs.getViewsChan:
 			var ret []backend.StoredView
 			for _, v := range svcs.views {
@@ -150,7 +154,11 @@ func (svcs *Services) Monitor() {
 			c.Reply <- ret
 		case c := <-svcs.getViewChan:
 			var ret = svcs.views[c.Name]
-			c.Reply <- ret.data
+			if ret == nil {
+				c.Reply <- nil
+			} else {
+				c.Reply <- &ret.data
+			}
 		case c := <-svcs.deleteServiceCmdChan:
 			log.Info("SERVICE '%s', deleted", c)
 			var ts = now()

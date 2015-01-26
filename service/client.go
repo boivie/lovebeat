@@ -16,9 +16,9 @@ type ServiceIf interface {
 	CreateOrUpdateView(name string, regexp string, alertMail string, webhooks string)
 	DeleteView(name string)
 	GetServices(view string) []backend.StoredService
-	GetService(name string) backend.StoredService
+	GetService(name string) *backend.StoredService
 	GetViews() []backend.StoredView
-	GetView(name string) backend.StoredView
+	GetView(name string) *backend.StoredView
 }
 
 type upsertServiceCmd struct {
@@ -42,7 +42,7 @@ type getServicesCmd struct {
 
 type getServiceCmd struct {
 	Name  string
-	Reply chan backend.StoredService
+	Reply chan *backend.StoredService
 }
 
 type getViewsCmd struct {
@@ -51,7 +51,7 @@ type getViewsCmd struct {
 
 type getViewCmd struct {
 	Name  string
-	Reply chan backend.StoredView
+	Reply chan *backend.StoredView
 }
 
 type client struct {
@@ -91,8 +91,8 @@ func (c *client) GetServices(view string) []backend.StoredService {
 	return ret
 }
 
-func (c *client) GetService(name string) backend.StoredService {
-	myc := make(chan backend.StoredService)
+func (c *client) GetService(name string) *backend.StoredService {
+	myc := make(chan *backend.StoredService)
 	c.svcs.getServiceChan <- &getServiceCmd{Name: name, Reply: myc}
 	ret := <-myc
 	return ret
@@ -105,8 +105,8 @@ func (c *client) GetViews() []backend.StoredView {
 	return ret
 }
 
-func (c *client) GetView(name string) backend.StoredView {
-	myc := make(chan backend.StoredView)
+func (c *client) GetView(name string) *backend.StoredView {
+	myc := make(chan *backend.StoredView)
 	c.svcs.getViewChan <- &getViewCmd{Name: name, Reply: myc}
 	ret := <-myc
 	return ret

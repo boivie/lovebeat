@@ -118,6 +118,10 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 	v := client.GetView(name)
+	if v == nil {
+		http.NotFound(c, r)
+		return
+	}
 	js := JsonView{
 		Name:      v.Name,
 		State:     v.State,
@@ -181,6 +185,11 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 
 	var now = now()
 	var s = client.GetService(name)
+	if s == nil {
+		http.NotFound(c, r)
+		return
+	}
+
 	js := JsonService{
 		Name:           s.Name,
 		LastBeat:       s.LastBeat,
