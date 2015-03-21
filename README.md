@@ -15,10 +15,10 @@ If you're not used to building go applications, just follow these steps:
     $ mkdir go
     $ cd go
     $ export GOPATH=`pwd`
-    $ go get github.com/boivie/lovebeat-go
-    $ cd src/github.com/boivie/lovebeat-go
+    $ go get github.com/boivie/lovebeat
+    $ cd src/github.com/boivie/lovebeat
     $ go build
-    $ ./lovebeat-go
+    $ ./lovebeat
 
 Developers will want to install go-bindata to re-generate the assets from the
 data/ directory. Then type "make" to build it.

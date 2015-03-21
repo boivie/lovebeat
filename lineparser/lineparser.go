@@ -2,7 +2,7 @@ package lineparser
 
 import (
 	"bytes"
-	"github.com/boivie/lovebeat-go/service"
+	"github.com/boivie/lovebeat/service"
 	"github.com/op/go-logging"
 	"regexp"
 	"strconv"

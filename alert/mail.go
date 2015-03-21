@@ -2,7 +2,7 @@ package alert
 
 import (
 	"bytes"
-	"github.com/boivie/lovebeat-go/config"
+	"github.com/boivie/lovebeat/config"
 	"net/smtp"
 	"strings"
 	"text/template"

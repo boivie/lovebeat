@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/boivie/lovebeat-go/alert"
-	"github.com/boivie/lovebeat-go/backend"
-	"github.com/boivie/lovebeat-go/metrics"
+	"github.com/boivie/lovebeat/alert"
+	"github.com/boivie/lovebeat/backend"
+	"github.com/boivie/lovebeat/metrics"
 	"github.com/op/go-logging"
 
 	"regexp"

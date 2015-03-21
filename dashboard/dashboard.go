@@ -3,8 +3,8 @@ package dashboard
 import (
 	"bytes"
 	"fmt"
-	"github.com/boivie/lovebeat-go/backend"
-	"github.com/boivie/lovebeat-go/service"
+	"github.com/boivie/lovebeat/backend"
+	"github.com/boivie/lovebeat/service"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
 	"io"

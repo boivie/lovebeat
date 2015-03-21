@@ -1,7 +1,7 @@
 package alert
 
 import (
-	"github.com/boivie/lovebeat-go/backend"
+	"github.com/boivie/lovebeat/backend"
 	"strings"
 	"testing"
 )

@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
-	"github.com/boivie/lovebeat-go/service"
+	"github.com/boivie/lovebeat/service"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
 	"io"

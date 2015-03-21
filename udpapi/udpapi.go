@@ -1,9 +1,9 @@
 package udpapi
 
 import (
-	"github.com/boivie/lovebeat-go/config"
-	"github.com/boivie/lovebeat-go/lineparser"
-	"github.com/boivie/lovebeat-go/service"
+	"github.com/boivie/lovebeat/config"
+	"github.com/boivie/lovebeat/lineparser"
+	"github.com/boivie/lovebeat/service"
 	"github.com/op/go-logging"
 	"net"
 )

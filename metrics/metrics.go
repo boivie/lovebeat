@@ -2,7 +2,7 @@ package metrics
 
 import (
 	"fmt"
-	"github.com/boivie/lovebeat-go/config"
+	"github.com/boivie/lovebeat/config"
 	"github.com/op/go-logging"
 	"net"
 )

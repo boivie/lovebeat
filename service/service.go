@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/boivie/lovebeat-go/backend"
+	"github.com/boivie/lovebeat/backend"
 	"time"
 )
 
