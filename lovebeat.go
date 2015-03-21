@@ -97,6 +97,8 @@ func main() {
 
 	var hostname = getHostname()
 	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
+	wd, _ := os.Getwd()
+	log.Info("Running from %s", wd)
 
 	m := metrics.New(&cfg.Metrics)
 
