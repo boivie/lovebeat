@@ -7,10 +7,14 @@ Other use-cases include creating triggers for manual stuff that you haven't auto
 
 Lovebeat provide a lot of different APIs. We recommend the "statsd"-compatible UDP protocol when adding triggers to your software for minimum impact on your performance. A TCP protocol if you don't trust UDP and HTTP protocol for curl. And don't forget the web UI.
 
-Installation
-============
+Installation and running
+========================
 
-If you're not used to building go applications, just follow these steps:
+If you can use docker, simply:
+
+    $ docker run -it -p 8127:8127/udp -p 8127:8127/tcp -p 8080:8080 boivie/lovebeat
+
+If you have go installed, simply:
 
     $ mkdir go
     $ cd go
@@ -22,10 +26,6 @@ If you're not used to building go applications, just follow these steps:
 
 Developers will want to install go-bindata to re-generate the assets from the
 data/ directory. Then type "make" to build it.
-
-Running
-=======
-
 
 Key Concepts
 ============
@@ -143,6 +143,12 @@ documented.
 Note that lovebeat by default reads /etc/lovebeat.cfg but you can override
 this by specifying the '-config <file>' argument when starting lovebeat. If
 no configuration file is specified, sensible defaults are used.
+
+Building a docker image from source
+===================================
+
+     $ docker run --rm -v $(pwd):/src -v /var/run/docker.sock:/var/run/docker.sock centurylink/golang-builder
+
 
 Notable software included
 =========================
