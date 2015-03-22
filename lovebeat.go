@@ -104,8 +104,9 @@ func main() {
 
 	m := metrics.New(&cfg.Metrics)
 
+	service.RegisterMetrics(bus, m)
 	var be = backend.NewFileBackend(&cfg.Database, m)
-	var svcs = service.NewServices(be, m, bus)
+	var svcs = service.NewServices(be, bus)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)

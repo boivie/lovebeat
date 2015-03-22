@@ -4,7 +4,6 @@ import (
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/eventbus"
-	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
 
@@ -31,14 +30,7 @@ const (
 )
 
 var (
-	log      = logging.MustGetLogger("lovebeat")
-	counters = metrics.NopMetrics()
-	StateMap = map[string]int{
-		model.STATE_PAUSED:  0,
-		model.STATE_OK:      1,
-		model.STATE_WARNING: 2,
-		model.STATE_ERROR:   3,
-	}
+	log = logging.MustGetLogger("lovebeat")
 )
 
 func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
@@ -47,7 +39,6 @@ func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
 	if service.data.State != ref.data.State {
 		log.Info("SERVICE '%s', state %s -> %s",
 			service.name(), ref.data.State, service.data.State)
-		counters.SetGauge("service.state."+service.name(), int(StateMap[service.data.State]))
 		svcs.bus.Publish(ServiceStateChangedEvent{
 			service.data,
 			ref.data.State,
@@ -77,7 +68,6 @@ func (svcs *Services) updateView(view View, ts int64) {
 		log.Info("VIEW '%s', %d: state %s -> %s",
 			view.name(), view.data.IncidentNbr, ref.data.State,
 			view.data.State)
-		counters.SetGauge("view.state."+view.name(), int(StateMap[view.data.State]))
 
 		if view.hasAlert(&ref) {
 			// TODO: Send alert
@@ -250,8 +240,7 @@ func (svcs *Services) reload(cfg config.Config) {
 	}
 }
 
-func NewServices(beiface backend.Backend, m metrics.Metrics, bus *eventbus.EventBus) *Services {
-	counters = m
+func NewServices(beiface backend.Backend, bus *eventbus.EventBus) *Services {
 	svcs := new(Services)
 	svcs.bus = bus
 	svcs.be = beiface
