@@ -26,4 +26,5 @@ type View struct {
 	Regexp      string
 	LastUpdated int64
 	IncidentNbr int
+	Alerts      []string
 }

@@ -69,9 +69,6 @@ func (svcs *Services) updateView(view View, ts int64) {
 			view.name(), view.data.IncidentNbr, ref.data.State,
 			view.data.State)
 
-		if view.hasAlert(&ref) {
-			// TODO: Send alert
-		}
 		svcs.bus.Publish(ViewStateChangedEvent{view.data, ref.data.State, view.data.State})
 	}
 }
@@ -190,6 +187,7 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 			Name:   "all",
 			Regexp: "",
 			State:  model.STATE_PAUSED,
+			Alerts: make([]string, 0),
 		},
 		ree: regexp.MustCompile(""),
 	})
@@ -202,6 +200,7 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 				Name:   name,
 				Regexp: v.Regexp,
 				State:  model.STATE_PAUSED,
+				Alerts: v.Alerts,
 			},
 			ree: ree,
 		}

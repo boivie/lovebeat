@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/model"
 	"regexp"
@@ -42,24 +41,4 @@ func (v *View) save(be backend.Backend, ref *View, ts int64) {
 		v.data.IncidentNbr += 1
 	}
 	be.SaveView(&v.data)
-}
-
-func (v *View) hasAlert(ref *View) bool {
-	return v.data.State != ref.data.State
-}
-
-func (v *View) getAlert(ref *View) alert.Alert {
-	var services = make([]model.Service, 0, 10)
-	for _, s := range v.services {
-		if (s.data.State == model.STATE_WARNING ||
-			s.data.State == model.STATE_ERROR) &&
-			v.contains(s.name()) {
-			services = append(services, s.data)
-			if len(services) == 10 {
-				break
-			}
-		}
-	}
-
-	return alert.Alert{ref.data, v.data, services}
 }

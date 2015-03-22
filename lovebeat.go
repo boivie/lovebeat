@@ -3,6 +3,7 @@ package main // import "github.com/boivie/lovebeat"
 import (
 	"flag"
 	"fmt"
+	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
@@ -107,6 +108,8 @@ func main() {
 	service.RegisterMetrics(bus, m)
 	var be = backend.NewFileBackend(&cfg.Database, m)
 	var svcs = service.NewServices(be, bus)
+
+	alert.RegisterAlerters(bus, cfg)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
