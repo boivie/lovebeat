@@ -75,6 +75,6 @@ func New(cfg *config.ConfigMetrics) Metrics {
 			return m
 		}
 	}
-	log.Info("Not metrics reporting configured")
+	log.Info("No metrics reporting configured")
 	return NopMetrics()
 }
