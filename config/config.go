@@ -3,7 +3,9 @@ package config
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/op/go-logging"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 type Config struct {
@@ -58,7 +60,17 @@ func exists(path string) (bool, error) {
 	}
 	return false, err
 }
-func ReadConfig(fname string) Config {
+
+func readFile(conf *Config, fname string) {
+	if e, _ := exists(fname); e {
+		log.Info("Reading configuration file %s", fname)
+		if _, err := toml.DecodeFile(fname, conf); err != nil {
+			log.Error("Failed to parse configuration file %s", fname, err)
+		}
+	}
+}
+
+func ReadConfig(fname string, dirname string) Config {
 	var conf = Config{
 		Mail: ConfigMail{
 			From:   "lovebeat@example.com",
@@ -82,9 +94,14 @@ func ReadConfig(fname string) Config {
 			Prefix: "lovebeat",
 		},
 	}
-	if e, _ := exists(fname); e {
-		if _, err := toml.DecodeFile(fname, &conf); err != nil {
-			log.Error("Failed to parse configuration file", err)
+	readFile(&conf, fname)
+	if dirname != "" {
+		files, err := ioutil.ReadDir(dirname)
+		if err == nil {
+			for _, f := range files {
+				path := filepath.Join(dirname, f.Name())
+				readFile(&conf, path)
+			}
 		}
 	}
 	return conf

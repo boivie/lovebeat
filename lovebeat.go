@@ -34,6 +34,7 @@ var (
 	debug       = flag.Bool("debug", false, "Enable debug logs")
 	showVersion = flag.Bool("version", false, "Print version string")
 	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
+	cfgDir      = flag.String("config-dir", "", "Configuration directory")
 	useSyslog   = flag.Bool("syslog", false, "Log to syslog instead of stderr")
 )
 
@@ -94,13 +95,11 @@ func main() {
 		return
 	}
 
-	var cfg = config.ReadConfig(*cfgFile)
-
 	var hostname = getHostname()
-	log.Info("Lovebeat v%s started as host %s, PID %d", VERSION, hostname, os.Getpid())
 	wd, _ := os.Getwd()
-	log.Info("Running from %s", wd)
+	log.Info("Lovebeat v%s started as host %s, PID %d, running from %s", VERSION, hostname, os.Getpid(), wd)
 
+	var cfg = config.ReadConfig(*cfgFile, *cfgDir)
 	bus := eventbus.New()
 
 	m := metrics.New(&cfg.Metrics)
