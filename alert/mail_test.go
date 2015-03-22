@@ -1,15 +1,15 @@
 package alert
 
 import (
-	"github.com/boivie/lovebeat/backend"
+	"github.com/boivie/lovebeat/model"
 	"strings"
 	"testing"
 )
 
 func TestSimpleSubject(t *testing.T) {
-	v1 := backend.StoredView{Name: "TestView", State: "ok", IncidentNbr: 1}
-	v2 := backend.StoredView{Name: "TestView", State: "error", IncidentNbr: 1}
-	alert := Alert{v1, v2, []backend.StoredService{}}
+	v1 := model.View{Name: "TestView", State: "ok", IncidentNbr: 1}
+	v2 := model.View{Name: "TestView", State: "error", IncidentNbr: 1}
+	alert := Alert{v1, v2, []model.Service{}}
 	mail := createMail(alert)
 	if mail.Subject != "[LOVEBEAT] TestView-1" {
 		t.Errorf("Was: %v", mail.Subject)
@@ -17,9 +17,9 @@ func TestSimpleSubject(t *testing.T) {
 }
 
 func TestSimpleBody(t *testing.T) {
-	v1 := backend.StoredView{Name: "TestView", State: "ok", IncidentNbr: 1}
-	v2 := backend.StoredView{Name: "TestView", State: "error", IncidentNbr: 1}
-	alert := Alert{v1, v2, []backend.StoredService{}}
+	v1 := model.View{Name: "TestView", State: "ok", IncidentNbr: 1}
+	v2 := model.View{Name: "TestView", State: "error", IncidentNbr: 1}
+	alert := Alert{v1, v2, []model.Service{}}
 	mail := createMail(alert)
 	ref := "The status for view 'TestView' has changed from 'OK' to 'ERROR'"
 
@@ -29,11 +29,11 @@ func TestSimpleBody(t *testing.T) {
 }
 
 func TestBodyWithServices(t *testing.T) {
-	v1 := backend.StoredView{Name: "TestView", State: "ok", IncidentNbr: 1}
-	v2 := backend.StoredView{Name: "TestView", State: "error", IncidentNbr: 1}
-	svc1 := backend.StoredService{Name: "Svc1", State: "error"}
-	svc2 := backend.StoredService{Name: "Svc2", State: "warning"}
-	alert := Alert{v1, v2, []backend.StoredService{svc1, svc2}}
+	v1 := model.View{Name: "TestView", State: "ok", IncidentNbr: 1}
+	v2 := model.View{Name: "TestView", State: "error", IncidentNbr: 1}
+	svc1 := model.Service{Name: "Svc1", State: "error"}
+	svc2 := model.Service{Name: "Svc2", State: "warning"}
+	alert := Alert{v1, v2, []model.Service{svc1, svc2}}
 	mail := createMail(alert)
 
 	if !strings.Contains(mail.Body, "* Svc1 - ERROR\n") {

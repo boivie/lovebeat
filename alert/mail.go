@@ -3,6 +3,7 @@ package alert
 import (
 	"bytes"
 	"github.com/boivie/lovebeat/config"
+	"github.com/boivie/lovebeat/service"
 	"net/smtp"
 	"strings"
 	"text/template"
@@ -19,14 +20,9 @@ type mailAlerter struct {
 }
 
 const (
-	TMPL_BODY = `The status for view '{{.Current.Name}}' has changed from '{{.Previous.State | ToUpper}}' to '{{.Current.State | ToUpper}}'
-
-Services with failures (max 10):
-
-{{range .Services}}  * {{.Name}} - {{.State | ToUpper}}
-{{else}}  None. All are OK.{{end}}
+	TMPL_BODY = `The status for view '{{.View.Name}}' has changed from '{{.Previous | ToUpper}}' to '{{.Current | ToUpper}}'
 `
-	TMPL_SUBJECT = `[LOVEBEAT] {{.Current.Name}}-{{.Current.IncidentNbr}}`
+	TMPL_SUBJECT = `[LOVEBEAT] {{.View.Name}}-{{.View.IncidentNbr}}`
 	TMPL_EMAIL   = `From: {{.From}}
 To: {{.To}}
 Subject: {{.Subject}}
@@ -55,22 +51,24 @@ func renderTemplate(tmpl string, context map[string]interface{}) string {
 	return doc.String()
 }
 
-func createMail(alert Alert) mail {
+func createMail(address string, ev service.ViewStateChangedEvent) mail {
 	var context = make(map[string]interface{})
-	context["Previous"] = alert.Previous
-	context["Current"] = alert.Current
-	context["Services"] = alert.ServicesInError
+	context["View"] = ev.View
+	context["Previous"] = ev.Previous
+	context["Current"] = ev.Current
 
 	var body = renderTemplate(TMPL_BODY, context)
 	var subject = renderTemplate(TMPL_SUBJECT, context)
-	return mail{To: alert.Current.AlertMail,
+	return mail{
+		To:      address,
 		Subject: subject,
-		Body:    body}
+		Body:    body,
+	}
 }
 
-func (m mailAlerter) Notify(alert Alert) {
-	if alert.Current.AlertMail != "" {
-		m.cmds <- createMail(alert)
+func (m mailAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
+	if cfg.Mail != "" {
+		m.cmds <- createMail(cfg.Mail, ev)
 	}
 }
 
@@ -97,10 +95,10 @@ func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 
 }
 
-func NewMailAlerter(cfg *config.ConfigMail) Alerter {
-	log.Debug("Sending mail via %s, from %s", cfg.Server, cfg.From)
+func NewMailAlerter(cfg config.Config) Alerter {
+	log.Debug("Sending mail via %s, from %s", cfg.Mail.Server, cfg.Mail.From)
 	var q = make(chan mail, 100)
 	var ma = mailAlerter{cmds: q}
-	go ma.Worker(q, cfg)
+	go ma.Worker(q, &cfg.Mail)
 	return &ma
 }

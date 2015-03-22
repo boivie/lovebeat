@@ -1,6 +1,8 @@
 package alert
 
 import (
+	"github.com/boivie/lovebeat/config"
+	"github.com/boivie/lovebeat/service"
 	"github.com/franela/goreq"
 	"strings"
 	"time"
@@ -22,13 +24,14 @@ type webhookData struct {
 	IncidentNbr int    `json:"incident_number"`
 }
 
-func (m webhooksAlerter) Notify(alert Alert) {
-	if alert.Current.Webhooks != "" {
-		js := webhookData{Name: alert.Current.Name,
-			FromState:   strings.ToUpper(alert.Previous.State),
-			ToState:     strings.ToUpper(alert.Current.State),
-			IncidentNbr: alert.Current.IncidentNbr}
-		m.cmds <- webhook{Url: alert.Current.Webhooks, Data: js}
+func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
+	if cfg.Webhook != "" {
+		js := webhookData{
+			Name:        ev.View.Name,
+			FromState:   strings.ToUpper(ev.Previous),
+			ToState:     strings.ToUpper(ev.Current),
+			IncidentNbr: ev.View.IncidentNbr}
+		m.cmds <- webhook{Url: cfg.Webhook, Data: js}
 	}
 }
 
@@ -58,7 +61,7 @@ func (m webhooksAlerter) Worker(q chan webhook) {
 
 }
 
-func NewWebhooksAlerter() Alerter {
+func NewWebhooksAlerter(cfg config.Config) Alerter {
 	goreq.SetConnectTimeout(5 * time.Second)
 	var q = make(chan webhook, 100)
 	var w = webhooksAlerter{cmds: q}

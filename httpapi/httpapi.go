@@ -61,40 +61,10 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "{}\n")
 }
 
-func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	view_name := params["name"]
-	var expr = r.FormValue("regexp")
-	if expr == "" {
-		log.Error("No regexp provided")
-		return
-	}
-
-	client.CreateOrUpdateView(view_name, expr, r.FormValue("alert_mail"),
-		r.FormValue("webhooks"))
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", "3")
-	io.WriteString(c, "{}\n")
-}
-
-func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	name := params["name"]
-
-	client.DeleteView(name)
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", "3")
-	io.WriteString(c, "{}\n")
-}
-
 type JsonView struct {
-	Name      string `json:"name"`
-	State     string `json:"state"`
-	Regexp    string `json:"regexp,omitempty"`
-	AlertMail string `json:"alert_mail"`
-	Webhooks  string `json:"webhooks"`
+	Name   string `json:"name"`
+	State  string `json:"state"`
+	Regexp string `json:"regexp,omitempty"`
 }
 
 func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
@@ -123,11 +93,9 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 	js := JsonView{
-		Name:      v.Name,
-		State:     v.State,
-		Regexp:    v.Regexp,
-		AlertMail: v.AlertMail,
-		Webhooks:  v.Webhooks,
+		Name:   v.Name,
+		State:  v.State,
+		Regexp: v.Regexp,
 	}
 
 	var encoded, _ = json.MarshalIndent(js, "", "  ")
@@ -228,10 +196,6 @@ func Register(rtr *mux.Router, client_ service.ServiceIf) {
 		DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/",
 		GetViewsHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}",
-		CreateViewHandler).Methods("POST")
-	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}",
-		DeleteViewHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}",
 		GetViewHandler).Methods("GET")
 }

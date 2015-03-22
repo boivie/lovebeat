@@ -7,6 +7,7 @@ import (
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
+	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/httpapi"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/service"
@@ -100,23 +101,23 @@ func main() {
 	wd, _ := os.Getwd()
 	log.Info("Running from %s", wd)
 
+	bus := eventbus.New()
+
 	m := metrics.New(&cfg.Metrics)
 
+	service.RegisterMetrics(bus, m)
 	var be = backend.NewFileBackend(&cfg.Database, m)
-	var alerters = []alert.Alerter{alert.NewMailAlerter(&cfg.Mail),
-		alert.NewWebhooksAlerter()}
-	var svcs = service.NewServices(be, alerters, m)
+	var svcs = service.NewServices(be, bus)
+
+	alert.RegisterAlerters(bus, cfg)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
 
-	go svcs.Monitor()
+	go svcs.Monitor(cfg)
 	go httpServer(&cfg.Http, svcs)
 	go udpapi.Listener(&cfg.Udp, svcs.GetClient())
 	go tcpapi.Listener(&cfg.Tcp, svcs.GetClient())
-
-	// Ensure that the 'all' view exists
-	svcs.GetClient().CreateOrUpdateView("all", "", "", "")
 
 	m.IncCounter("started.count")
 

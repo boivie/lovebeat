@@ -2,24 +2,25 @@ package service
 
 import (
 	"github.com/boivie/lovebeat/backend"
+	"github.com/boivie/lovebeat/model"
 	"time"
 )
 
 type Service struct {
-	data backend.StoredService
+	data model.Service
 }
 
 func newService(name string) *Service {
 	return &Service{
-		data: backend.StoredService{
+		data: model.Service{
 			Name:           name,
 			LastValue:      -1,
 			LastBeat:       -1,
-			PreviousBeats:  make([]int64, backend.PREVIOUS_BEATS_COUNT),
+			PreviousBeats:  make([]int64, model.PREVIOUS_BEATS_COUNT),
 			LastUpdated:    -1,
 			WarningTimeout: -1,
 			ErrorTimeout:   -1,
-			State:          backend.STATE_PAUSED,
+			State:          model.STATE_PAUSED,
 		},
 	}
 }
@@ -49,14 +50,14 @@ func (s *Service) update(ts int64) {
 }
 
 func (s *Service) stateAt(ts int64) string {
-	var state = backend.STATE_OK
+	var state = model.STATE_OK
 	var warningExpiry = s.getExpiry(s.data.WarningTimeout)
 	var errorExpiry = s.getExpiry(s.data.ErrorTimeout)
 	if warningExpiry > 0 && ts >= warningExpiry {
-		state = backend.STATE_WARNING
+		state = model.STATE_WARNING
 	}
 	if errorExpiry > 0 && ts >= errorExpiry {
-		state = backend.STATE_ERROR
+		state = model.STATE_ERROR
 	}
 	return state
 }
@@ -72,20 +73,5 @@ func (s *Service) registerBeat(ts int64) {
 }
 
 func (s *Service) save(be backend.Backend, ref *Service, ts int64) {
-	if s.data.State != ref.data.State {
-		log.Info("SERVICE '%s', state %s -> %s",
-			s.name(), ref.data.State, s.data.State)
-		counters.SetGauge("service.state."+s.name(), int(StateMap[s.data.State]))
-	}
-	if s.data.WarningTimeout != ref.data.WarningTimeout {
-		log.Info("SERVICE '%s', warn %d -> %d",
-			s.name(), ref.data.WarningTimeout,
-			s.data.WarningTimeout)
-	}
-	if s.data.ErrorTimeout != ref.data.ErrorTimeout {
-		log.Info("SERVICE '%s', err %d -> %d",
-			s.name(), ref.data.ErrorTimeout,
-			s.data.ErrorTimeout)
-	}
 	be.SaveService(&s.data)
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/metrics"
+	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
 	"os"
 	"time"
@@ -31,8 +32,8 @@ type FileBackend struct {
 	cfg      *config.ConfigDatabase
 	q        chan update
 	sync     chan chan bool
-	services map[string]*StoredService
-	views    map[string]*StoredView
+	services map[string]*model.Service
+	views    map[string]*model.View
 }
 
 func (f FileBackend) Sync() {
@@ -41,16 +42,16 @@ func (f FileBackend) Sync() {
 	<-reply
 }
 
-func (f FileBackend) SaveService(service *StoredService) {
+func (f FileBackend) SaveService(service *model.Service) {
 	f.q <- update{setService: service}
 }
 
-func (f FileBackend) SaveView(view *StoredView) {
+func (f FileBackend) SaveView(view *model.View) {
 	f.q <- update{setView: view}
 }
 
-func (r FileBackend) LoadServices() []*StoredService {
-	v := make([]*StoredService, len(r.services))
+func (r FileBackend) LoadServices() []*model.Service {
+	v := make([]*model.Service, len(r.services))
 	idx := 0
 	for _, value := range r.services {
 		v[idx] = value
@@ -59,12 +60,10 @@ func (r FileBackend) LoadServices() []*StoredService {
 	return v
 }
 
-func (r FileBackend) LoadViews() []*StoredView {
-	v := make([]*StoredView, len(r.views))
-	idx := 0
+func (r FileBackend) LoadViews() map[string]*model.View {
+	v := make(map[string]*model.View)
 	for _, value := range r.views {
-		v[idx] = value
-		idx++
+		v[value.Name] = value
 	}
 	return v
 }
@@ -78,13 +77,13 @@ func (f FileBackend) DeleteView(name string) {
 }
 
 func (f FileBackend) loadService(data []byte) {
-	service := &StoredService{}
+	service := &model.Service{}
 	json.Unmarshal(data, &service)
 	f.services[service.Name] = service
 }
 
 func (f FileBackend) loadView(data []byte) {
-	view := &StoredView{}
+	view := &model.View{}
 	json.Unmarshal(data, &view)
 	f.views[view.Name] = view
 }
@@ -159,8 +158,8 @@ func (f FileBackend) saveAll() {
 }
 
 type update struct {
-	setService    *StoredService
-	setView       *StoredView
+	setService    *model.Service
+	setView       *model.View
 	deleteService string
 	deleteView    string
 }
@@ -199,8 +198,8 @@ func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics) Backend {
 		cfg:      cfg,
 		q:        q,
 		sync:     make(chan chan bool),
-		services: make(map[string]*StoredService),
-		views:    make(map[string]*StoredView),
+		services: make(map[string]*model.Service),
+		views:    make(map[string]*model.View),
 	}
 	be.readAll()
 	go be.fileSaver()
