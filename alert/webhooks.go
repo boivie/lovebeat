@@ -22,14 +22,12 @@ type webhookData struct {
 	IncidentNbr int    `json:"incident_number"`
 }
 
-func (m webhooksAlerter) Notify(alert Alert) {
-	if alert.Current.Webhooks != "" {
-		js := webhookData{Name: alert.Current.Name,
-			FromState:   strings.ToUpper(alert.Previous.State),
-			ToState:     strings.ToUpper(alert.Current.State),
-			IncidentNbr: alert.Current.IncidentNbr}
-		m.cmds <- webhook{Url: alert.Current.Webhooks, Data: js}
-	}
+func (m webhooksAlerter) Notify(url string, alert Alert) {
+	js := webhookData{Name: alert.Current.Name,
+		FromState:   strings.ToUpper(alert.Previous.State),
+		ToState:     strings.ToUpper(alert.Current.State),
+		IncidentNbr: alert.Current.IncidentNbr}
+	m.cmds <- webhook{Url: url, Data: js}
 }
 
 func (m webhooksAlerter) Worker(q chan webhook) {
@@ -58,6 +56,7 @@ func (m webhooksAlerter) Worker(q chan webhook) {
 
 }
 
+/*
 func NewWebhooksAlerter() Alerter {
 	goreq.SetConnectTimeout(5 * time.Second)
 	var q = make(chan webhook, 100)
@@ -65,3 +64,4 @@ func NewWebhooksAlerter() Alerter {
 	go w.Worker(q)
 	return &w
 }
+*/

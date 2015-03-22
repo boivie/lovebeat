@@ -25,7 +25,5 @@ type View struct {
 	State       string
 	Regexp      string
 	LastUpdated int64
-	AlertMail   string
-	Webhooks    string
 	IncidentNbr int
 }

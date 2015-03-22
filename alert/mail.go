@@ -55,7 +55,7 @@ func renderTemplate(tmpl string, context map[string]interface{}) string {
 	return doc.String()
 }
 
-func createMail(alert Alert) mail {
+func createMail(address string, alert Alert) mail {
 	var context = make(map[string]interface{})
 	context["Previous"] = alert.Previous
 	context["Current"] = alert.Current
@@ -63,16 +63,12 @@ func createMail(alert Alert) mail {
 
 	var body = renderTemplate(TMPL_BODY, context)
 	var subject = renderTemplate(TMPL_SUBJECT, context)
-	return mail{To: alert.Current.AlertMail,
+	return mail{To: address,
 		Subject: subject,
 		Body:    body}
 }
 
-func (m mailAlerter) Notify(alert Alert) {
-	if alert.Current.AlertMail != "" {
-		m.cmds <- createMail(alert)
-	}
-}
+// TODO: call createMail
 
 func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 	for {
@@ -97,6 +93,7 @@ func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 
 }
 
+/*
 func NewMailAlerter(cfg *config.ConfigMail) Alerter {
 	log.Debug("Sending mail via %s, from %s", cfg.Server, cfg.From)
 	var q = make(chan mail, 100)
@@ -104,3 +101,4 @@ func NewMailAlerter(cfg *config.ConfigMail) Alerter {
 	go ma.Worker(q, cfg)
 	return &ma
 }
+*/

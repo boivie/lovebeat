@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/model"
@@ -13,7 +12,6 @@ import (
 
 type Services struct {
 	be                   backend.Backend
-	alerters             []alert.Alerter
 	services             map[string]*Service
 	views                map[string]*View
 	upsertServiceCmdChan chan *upsertServiceCmd
@@ -40,13 +38,6 @@ var (
 	}
 )
 
-func (svcs *Services) sendAlert(a alert.Alert) {
-	for _, alerter := range svcs.alerters {
-		alerter.Notify(a)
-	}
-
-}
-
 func (svcs *Services) updateViews(ts int64, serviceName string) {
 	for _, view := range svcs.views {
 		if view.contains(serviceName) {
@@ -55,7 +46,7 @@ func (svcs *Services) updateViews(ts int64, serviceName string) {
 			if view.data.State != ref.data.State {
 				view.save(svcs.be, &ref, ts)
 				if view.hasAlert(&ref) {
-					svcs.sendAlert(view.getAlert(&ref))
+					// TODO: Send alert
 				}
 			}
 		}
@@ -209,11 +200,10 @@ func (svcs *Services) reload() {
 	}
 }
 
-func NewServices(beiface backend.Backend, alerters []alert.Alerter, m metrics.Metrics) *Services {
+func NewServices(beiface backend.Backend, m metrics.Metrics) *Services {
 	counters = m
 	svcs := new(Services)
 	svcs.be = beiface
-	svcs.alerters = alerters
 	svcs.deleteServiceCmdChan = make(chan string, 5)
 	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)

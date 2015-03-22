@@ -14,7 +14,3 @@ type Alert struct {
 	Current         model.View
 	ServicesInError []model.Service
 }
-
-type Alerter interface {
-	Notify(alert Alert)
-}

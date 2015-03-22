@@ -13,6 +13,8 @@ type Config struct {
 	Http     ConfigBind
 	Database ConfigDatabase
 	Metrics  ConfigMetrics
+	Alerts   map[string]ConfigAlert
+	Views    map[string]ConfigView
 }
 
 type ConfigMail struct {
@@ -32,6 +34,16 @@ type ConfigDatabase struct {
 type ConfigMetrics struct {
 	Server string
 	Prefix string
+}
+
+type ConfigAlert struct {
+	Mail    string
+	Webhook string
+}
+
+type ConfigView struct {
+	Regexp string
+	Alerts []string
 }
 
 var log = logging.MustGetLogger("lovebeat")

@@ -62,11 +62,9 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 type JsonView struct {
-	Name      string `json:"name"`
-	State     string `json:"state"`
-	Regexp    string `json:"regexp,omitempty"`
-	AlertMail string `json:"alert_mail"`
-	Webhooks  string `json:"webhooks"`
+	Name   string `json:"name"`
+	State  string `json:"state"`
+	Regexp string `json:"regexp,omitempty"`
 }
 
 func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
@@ -95,11 +93,9 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 	js := JsonView{
-		Name:      v.Name,
-		State:     v.State,
-		Regexp:    v.Regexp,
-		AlertMail: v.AlertMail,
-		Webhooks:  v.Webhooks,
+		Name:   v.Name,
+		State:  v.State,
+		Regexp: v.Regexp,
 	}
 
 	var encoded, _ = json.MarshalIndent(js, "", "  ")

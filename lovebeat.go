@@ -3,7 +3,6 @@ package main // import "github.com/boivie/lovebeat"
 import (
 	"flag"
 	"fmt"
-	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
@@ -103,9 +102,7 @@ func main() {
 	m := metrics.New(&cfg.Metrics)
 
 	var be = backend.NewFileBackend(&cfg.Database, m)
-	var alerters = []alert.Alerter{alert.NewMailAlerter(&cfg.Mail),
-		alert.NewWebhooksAlerter()}
-	var svcs = service.NewServices(be, alerters, m)
+	var svcs = service.NewServices(be, m)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
