@@ -17,8 +17,6 @@ type Services struct {
 	views                map[string]*View
 	upsertServiceCmdChan chan *upsertServiceCmd
 	deleteServiceCmdChan chan string
-	deleteViewCmdChan    chan string
-	upsertViewCmdChan    chan *upsertViewCmd
 	getServicesChan      chan *getServicesCmd
 	getServiceChan       chan *getServiceCmd
 	getViewsChan         chan *getViewsCmd
@@ -83,26 +81,6 @@ func (svcs *Services) getView(name string) *View {
 	return s
 }
 
-func (svcs *Services) createView(name string, expr string, alertMail string,
-	webhooks string, ts int64) {
-	var ree, err = regexp.Compile(expr)
-	if err != nil {
-		log.Error("Invalid regexp: %s", err)
-		return
-	}
-
-	var view = svcs.getView(name)
-	var ref = *view
-	view.data.Regexp = expr
-	view.ree = ree
-	view.data.AlertMail = alertMail
-	view.data.Webhooks = webhooks
-	view.update(ts)
-	view.save(svcs.be, &ref, ts)
-
-	log.Info("VIEW '%s' created or updated.", name)
-}
-
 func (svcs *Services) Monitor() {
 	period := time.Duration(EXPIRY_INTERVAL) * time.Second
 	ticker := time.NewTicker(period)
@@ -121,14 +99,6 @@ func (svcs *Services) Monitor() {
 				s.save(svcs.be, &ref, ts)
 				svcs.updateViews(ts, s.name())
 			}
-		case c := <-svcs.upsertViewCmdChan:
-			log.Debug("Create or update view %s", c.View)
-			svcs.createView(c.View, c.Regexp, c.AlertMail,
-				c.Webhooks, now())
-		case c := <-svcs.deleteViewCmdChan:
-			log.Info("VIEW '%s', deleted", c)
-			delete(svcs.views, c)
-			svcs.be.DeleteView(c)
 		case c := <-svcs.getServicesChan:
 			var ret []backend.StoredService
 			var view, ok = svcs.views[c.View]
@@ -202,6 +172,17 @@ func (svcs *Services) Monitor() {
 	}
 }
 
+func (svcs *Services) createAllView() *View {
+	var ree, _ = regexp.Compile("")
+	return &View{
+		services: svcs.services,
+		data: backend.StoredView{
+			Name: "all",
+		},
+		ree: ree,
+	}
+}
+
 func (svcs *Services) reload() {
 	svcs.services = make(map[string]*Service)
 	svcs.views = make(map[string]*View)
@@ -215,11 +196,16 @@ func (svcs *Services) reload() {
 		svcs.services[s.Name] = svc
 	}
 
+	svcs.views["all"] = svcs.createAllView()
+
 	for _, v := range svcs.be.LoadViews() {
 		var ree, _ = regexp.Compile(v.Regexp)
-		svcs.views[v.Name] = &View{services: svcs.services, data: *v, ree: ree}
+		svcs.views[v.Name] = &View{
+			services: svcs.services,
+			data:     *v,
+			ree:      ree,
+		}
 	}
-
 }
 
 func NewServices(beiface backend.Backend, alerters []alert.Alerter, m metrics.Metrics) *Services {
@@ -229,8 +215,6 @@ func NewServices(beiface backend.Backend, alerters []alert.Alerter, m metrics.Me
 	svcs.alerters = alerters
 	svcs.deleteServiceCmdChan = make(chan string, 5)
 	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
-	svcs.deleteViewCmdChan = make(chan string, 5)
-	svcs.upsertViewCmdChan = make(chan *upsertViewCmd, 5)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)
 	svcs.getServiceChan = make(chan *getServiceCmd, 5)
 	svcs.getViewsChan = make(chan *getViewsCmd, 5)

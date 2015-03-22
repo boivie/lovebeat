@@ -61,34 +61,6 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "{}\n")
 }
 
-func CreateViewHandler(c http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	view_name := params["name"]
-	var expr = r.FormValue("regexp")
-	if expr == "" {
-		log.Error("No regexp provided")
-		return
-	}
-
-	client.CreateOrUpdateView(view_name, expr, r.FormValue("alert_mail"),
-		r.FormValue("webhooks"))
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", "3")
-	io.WriteString(c, "{}\n")
-}
-
-func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	name := params["name"]
-
-	client.DeleteView(name)
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", "3")
-	io.WriteString(c, "{}\n")
-}
-
 type JsonView struct {
 	Name      string `json:"name"`
 	State     string `json:"state"`
@@ -228,10 +200,6 @@ func Register(rtr *mux.Router, client_ service.ServiceIf) {
 		DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/",
 		GetViewsHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}",
-		CreateViewHandler).Methods("POST")
-	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}",
-		DeleteViewHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}",
 		GetViewHandler).Methods("GET")
 }

@@ -115,9 +115,6 @@ func main() {
 	go udpapi.Listener(&cfg.Udp, svcs.GetClient())
 	go tcpapi.Listener(&cfg.Tcp, svcs.GetClient())
 
-	// Ensure that the 'all' view exists
-	svcs.GetClient().CreateOrUpdateView("all", "", "", "")
-
 	m.IncCounter("started.count")
 
 	signalHandler(be)

@@ -13,8 +13,6 @@ type ServiceIf interface {
 
 	UpdateService(name string, registerBeat bool, warningTimeout int64, errorTimeout int64)
 
-	CreateOrUpdateView(name string, regexp string, alertMail string, webhooks string)
-	DeleteView(name string)
 	GetServices(view string) []backend.StoredService
 	GetService(name string) *backend.StoredService
 	GetViews() []backend.StoredView
@@ -62,25 +60,12 @@ func (c *client) DeleteService(name string) {
 	c.svcs.deleteServiceCmdChan <- name
 }
 
-func (c *client) DeleteView(name string) {
-	c.svcs.deleteViewCmdChan <- name
-}
-
 func (c *client) UpdateService(name string, registerBeat bool, warningTimeout int64, errorTimeout int64) {
 	c.svcs.upsertServiceCmdChan <- &upsertServiceCmd{
 		Service:        name,
 		RegisterBeat:   registerBeat,
 		WarningTimeout: warningTimeout,
 		ErrorTimeout:   errorTimeout,
-	}
-}
-
-func (c *client) CreateOrUpdateView(name string, regexp string, alertMail string, webhooks string) {
-	c.svcs.upsertViewCmdChan <- &upsertViewCmd{
-		View:      name,
-		Regexp:    regexp,
-		AlertMail: alertMail,
-		Webhooks:  webhooks,
 	}
 }
 
