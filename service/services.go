@@ -160,35 +160,18 @@ func (svcs *Services) Monitor(cfg config.Config) {
 	}
 }
 
-func (svcs *Services) createAllView() View {
-	var ree, _ = regexp.Compile("")
-	return View{
+func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
+	views := make([]View, 0)
+
+	views = append(views, View{
 		services: svcs.services,
 		data: model.View{
 			Name:   "all",
 			Regexp: "",
 			State:  model.STATE_PAUSED,
 		},
-		ree: ree,
-	}
-}
-
-func (svcs *Services) reload(cfg config.Config) {
-	svcs.services = make(map[string]*Service)
-
-	for _, s := range svcs.be.LoadServices() {
-		var svc = &Service{data: *s}
-		if svc.data.PreviousBeats == nil ||
-			len(svc.data.PreviousBeats) != model.PREVIOUS_BEATS_COUNT {
-			svc.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
-		}
-		svcs.services[s.Name] = svc
-	}
-
-	views := make([]View, 0)
-	views = append(views, svcs.createAllView())
-
-	backendViews := svcs.be.LoadViews()
+		ree: regexp.MustCompile(""),
+	})
 
 	for name, v := range cfg.Views {
 		var ree, _ = regexp.Compile(v.Regexp)
@@ -203,6 +186,23 @@ func (svcs *Services) reload(cfg config.Config) {
 		}
 		views = append(views, view)
 	}
+	return views
+}
+
+func (svcs *Services) reload(cfg config.Config) {
+	svcs.services = make(map[string]*Service)
+
+	for _, s := range svcs.be.LoadServices() {
+		var svc = &Service{data: *s}
+		if svc.data.PreviousBeats == nil ||
+			len(svc.data.PreviousBeats) != model.PREVIOUS_BEATS_COUNT {
+			svc.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
+		}
+		svcs.services[s.Name] = svc
+	}
+
+	views := svcs.loadViewsFromConfig(cfg)
+	backendViews := svcs.be.LoadViews()
 
 	svcs.views = make(map[string]View)
 	ts := now()
