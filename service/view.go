@@ -17,18 +17,6 @@ var (
 	EMPTY_REGEXP = regexp.MustCompile("^$")
 )
 
-func newView(services map[string]*Service, name string) *View {
-	return &View{
-		services: services,
-		data: model.View{
-			Name:        name,
-			State:       model.STATE_PAUSED,
-			LastUpdated: -1,
-			Regexp:      "^$",
-		},
-		ree: EMPTY_REGEXP}
-}
-
 func (v *View) name() string { return v.data.Name }
 func (v *View) update(ts int64) {
 	v.data.State = model.STATE_OK
