@@ -107,7 +107,7 @@ func main() {
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
 
-	go svcs.Monitor()
+	go svcs.Monitor(cfg)
 	go httpServer(&cfg.Http, svcs)
 	go udpapi.Listener(&cfg.Udp, svcs.GetClient())
 	go tcpapi.Listener(&cfg.Tcp, svcs.GetClient())

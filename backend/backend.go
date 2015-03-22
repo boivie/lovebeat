@@ -6,7 +6,7 @@ import (
 
 type Backend interface {
 	LoadServices() []*model.Service
-	LoadViews() []*model.View
+	LoadViews() map[string]*model.View
 
 	SaveService(service *model.Service)
 	SaveView(view *model.View)
