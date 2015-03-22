@@ -6,6 +6,7 @@ import (
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
+	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/httpapi"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/service"
@@ -99,10 +100,12 @@ func main() {
 	wd, _ := os.Getwd()
 	log.Info("Running from %s", wd)
 
+	bus := eventbus.New()
+
 	m := metrics.New(&cfg.Metrics)
 
 	var be = backend.NewFileBackend(&cfg.Database, m)
-	var svcs = service.NewServices(be, m)
+	var svcs = service.NewServices(be, m, bus)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)

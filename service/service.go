@@ -73,20 +73,5 @@ func (s *Service) registerBeat(ts int64) {
 }
 
 func (s *Service) save(be backend.Backend, ref *Service, ts int64) {
-	if s.data.State != ref.data.State {
-		log.Info("SERVICE '%s', state %s -> %s",
-			s.name(), ref.data.State, s.data.State)
-		counters.SetGauge("service.state."+s.name(), int(StateMap[s.data.State]))
-	}
-	if s.data.WarningTimeout != ref.data.WarningTimeout {
-		log.Info("SERVICE '%s', warn %d -> %d",
-			s.name(), ref.data.WarningTimeout,
-			s.data.WarningTimeout)
-	}
-	if s.data.ErrorTimeout != ref.data.ErrorTimeout {
-		log.Info("SERVICE '%s', err %d -> %d",
-			s.name(), ref.data.ErrorTimeout,
-			s.data.ErrorTimeout)
-	}
 	be.SaveService(&s.data)
 }

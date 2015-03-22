@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
+	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
@@ -13,6 +14,7 @@ import (
 
 type Services struct {
 	be                   backend.Backend
+	bus                  *eventbus.EventBus
 	services             map[string]*Service
 	views                map[string]View
 	upsertServiceCmdChan chan *upsertServiceCmd
@@ -39,16 +41,49 @@ var (
 	}
 )
 
+func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
+	service.update(ts)
+	service.save(svcs.be, &ref, ts)
+	if service.data.State != ref.data.State {
+		log.Info("SERVICE '%s', state %s -> %s",
+			service.name(), ref.data.State, service.data.State)
+		counters.SetGauge("service.state."+service.name(), int(StateMap[service.data.State]))
+		svcs.bus.Publish(ServiceStateChangedEvent{
+			service.data,
+			ref.data.State,
+			service.data.State,
+		})
+	}
+	if service.data.WarningTimeout != ref.data.WarningTimeout {
+		log.Info("SERVICE '%s', warn %d -> %d",
+			service.name(), ref.data.WarningTimeout,
+			service.data.WarningTimeout)
+	}
+	if service.data.ErrorTimeout != ref.data.ErrorTimeout {
+		log.Info("SERVICE '%s', err %d -> %d",
+			service.name(), ref.data.ErrorTimeout,
+			service.data.ErrorTimeout)
+	}
+	svcs.updateMatchingViews(ts, service.name())
+}
+
 func (svcs *Services) updateView(view View, ts int64) {
 	var ref = view
 	view.update(ts)
 	if view.data.State != ref.data.State {
 		view.save(svcs.be, &ref, ts)
+		svcs.views[view.data.Name] = view
+
+		log.Info("VIEW '%s', %d: state %s -> %s",
+			view.name(), view.data.IncidentNbr, ref.data.State,
+			view.data.State)
+		counters.SetGauge("view.state."+view.name(), int(StateMap[view.data.State]))
+
 		if view.hasAlert(&ref) {
 			// TODO: Send alert
 		}
+		svcs.bus.Publish(ViewStateChangedEvent{view.data, ref.data.State, view.data.State})
 	}
-	svcs.views[view.data.Name] = view
 }
 
 func (svcs *Services) updateMatchingViews(ts int64, serviceName string) {
@@ -84,9 +119,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 					continue
 				}
 				var ref = *s
-				s.update(ts)
-				s.save(svcs.be, &ref, ts)
-				svcs.updateMatchingViews(ts, s.name())
+				svcs.updateService(ref, s, ts)
 			}
 		case c := <-svcs.getServicesChan:
 			var ret []model.Service
@@ -153,9 +186,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 			} else if c.ErrorTimeout > 0 {
 				s.data.ErrorTimeout = c.ErrorTimeout
 			}
-			s.update(ts)
-			s.save(svcs.be, &ref, ts)
-			svcs.updateMatchingViews(ts, s.name())
+			svcs.updateService(ref, s, ts)
 		}
 	}
 }
@@ -219,9 +250,10 @@ func (svcs *Services) reload(cfg config.Config) {
 	}
 }
 
-func NewServices(beiface backend.Backend, m metrics.Metrics) *Services {
+func NewServices(beiface backend.Backend, m metrics.Metrics, bus *eventbus.EventBus) *Services {
 	counters = m
 	svcs := new(Services)
+	svcs.bus = bus
 	svcs.be = beiface
 	svcs.deleteServiceCmdChan = make(chan string, 5)
 	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)

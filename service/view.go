@@ -50,14 +50,8 @@ func (v *View) contains(serviceName string) bool {
 }
 
 func (v *View) save(be backend.Backend, ref *View, ts int64) {
-	if v.data.State != ref.data.State {
-		if ref.data.State == model.STATE_OK {
-			v.data.IncidentNbr += 1
-		}
-		log.Info("VIEW '%s', %d: state %s -> %s",
-			v.name(), v.data.IncidentNbr, ref.data.State,
-			v.data.State)
-		counters.SetGauge("view.state."+v.name(), int(StateMap[v.data.State]))
+	if v.data.State != ref.data.State && ref.data.State == model.STATE_OK {
+		v.data.IncidentNbr += 1
 	}
 	be.SaveView(&v.data)
 }
