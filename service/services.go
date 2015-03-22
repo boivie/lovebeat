@@ -106,6 +106,7 @@ func (svcs *Services) createView(name string, expr string, alertMail string,
 func (svcs *Services) Monitor() {
 	period := time.Duration(EXPIRY_INTERVAL) * time.Second
 	ticker := time.NewTicker(period)
+	svcs.reload()
 	for {
 		select {
 		case <-ticker.C:
@@ -201,19 +202,7 @@ func (svcs *Services) Monitor() {
 	}
 }
 
-func NewServices(beiface backend.Backend, alerters []alert.Alerter, m metrics.Metrics) *Services {
-	counters = m
-	svcs := new(Services)
-	svcs.be = beiface
-	svcs.alerters = alerters
-	svcs.deleteServiceCmdChan = make(chan string, 5)
-	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
-	svcs.deleteViewCmdChan = make(chan string, 5)
-	svcs.upsertViewCmdChan = make(chan *upsertViewCmd, 5)
-	svcs.getServicesChan = make(chan *getServicesCmd, 5)
-	svcs.getServiceChan = make(chan *getServiceCmd, 5)
-	svcs.getViewsChan = make(chan *getViewsCmd, 5)
-	svcs.getViewChan = make(chan *getViewCmd, 5)
+func (svcs *Services) reload() {
 	svcs.services = make(map[string]*Service)
 	svcs.views = make(map[string]*View)
 
@@ -230,6 +219,22 @@ func NewServices(beiface backend.Backend, alerters []alert.Alerter, m metrics.Me
 		var ree, _ = regexp.Compile(v.Regexp)
 		svcs.views[v.Name] = &View{services: svcs.services, data: *v, ree: ree}
 	}
+
+}
+
+func NewServices(beiface backend.Backend, alerters []alert.Alerter, m metrics.Metrics) *Services {
+	counters = m
+	svcs := new(Services)
+	svcs.be = beiface
+	svcs.alerters = alerters
+	svcs.deleteServiceCmdChan = make(chan string, 5)
+	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.deleteViewCmdChan = make(chan string, 5)
+	svcs.upsertViewCmdChan = make(chan *upsertViewCmd, 5)
+	svcs.getServicesChan = make(chan *getServicesCmd, 5)
+	svcs.getServiceChan = make(chan *getServiceCmd, 5)
+	svcs.getViewsChan = make(chan *getViewsCmd, 5)
+	svcs.getViewChan = make(chan *getViewCmd, 5)
 
 	return svcs
 }
