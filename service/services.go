@@ -14,7 +14,7 @@ import (
 type Services struct {
 	be                   backend.Backend
 	services             map[string]*Service
-	views                map[string]*View
+	views                map[string]View
 	upsertServiceCmdChan chan *upsertServiceCmd
 	deleteServiceCmdChan chan string
 	getServicesChan      chan *getServicesCmd
@@ -39,8 +39,8 @@ var (
 	}
 )
 
-func (svcs *Services) updateView(view *View, ts int64) {
-	var ref = *view
+func (svcs *Services) updateView(view View, ts int64) {
+	var ref = view
 	view.update(ts)
 	if view.data.State != ref.data.State {
 		view.save(svcs.be, &ref, ts)
@@ -48,6 +48,7 @@ func (svcs *Services) updateView(view *View, ts int64) {
 			// TODO: Send alert
 		}
 	}
+	svcs.views[view.data.Name] = view
 }
 
 func (svcs *Services) updateMatchingViews(ts int64, serviceName string) {
@@ -64,16 +65,6 @@ func (svcs *Services) getService(name string) *Service {
 		log.Debug("Asked for unknown service %s", name)
 		s = newService(name)
 		svcs.services[name] = s
-	}
-	return s
-}
-
-func (svcs *Services) getView(name string) *View {
-	var s, ok = svcs.views[name]
-	if !ok {
-		log.Debug("Asked for unknown view %s", name)
-		s = newView(svcs.services, name)
-		svcs.views[name] = s
 	}
 	return s
 }
@@ -122,11 +113,10 @@ func (svcs *Services) Monitor(cfg config.Config) {
 			}
 			c.Reply <- ret
 		case c := <-svcs.getViewChan:
-			var ret = svcs.views[c.Name]
-			if ret == nil {
-				c.Reply <- nil
-			} else {
+			if ret, ok := svcs.views[c.Name]; ok {
 				c.Reply <- &ret.data
+			} else {
+				c.Reply <- nil
 			}
 		case c := <-svcs.deleteServiceCmdChan:
 			log.Info("SERVICE '%s', deleted", c)
@@ -170,22 +160,21 @@ func (svcs *Services) Monitor(cfg config.Config) {
 	}
 }
 
-func (svcs *Services) createAllView() *View {
+func (svcs *Services) createAllView() View {
 	var ree, _ = regexp.Compile("")
-	return &View{
+	return View{
 		services: svcs.services,
 		data: model.View{
-			Name:  "all",
-			State: model.STATE_PAUSED,
+			Name:   "all",
+			Regexp: "",
+			State:  model.STATE_PAUSED,
 		},
 		ree: ree,
 	}
 }
 
 func (svcs *Services) reload(cfg config.Config) {
-	ts := now()
 	svcs.services = make(map[string]*Service)
-	svcs.views = make(map[string]*View)
 
 	for _, s := range svcs.be.LoadServices() {
 		var svc = &Service{data: *s}
@@ -196,7 +185,9 @@ func (svcs *Services) reload(cfg config.Config) {
 		svcs.services[s.Name] = svc
 	}
 
-	svcs.views["all"] = svcs.createAllView()
+	views := make([]View, 0)
+	views = append(views, svcs.createAllView())
+
 	backendViews := svcs.be.LoadViews()
 
 	for name, v := range cfg.Views {
@@ -210,15 +201,21 @@ func (svcs *Services) reload(cfg config.Config) {
 			},
 			ree: ree,
 		}
-		if be, ok := backendViews[name]; ok {
+		views = append(views, view)
+	}
+
+	svcs.views = make(map[string]View)
+	ts := now()
+	for _, view := range views {
+		if be, ok := backendViews[view.data.Name]; ok {
 			view.data.State = be.State
 			view.data.LastUpdated = be.LastUpdated
 			view.data.IncidentNbr = be.IncidentNbr
 		}
 		log.Info("Created view '%s' ('%s'), state = %s",
-			name, v.Regexp, view.data.State)
-		svcs.updateView(&view, ts)
-		svcs.views[name] = &view
+			view.data.Name, view.data.Regexp, view.data.State)
+		svcs.views[view.data.Name] = view
+		svcs.updateView(view, ts)
 	}
 }
 
