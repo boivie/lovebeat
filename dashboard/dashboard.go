@@ -3,7 +3,7 @@ package dashboard
 import (
 	"bytes"
 	"fmt"
-	"github.com/boivie/lovebeat/backend"
+	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
@@ -25,9 +25,9 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var services = client.GetServices(viewName)
 	var errors, warnings, ok = 0, 0, 0
 	for _, s := range services {
-		if s.State == backend.STATE_WARNING {
+		if s.State == model.STATE_WARNING {
 			warnings++
-		} else if s.State == backend.STATE_ERROR {
+		} else if s.State == model.STATE_ERROR {
 			errors++
 		} else {
 			ok++

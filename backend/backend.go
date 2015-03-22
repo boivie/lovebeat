@@ -1,41 +1,15 @@
 package backend
 
-const (
-	STATE_PAUSED  = "paused"
-	STATE_OK      = "ok"
-	STATE_WARNING = "warning"
-	STATE_ERROR   = "error"
+import (
+	"github.com/boivie/lovebeat/model"
 )
 
-const PREVIOUS_BEATS_COUNT = 20
-
-type StoredService struct {
-	Name           string
-	LastValue      int
-	LastBeat       int64
-	PreviousBeats  []int64
-	LastUpdated    int64
-	WarningTimeout int64
-	ErrorTimeout   int64
-	State          string
-}
-
-type StoredView struct {
-	Name        string
-	State       string
-	Regexp      string
-	LastUpdated int64
-	AlertMail   string
-	Webhooks    string
-	IncidentNbr int
-}
-
 type Backend interface {
-	LoadServices() []*StoredService
-	LoadViews() []*StoredView
+	LoadServices() []*model.Service
+	LoadViews() []*model.View
 
-	SaveService(service *StoredService)
-	SaveView(view *StoredView)
+	SaveService(service *model.Service)
+	SaveView(view *model.View)
 
 	DeleteService(name string)
 	DeleteView(name string)

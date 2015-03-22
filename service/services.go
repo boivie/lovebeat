@@ -4,6 +4,7 @@ import (
 	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/metrics"
+	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
 
 	"regexp"
@@ -32,10 +33,10 @@ var (
 	log      = logging.MustGetLogger("lovebeat")
 	counters = metrics.NopMetrics()
 	StateMap = map[string]int{
-		backend.STATE_PAUSED:  0,
-		backend.STATE_OK:      1,
-		backend.STATE_WARNING: 2,
-		backend.STATE_ERROR:   3,
+		model.STATE_PAUSED:  0,
+		model.STATE_OK:      1,
+		model.STATE_WARNING: 2,
+		model.STATE_ERROR:   3,
 	}
 )
 
@@ -90,7 +91,7 @@ func (svcs *Services) Monitor() {
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range svcs.services {
-				if s.data.State == backend.STATE_PAUSED ||
+				if s.data.State == model.STATE_PAUSED ||
 					s.data.State == s.stateAt(ts) {
 					continue
 				}
@@ -100,7 +101,7 @@ func (svcs *Services) Monitor() {
 				svcs.updateViews(ts, s.name())
 			}
 		case c := <-svcs.getServicesChan:
-			var ret []backend.StoredService
+			var ret []model.Service
 			var view, ok = svcs.views[c.View]
 			if ok {
 				for _, s := range svcs.services {
@@ -118,7 +119,7 @@ func (svcs *Services) Monitor() {
 				c.Reply <- &ret.data
 			}
 		case c := <-svcs.getViewsChan:
-			var ret []backend.StoredView
+			var ret []model.View
 			for _, v := range svcs.views {
 				ret = append(ret, v.data)
 			}
@@ -150,7 +151,7 @@ func (svcs *Services) Monitor() {
 			if c.WarningTimeout == TIMEOUT_AUTO &&
 				s.data.WarningTimeout == -1 {
 				s.data.WarningTimeout = TIMEOUT_AUTO
-				s.data.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
+				s.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
 			} else if c.WarningTimeout == TIMEOUT_CLEAR {
 				s.data.WarningTimeout = TIMEOUT_CLEAR
 			} else if c.WarningTimeout > 0 {
@@ -159,7 +160,7 @@ func (svcs *Services) Monitor() {
 			if c.ErrorTimeout == TIMEOUT_AUTO &&
 				s.data.ErrorTimeout == -1 {
 				s.data.ErrorTimeout = TIMEOUT_AUTO
-				s.data.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
+				s.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
 			} else if c.ErrorTimeout == TIMEOUT_CLEAR {
 				s.data.ErrorTimeout = TIMEOUT_CLEAR
 			} else if c.ErrorTimeout > 0 {
@@ -176,7 +177,7 @@ func (svcs *Services) createAllView() *View {
 	var ree, _ = regexp.Compile("")
 	return &View{
 		services: svcs.services,
-		data: backend.StoredView{
+		data: model.View{
 			Name: "all",
 		},
 		ree: ree,
@@ -190,8 +191,8 @@ func (svcs *Services) reload() {
 	for _, s := range svcs.be.LoadServices() {
 		var svc = &Service{data: *s}
 		if svc.data.PreviousBeats == nil ||
-			len(svc.data.PreviousBeats) != backend.PREVIOUS_BEATS_COUNT {
-			svc.data.PreviousBeats = make([]int64, backend.PREVIOUS_BEATS_COUNT)
+			len(svc.data.PreviousBeats) != model.PREVIOUS_BEATS_COUNT {
+			svc.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
 		}
 		svcs.services[s.Name] = svc
 	}

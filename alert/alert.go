@@ -1,7 +1,7 @@
 package alert
 
 import (
-	"github.com/boivie/lovebeat/backend"
+	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
 )
 
@@ -10,9 +10,9 @@ var (
 )
 
 type Alert struct {
-	Previous        backend.StoredView
-	Current         backend.StoredView
-	ServicesInError []backend.StoredService
+	Previous        model.View
+	Current         model.View
+	ServicesInError []model.Service
 }
 
 type Alerter interface {

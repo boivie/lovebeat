@@ -3,12 +3,13 @@ package service
 import (
 	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/backend"
+	"github.com/boivie/lovebeat/model"
 	"regexp"
 )
 
 type View struct {
 	services map[string]*Service
-	data     backend.StoredView
+	data     model.View
 	ree      *regexp.Regexp
 }
 
@@ -19,9 +20,9 @@ var (
 func newView(services map[string]*Service, name string) *View {
 	return &View{
 		services: services,
-		data: backend.StoredView{
+		data: model.View{
 			Name:        name,
-			State:       backend.STATE_PAUSED,
+			State:       model.STATE_PAUSED,
 			LastUpdated: -1,
 			Regexp:      "^$",
 		},
@@ -30,15 +31,15 @@ func newView(services map[string]*Service, name string) *View {
 
 func (v *View) name() string { return v.data.Name }
 func (v *View) update(ts int64) {
-	v.data.State = backend.STATE_OK
+	v.data.State = model.STATE_OK
 	v.data.LastUpdated = ts
 	for _, s := range v.services {
 		if v.contains(s.name()) {
-			if s.data.State == backend.STATE_WARNING &&
-				v.data.State == backend.STATE_OK {
-				v.data.State = backend.STATE_WARNING
-			} else if s.data.State == backend.STATE_ERROR {
-				v.data.State = backend.STATE_ERROR
+			if s.data.State == model.STATE_WARNING &&
+				v.data.State == model.STATE_OK {
+				v.data.State = model.STATE_WARNING
+			} else if s.data.State == model.STATE_ERROR {
+				v.data.State = model.STATE_ERROR
 			}
 		}
 	}
@@ -50,7 +51,7 @@ func (v *View) contains(serviceName string) bool {
 
 func (v *View) save(be backend.Backend, ref *View, ts int64) {
 	if v.data.State != ref.data.State {
-		if ref.data.State == backend.STATE_OK {
+		if ref.data.State == model.STATE_OK {
 			v.data.IncidentNbr += 1
 		}
 		log.Info("VIEW '%s', %d: state %s -> %s",
@@ -66,10 +67,10 @@ func (v *View) hasAlert(ref *View) bool {
 }
 
 func (v *View) getAlert(ref *View) alert.Alert {
-	var services = make([]backend.StoredService, 0, 10)
+	var services = make([]model.Service, 0, 10)
 	for _, s := range v.services {
-		if (s.data.State == backend.STATE_WARNING ||
-			s.data.State == backend.STATE_ERROR) &&
+		if (s.data.State == model.STATE_WARNING ||
+			s.data.State == model.STATE_ERROR) &&
 			v.contains(s.name()) {
 			services = append(services, s.data)
 			if len(services) == 10 {
