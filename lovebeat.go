@@ -34,7 +34,7 @@ var (
 	debug       = flag.Bool("debug", false, "Enable debug logs")
 	showVersion = flag.Bool("version", false, "Print version string")
 	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
-	cfgDir      = flag.String("config-dir", "", "Configuration directory")
+	cfgDir      = flag.String("config-dir", "/etc/lovebeat.conf.d", "Configuration directory")
 	useSyslog   = flag.Bool("syslog", false, "Log to syslog instead of stderr")
 )
 
