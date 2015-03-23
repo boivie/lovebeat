@@ -1,12 +1,14 @@
-FROM scratch
-ADD release/passwd.minimal /etc/passwd
-ADD lovebeat /lovebeat
-USER nobody
+FROM busybox
+COPY lovebeat /bin/lovebeat
 
-VOLUME /data
+RUN mkdir /data && chown default:default /data
+
+VOLUME ["/data", "/etc/lovebeat.conf.d"]
 WORKDIR /data
 
 EXPOSE 8127/udp 8127/tcp
 EXPOSE 8080
 
-CMD ["/lovebeat"]
+USER default
+
+CMD ["/bin/lovebeat"]
