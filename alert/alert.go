@@ -3,6 +3,7 @@ package alert
 import (
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/eventbus"
+	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
 	"github.com/op/go-logging"
 )
@@ -18,6 +19,9 @@ type Alerter interface {
 }
 
 func ViewStateChanged(ev service.ViewStateChangedEvent) {
+	if ev.Current == model.STATE_PAUSED || ev.Previous == model.STATE_PAUSED {
+		return
+	}
 	for _, alert := range ev.View.Alerts {
 		for _, alerter := range alerters {
 			if cfg, ok := alerts[alert]; ok {

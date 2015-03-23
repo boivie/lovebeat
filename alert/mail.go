@@ -88,7 +88,7 @@ func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 			var err = smtp.SendMail(cfg.Server, nil, cfg.From, to,
 				[]byte(contents))
 			if err != nil {
-				log.Error("Failed to send e-mail", err)
+				log.Error("Failed to send e-mail: %s", err)
 			}
 		}
 	}
