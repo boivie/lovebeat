@@ -20,7 +20,7 @@ func New() *EventBus {
 
 func (bus *EventBus) addHandler(t reflect.Type, fn reflect.Value) {
 	bus.lock.Lock()
-	bus.lock.Unlock()
+	defer bus.lock.Unlock()
 	handlers, ok := bus.handlers[t]
 	if !ok {
 		handlers = make([]reflect.Value, 0)
