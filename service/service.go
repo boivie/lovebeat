@@ -16,11 +16,11 @@ func newService(name string) *Service {
 			Name:           name,
 			LastValue:      -1,
 			LastBeat:       -1,
-			PreviousBeats:  make([]int64, model.PREVIOUS_BEATS_COUNT),
+			PreviousBeats:  make([]int64, model.PreviousBeatsCount),
 			LastUpdated:    -1,
 			WarningTimeout: -1,
 			ErrorTimeout:   -1,
-			State:          model.STATE_PAUSED,
+			State:          model.StatePaused,
 		},
 	}
 }
@@ -50,14 +50,14 @@ func (s *Service) update(ts int64) {
 }
 
 func (s *Service) stateAt(ts int64) string {
-	var state = model.STATE_OK
+	var state = model.StateOk
 	var warningExpiry = s.getExpiry(s.data.WarningTimeout)
 	var errorExpiry = s.getExpiry(s.data.ErrorTimeout)
 	if warningExpiry > 0 && ts >= warningExpiry {
-		state = model.STATE_WARNING
+		state = model.StateWarning
 	}
 	if errorExpiry > 0 && ts >= errorExpiry {
-		state = model.STATE_ERROR
+		state = model.StateError
 	}
 	return state
 }

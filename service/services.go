@@ -101,7 +101,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range svcs.services {
-				if s.data.State == model.STATE_PAUSED ||
+				if s.data.State == model.StatePaused ||
 					s.data.State == s.stateAt(ts) {
 					continue
 				}
@@ -158,7 +158,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 			if c.WarningTimeout == TIMEOUT_AUTO &&
 				s.data.WarningTimeout == -1 {
 				s.data.WarningTimeout = TIMEOUT_AUTO
-				s.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
+				s.data.PreviousBeats = make([]int64, model.PreviousBeatsCount)
 			} else if c.WarningTimeout == TIMEOUT_CLEAR {
 				s.data.WarningTimeout = TIMEOUT_CLEAR
 			} else if c.WarningTimeout > 0 {
@@ -167,7 +167,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 			if c.ErrorTimeout == TIMEOUT_AUTO &&
 				s.data.ErrorTimeout == -1 {
 				s.data.ErrorTimeout = TIMEOUT_AUTO
-				s.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
+				s.data.PreviousBeats = make([]int64, model.PreviousBeatsCount)
 			} else if c.ErrorTimeout == TIMEOUT_CLEAR {
 				s.data.ErrorTimeout = TIMEOUT_CLEAR
 			} else if c.ErrorTimeout > 0 {
@@ -186,7 +186,7 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 		data: model.View{
 			Name:   "all",
 			Regexp: "",
-			State:  model.STATE_PAUSED,
+			State:  model.StatePaused,
 			Alerts: make([]string, 0),
 		},
 		ree: regexp.MustCompile(""),
@@ -199,7 +199,7 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 			data: model.View{
 				Name:   name,
 				Regexp: v.Regexp,
-				State:  model.STATE_PAUSED,
+				State:  model.StatePaused,
 				Alerts: v.Alerts,
 			},
 			ree: ree,
@@ -215,8 +215,8 @@ func (svcs *Services) reload(cfg config.Config) {
 	for _, s := range svcs.be.LoadServices() {
 		var svc = &Service{data: *s}
 		if svc.data.PreviousBeats == nil ||
-			len(svc.data.PreviousBeats) != model.PREVIOUS_BEATS_COUNT {
-			svc.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
+			len(svc.data.PreviousBeats) != model.PreviousBeatsCount {
+			svc.data.PreviousBeats = make([]int64, model.PreviousBeatsCount)
 		}
 		svcs.services[s.Name] = svc
 	}
