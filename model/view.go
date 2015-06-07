@@ -13,7 +13,7 @@ const StateWarning = "warning"
 const StateError = "error"
 
 // The number of beats that we save
-const PreviousBeatsCount = 20
+const PreviousBeatsCount = 100
 
 // Service is something that can issue a beat
 type Service struct {
