@@ -1,0 +1,20 @@
+Source: lovebeat
+Maintainer: Victor Boivie <victor@boivie.com>
+Section: net
+Priority: optional
+Standards-Version: 3.9.6
+Build-Depends: debhelper (>= 9), devscripts, git, golang-go | go-compiler
+
+Package: lovebeat
+Architecture: any
+Description: Zero-configuration heartbeat monitor for arbitrary events.
+ Lovebeat is a system daemon that accepts events via HTTP or the Graphite
+ and statsd protocols and detects when the interval between two consecutive
+ events with a particular name deviate too much. The allowed deviation
+ can be statically configured or dynamically determined by Lovebeat based
+ on the history of those events.
+ .
+ The current state of all events can be monitored via a web page, and
+ alerting tools like e.g. Nagios can be used to query the state and fire
+ alerts accordingly. Lovebeat also has simple email alerting built in.
+Depends: adduser, lsb-base, ${shlibs:Depends}, ${misc:Depends}
