@@ -1,0 +1,16 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: lovebeat
+Upstream-Contact: Victor Boivie <victor@boivie.com>
+Source: https://github.com/boivie/lovebeat
+
+Files: *
+Copyright: 2014-2015 Victor Boivie
+License: Apache-2.0
+ On Debian systems, the full text of the Apache Software License version 2 can
+ be found in the file `/usr/share/common-licenses/Apache-2.0'.
+
+Files: data/js/juration.js
+Copyright: 2011 Dom Christie
+Comment: Full and exact license text not available. Upstream source
+ only states "released under the MIT license", which is ambiguous.
+License: MIT
