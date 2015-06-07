@@ -19,7 +19,6 @@ func newService(name string) *Service {
 			LastValue:      -1,
 			LastBeat:       -1,
 			PreviousBeats:  make([]int64, model.PreviousBeatsCount),
-			LastUpdated:    -1,
 			WarningTimeout: -1,
 			ErrorTimeout:   -1,
 			State:          model.StatePaused,
@@ -59,7 +58,6 @@ func (s *Service) name() string { return s.data.Name }
 
 func (s *Service) updateState(ts int64) {
 	s.data.State = s.stateAt(ts)
-	s.data.LastUpdated = ts
 }
 
 func (s *Service) stateAt(ts int64) string {

@@ -219,7 +219,6 @@ func (svcs *Services) reload(cfg config.Config) {
 	for _, view := range views {
 		if be, ok := backendViews[view.data.Name]; ok {
 			view.data.State = be.State
-			view.data.LastUpdated = be.LastUpdated
 			view.data.IncidentNbr = be.IncidentNbr
 		}
 		log.Info("Created view '%s' ('%s'), state = %s",

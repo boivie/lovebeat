@@ -19,7 +19,6 @@ var (
 func (v *View) name() string { return v.data.Name }
 func (v *View) update(ts int64) {
 	v.data.State = model.StateOk
-	v.data.LastUpdated = ts
 	for _, s := range v.services {
 		if v.contains(s.name()) {
 			if s.data.State == model.StateWarning &&

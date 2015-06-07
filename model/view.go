@@ -21,7 +21,6 @@ type Service struct {
 	LastValue      int
 	LastBeat       int64
 	PreviousBeats  []int64
-	LastUpdated    int64
 	WarningTimeout int64
 	ErrorTimeout   int64
 	State          string
@@ -32,7 +31,6 @@ type View struct {
 	Name        string
 	State       string
 	Regexp      string
-	LastUpdated int64
 	IncidentNbr int
 	Alerts      []string
 }
