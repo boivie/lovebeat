@@ -7,7 +7,9 @@ import (
 )
 
 type Service struct {
-	data model.Service
+	data          model.Service
+	warningExpiry int64
+	errorExpiry   int64
 }
 
 func newService(name string) *Service {
@@ -27,36 +29,45 @@ func newService(name string) *Service {
 
 func now() int64 { return time.Now().Unix() }
 
-func (s *Service) getExpiry(timeout int64) int64 {
-	if timeout <= 0 {
-		return 0
+func (s *Service) updateExpiry() {
+	s.warningExpiry = 0
+	s.errorExpiry = 0
+
+	if s.data.WarningTimeout > 0 {
+		s.warningExpiry = s.data.LastBeat + s.data.WarningTimeout
+	} else if s.data.WarningTimeout == TIMEOUT_AUTO {
+		auto := calcTimeout(s.data.PreviousBeats)
+		if auto != TIMEOUT_AUTO {
+			s.warningExpiry = s.data.LastBeat + auto
+		}
 	}
-	return s.data.LastBeat + timeout
+
+	if s.data.ErrorTimeout > 0 {
+		s.errorExpiry = s.data.LastBeat + s.data.ErrorTimeout
+	} else if s.data.ErrorTimeout == TIMEOUT_AUTO {
+		auto := calcTimeout(s.data.PreviousBeats)
+		if auto != TIMEOUT_AUTO {
+			s.errorExpiry = s.data.LastBeat + auto
+		}
+	}
+
+	log.Debug("Warning expiry for %s = %d", s.name(), s.warningExpiry)
+	log.Debug("Error expiry for %s = %d", s.name(), s.errorExpiry)
 }
 
 func (s *Service) name() string { return s.data.Name }
 
-// Called before saving - to update internal states
-func (s *Service) update(ts int64) {
+func (s *Service) updateState(ts int64) {
 	s.data.State = s.stateAt(ts)
-
-	if s.data.WarningTimeout == TIMEOUT_AUTO {
-		s.data.WarningTimeout = calcTimeout(s.data.PreviousBeats)
-	}
-	if s.data.ErrorTimeout == TIMEOUT_AUTO {
-		s.data.ErrorTimeout = calcTimeout(s.data.PreviousBeats)
-	}
 	s.data.LastUpdated = ts
 }
 
 func (s *Service) stateAt(ts int64) string {
 	var state = model.StateOk
-	var warningExpiry = s.getExpiry(s.data.WarningTimeout)
-	var errorExpiry = s.getExpiry(s.data.ErrorTimeout)
-	if warningExpiry > 0 && ts >= warningExpiry {
+	if s.warningExpiry > 0 && ts >= s.warningExpiry {
 		state = model.StateWarning
 	}
-	if errorExpiry > 0 && ts >= errorExpiry {
+	if s.errorExpiry > 0 && ts >= s.errorExpiry {
 		state = model.StateError
 	}
 	return state
