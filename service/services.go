@@ -203,10 +203,6 @@ func (svcs *Services) reload(cfg config.Config) {
 
 	for _, s := range svcs.be.LoadServices() {
 		var svc = &Service{data: *s}
-		if svc.data.PreviousBeats == nil ||
-			len(svc.data.PreviousBeats) != model.PreviousBeatsCount {
-			svc.data.PreviousBeats = make([]int64, model.PreviousBeatsCount)
-		}
 		svc.updateExpiry()
 		svcs.services[s.Name] = svc
 	}

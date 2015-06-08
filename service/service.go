@@ -7,9 +7,10 @@ import (
 )
 
 type Service struct {
-	data          model.Service
-	warningExpiry int64
-	errorExpiry   int64
+	data            model.Service
+	sessionLastBeat int64
+	warningExpiry   int64
+	errorExpiry     int64
 }
 
 func newService(name string) *Service {
@@ -18,7 +19,6 @@ func newService(name string) *Service {
 			Name:           name,
 			LastValue:      -1,
 			LastBeat:       -1,
-			PreviousBeats:  make([]int64, model.PreviousBeatsCount),
 			WarningTimeout: -1,
 			ErrorTimeout:   -1,
 			State:          model.StatePaused,
@@ -35,7 +35,7 @@ func (s *Service) updateExpiry() {
 	if s.data.WarningTimeout > 0 {
 		s.warningExpiry = s.data.LastBeat + s.data.WarningTimeout
 	} else if s.data.WarningTimeout == TIMEOUT_AUTO {
-		auto := calcTimeout(s.data.PreviousBeats)
+		auto := calcTimeout(s.data.BeatHistory)
 		if auto != TIMEOUT_AUTO {
 			s.warningExpiry = s.data.LastBeat + auto
 		}
@@ -44,7 +44,7 @@ func (s *Service) updateExpiry() {
 	if s.data.ErrorTimeout > 0 {
 		s.errorExpiry = s.data.LastBeat + s.data.ErrorTimeout
 	} else if s.data.ErrorTimeout == TIMEOUT_AUTO {
-		auto := calcTimeout(s.data.PreviousBeats)
+		auto := calcTimeout(s.data.BeatHistory)
 		if auto != TIMEOUT_AUTO {
 			s.errorExpiry = s.data.LastBeat + auto
 		}
@@ -77,8 +77,15 @@ func (s *Service) registerBeat(ts int64) {
 	} else {
 		log.Debug("Beat from %s (first!)", s.name())
 	}
+	if s.sessionLastBeat > 0 {
+		s.data.BeatHistory = append(s.data.BeatHistory, ts-s.sessionLastBeat)
+		if len(s.data.BeatHistory) > model.BeatHistoryCount {
+			idx := len(s.data.BeatHistory) - model.BeatHistoryCount
+			s.data.BeatHistory = s.data.BeatHistory[idx:]
+		}
+	}
 	s.data.LastBeat = ts
-	s.data.PreviousBeats = append(s.data.PreviousBeats[1:], ts)
+	s.sessionLastBeat = ts
 }
 
 func (s *Service) save(be backend.Backend, ref *Service, ts int64) {
