@@ -160,7 +160,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 				s.data.ErrorTimeout = c.ErrorTimeout
 			}
 
-			s.updateExpiry()
+			s.updateExpiry(ts)
 			s.updateState(ts)
 			svcs.updateService(ref, s, ts)
 		}
@@ -199,11 +199,12 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 }
 
 func (svcs *Services) reload(cfg config.Config) {
+	ts := now()
 	svcs.services = make(map[string]*Service)
 
 	for _, s := range svcs.be.LoadServices() {
 		var svc = &Service{data: *s}
-		svc.updateExpiry()
+		svc.updateExpiry(ts)
 		svcs.services[s.Name] = svc
 	}
 
@@ -211,7 +212,6 @@ func (svcs *Services) reload(cfg config.Config) {
 	backendViews := svcs.be.LoadViews()
 
 	svcs.views = make(map[string]View)
-	ts := now()
 	for _, view := range views {
 		if be, ok := backendViews[view.data.Name]; ok {
 			view.data.State = be.State

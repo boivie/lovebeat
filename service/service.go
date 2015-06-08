@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/boivie/lovebeat/algorithms"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/model"
 	"time"
@@ -26,16 +27,20 @@ func newService(name string) *Service {
 	}
 }
 
-func now() int64 { return time.Now().Unix() }
+func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
 
-func (s *Service) updateExpiry() {
+func calcTimeout(values []int64) int64 {
+	return TIMEOUT_AUTO
+}
+
+func (s *Service) updateExpiry(ts int64) {
 	s.warningExpiry = 0
 	s.errorExpiry = 0
 
 	if s.data.WarningTimeout > 0 {
 		s.warningExpiry = s.data.LastBeat + s.data.WarningTimeout
 	} else if s.data.WarningTimeout == TIMEOUT_AUTO {
-		auto := calcTimeout(s.data.BeatHistory)
+		auto := algorithms.AutoAlg(s.data.BeatHistory)
 		if auto != TIMEOUT_AUTO {
 			s.warningExpiry = s.data.LastBeat + auto
 		}
@@ -44,14 +49,18 @@ func (s *Service) updateExpiry() {
 	if s.data.ErrorTimeout > 0 {
 		s.errorExpiry = s.data.LastBeat + s.data.ErrorTimeout
 	} else if s.data.ErrorTimeout == TIMEOUT_AUTO {
-		auto := calcTimeout(s.data.BeatHistory)
+		auto := algorithms.AutoAlg(s.data.BeatHistory)
 		if auto != TIMEOUT_AUTO {
 			s.errorExpiry = s.data.LastBeat + auto
 		}
 	}
 
-	log.Debug("Warning expiry for %s = %d", s.name(), s.warningExpiry)
-	log.Debug("Error expiry for %s = %d", s.name(), s.errorExpiry)
+	if s.warningExpiry > 0 {
+		log.Debug("Warning expiry for %s = %d (%d ms)", s.name(), s.warningExpiry, s.warningExpiry-ts)
+	}
+	if s.errorExpiry > 0 {
+		log.Debug("Error expiry for %s = %d (%d ms)", s.name(), s.errorExpiry, s.errorExpiry-ts)
+	}
 }
 
 func (s *Service) name() string { return s.data.Name }
@@ -73,7 +82,7 @@ func (s *Service) stateAt(ts int64) string {
 
 func (s *Service) registerBeat(ts int64) {
 	if s.data.LastBeat > 0 {
-		log.Debug("Beat from %s (prev %d secs ago)", s.name(), ts-s.data.LastBeat)
+		log.Debug("Beat from %s (prev %d ms ago)", s.name(), ts-s.data.LastBeat)
 	} else {
 		log.Debug("Beat from %s (first!)", s.name())
 	}

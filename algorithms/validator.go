@@ -27,14 +27,14 @@ func Validate(f string) {
 	}
 
 	// sanity check, display to standard output
-	var timeseries []float64 = make([]float64, 0)
+	var timeseries []int64 = make([]int64, 0)
 
 	for _, each := range records {
 		var input, _ = strconv.Atoi(each[0])
 		var expected, _ = strconv.Atoi(each[1])
 
-		timeseries = append(timeseries, float64(input))
-		var calculated = AutoAlg(timeseries, 3)
+		timeseries = append(timeseries, int64(input))
+		var calculated = AutoAlg(timeseries)
 
 		var diff = (float64(expected) - float64(calculated)) / (float64(expected))
 

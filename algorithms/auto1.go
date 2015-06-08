@@ -74,20 +74,20 @@ func EwmStdLast(series []float64, com float64) float64 {
 	return math.Sqrt(t)
 }
 
-func copyLast(series []float64, N int) []float64 {
+func copyLast(series []int64, N int) []float64 {
 	var start = len(series) - N
 	if start < 0 {
 		start = 0
 	}
 	var end = len(series)
-	return series[start:end]
+	ret := make([]float64, end-start)
+	for i := start; i < end; i++ {
+		ret[i-start] = float64(series[i])
+	}
+	return ret
 }
 
-func round(f float64) int {
-	return int(math.Floor(f + .5))
-}
-
-func AutoAlg(series []float64, factor float64) int {
+func autoAlgEwmaStd(series []int64, factor float64) int64 {
 	var last20 = copyLast(series, 20)
 	var medians = Ewma(last20, 10)
 	var median = medians[len(medians)-1]
@@ -97,5 +97,9 @@ func AutoAlg(series []float64, factor float64) int {
 	if math.IsNaN(ret) {
 		return 0
 	}
-	return int(ret)
+	return int64(ret)
+}
+
+func AutoAlg(series []int64) int64 {
+	return autoAlgEwmaStd(series, 3)
 }

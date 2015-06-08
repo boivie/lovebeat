@@ -17,7 +17,7 @@ var (
 	client service.ServiceIf
 )
 
-func now() int64 { return time.Now().Unix() }
+func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
 
 var log = logging.MustGetLogger("lovebeat")
 
