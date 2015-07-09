@@ -16,15 +16,15 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 }
 
 func TestSimple(t *testing.T) {
-	input := []float64{60000, 60000}
-	ret := AutoAlg(input, 3)
+	input := []int64{60000, 60000}
+	ret := AutoAlg(input)
 
-	assertEqual(t, ret, 61000, "")
+	assertEqual(t, ret, int64(61000), "")
 }
 
 func TestRange(t *testing.T) {
-	input := []float64{60000, 60000, 60000, 60000, 60000, 60000}
-	ret := AutoAlg(input, 3)
+	input := []int64{60000, 60000, 60000, 60000, 60000, 60000}
+	ret := AutoAlg(input)
 
-	assertEqual(t, ret, 61000, "")
+	assertEqual(t, ret, int64(61000), "")
 }

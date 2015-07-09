@@ -87,19 +87,6 @@ func copyLast(series []int64, N int) []float64 {
 	return ret
 }
 
-func autoAlgEwmaStd(series []int64, factor float64) int64 {
-	var last20 = copyLast(series, 20)
-	var medians = Ewma(last20, 10)
-	var median = medians[len(medians)-1]
-	var stdev = EwmStdLast(last20, 10)
-
-	var ret = median + factor*stdev + 1000
-	if math.IsNaN(ret) {
-		return 0
-	}
-	return int64(ret)
-}
-
 func sum(numbers []float64) (total float64) {
 	for _, x := range numbers {
 		total += x
@@ -150,7 +137,7 @@ func autoAlgEwmaStdRemoveOutliers(series []int64, factor float64) int64 {
 	if math.IsNaN(ret) {
 		return 0
 	}
-	return int64(ret)
+	return int64(ret + 0.5)
 }
 
 func AutoAlg(series []int64) int64 {

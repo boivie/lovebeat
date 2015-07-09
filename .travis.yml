@@ -11,7 +11,7 @@ before_install:
 - go get github.com/mattn/goveralls
 - go get code.google.com/p/go.tools/cmd/cover
 script:
-- go get -t ./... && ./runcover.sh ./...
+- go get -t ./... && go test ./... && ./runcover.sh ./...
 - goveralls -coverprofile=profile.cov -service travis-ci -repotoken $COVERALLS_TOKEN
 after_success:
 - gox -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
