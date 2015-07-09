@@ -37,7 +37,7 @@ var (
 	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
 	cfgDir      = flag.String("config-dir", "/etc/lovebeat.conf.d", "Configuration directory")
 	useSyslog   = flag.Bool("syslog", false, "Log to syslog instead of stderr")
-	validate    = flag.String("validate", "", "Validate auto algorithm against the provided file")
+	validate    = flag.Bool("validate-auto", false, "Evaluate auto-algorithm")
 )
 
 var (
@@ -97,9 +97,9 @@ func main() {
 		return
 	}
 
-	if *validate != "" {
-		fmt.Printf("Validating auto-algorithm against %s\n", *validate)
-		algorithms.Validate(*validate)
+	if *validate {
+		fmt.Fprintf(os.Stderr, "Validating auto-algorithm from stdin\n")
+		algorithms.Validate()
 		return
 	}
 
