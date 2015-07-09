@@ -129,6 +129,10 @@ func autoAlgEwmaStdRemoveOutliers(series []int64, factor float64) int64 {
 
 	last20 = removeOutliers(last20, 3)
 
+	if len(last20) == 0 {
+		return 1000
+	}
+
 	var medians = Ewma(last20, 10)
 	var median = medians[len(medians)-1]
 	var stdev = EwmStdLast(last20, 10)

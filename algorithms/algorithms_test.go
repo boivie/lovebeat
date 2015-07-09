@@ -15,6 +15,13 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 	t.Fatal(message)
 }
 
+func TestEmpty(t *testing.T) {
+	input := []int64{}
+	ret := AutoAlg(input)
+
+	assertEqual(t, ret, int64(1000), "")
+}
+
 func TestSimple(t *testing.T) {
 	input := []int64{60000, 60000}
 	ret := AutoAlg(input)
