@@ -100,6 +100,59 @@ func autoAlgEwmaStd(series []int64, factor float64) int64 {
 	return int64(ret)
 }
 
+func sum(numbers []float64) (total float64) {
+	for _, x := range numbers {
+		total += x
+	}
+	return total
+}
+
+func mean(series []float64) float64 {
+	return float64(sum(series)) / float64(len(series))
+}
+
+func stdDev(numbers []float64, mean float64) float64 {
+	total := 0.0
+	for _, number := range numbers {
+		total += math.Pow(float64(number)-mean, 2)
+	}
+	variance := total / float64(len(numbers)-1)
+	return math.Sqrt(variance)
+}
+
+func removeOutliers(series []float64, m float64) []float64 {
+	u := mean(series)
+	s := stdDev(series, u)
+	var ret []float64
+
+	for _, e := range series {
+		if u-m*s < e && e < u+m*s {
+			ret = append(ret, e)
+		}
+	}
+
+	if len(ret) == 0 {
+		return series
+	}
+	return ret
+}
+
+func autoAlgEwmaStdRemoveOutliers(series []int64, factor float64) int64 {
+	var last20 = copyLast(series, 20)
+
+	last20 = removeOutliers(last20, 3)
+
+	var medians = Ewma(last20, 10)
+	var median = medians[len(medians)-1]
+	var stdev = EwmStdLast(last20, 10)
+
+	var ret = median + factor*stdev + 1000
+	if math.IsNaN(ret) {
+		return 0
+	}
+	return int64(ret)
+}
+
 func AutoAlg(series []int64) int64 {
-	return autoAlgEwmaStd(series, 3)
+	return autoAlgEwmaStdRemoveOutliers(series, 3)
 }
