@@ -12,10 +12,6 @@ type View struct {
 	ree      *regexp.Regexp
 }
 
-var (
-	EMPTY_REGEXP = regexp.MustCompile("^$")
-)
-
 func (v *View) name() string { return v.data.Name }
 func (v *View) update(ts int64) {
 	v.data.State = model.StateOk

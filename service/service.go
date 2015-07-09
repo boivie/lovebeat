@@ -29,10 +29,6 @@ func newService(name string) *Service {
 
 func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
 
-func calcTimeout(values []int64) int64 {
-	return TIMEOUT_AUTO
-}
-
 func (s *Service) updateExpiry(ts int64) {
 	s.warningExpiry = 0
 	s.errorExpiry = 0

@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	svcs   *service.Services
 	client service.ServiceIf
 )
 
