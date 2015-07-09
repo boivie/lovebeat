@@ -1,0 +1,21 @@
+#!/bin/sh -e
+
+SERVICE="lovebeat"
+
+if [ -f /etc/default/$SERVICE ] ; then
+    . /etc/default/$SERVICE
+fi
+
+[ -n "$LOVEBEAT_USER" ] || LOVEBEAT_USER="lovebeat"
+[ -n "$LOVEBEAT_HOME" ] || LOVEBEAT_HOME="/var/lib/lovebeat"
+
+case "$1" in
+    configure)
+        adduser --system --home "$LOVEBEAT_HOME" --disabled-password --group \
+            "$LOVEBEAT_USER"
+        chown -R "$LOVEBEAT_USER:$LOVEBEAT_USER" "$LOVEBEAT_HOME"
+        chmod 2775 "$LOVEBEAT_HOME"
+        ;;
+esac
+
+#DEBHELPER#

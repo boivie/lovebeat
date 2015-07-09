@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+### BEGIN INIT INFO
+# Provides:          lovebeat
+# Required-Start:    $network $remote_fs $syslog
+# Required-Stop:     $network $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Lovebeat heartbeat monitoring service
+# Description:       XXX
+### END INIT INFO
+
+set -e
+
+SERVICE="$(basename $0)"
+PIDFILE="/var/run/$SERVICE.pid"
+SERVICE_BIN="/usr/sbin/lovebeat"
+
+# Fail silently if the init script is left behind after the binary has
+# been removed, as suggested in §9.3.2 of the Debian Policy Manual.
+[ -x "$SERVICE_BIN" ] || exit 0
+
+if [ -f /etc/default/$SERVICE ] ; then
+    . /etc/default/$SERVICE
+fi
+
+. /lib/lsb/init-functions
+
+[ -n "$LOVEBEAT_USER" ] || LOVEBEAT_USER="lovebeat"
+[ -n "$LOVEBEAT_HOME" ] || LOVEBEAT_HOME="/var/lib/lovebeat"
+[ -n "$LOVEBEAT_OPTS" ] || LOVEBEAT_OPTS=""
+
+case "$1" in
+    start)
+        log_daemon_msg "Starting Lovebeat heartbeat monitoring service"
+        log_progress_msg "$SERVICE"
+        start-stop-daemon --start --background --oknodo --quiet \
+            --make-pidfile --pidfile "$PIDFILE" \
+            --chdir "$LOVEBEAT_HOME" \
+            --chuid "$LOVEBEAT_USER" --group "$LOVEBEAT_USER" \
+            --exec "$SERVICE_BIN" -- $LOVEBEAT_OPTS
+        log_end_msg 0
+        ;;
+    stop)
+        log_daemon_msg "Stopping Lovebeat heartbeat monitoring service"
+        log_progress_msg "$SERVICE"
+        start-stop-daemon --stop --oknodo --quiet \
+            --pidfile "$PIDFILE" \
+            --exec "$SERVICE_BIN"
+        log_end_msg 0
+        ;;
+    restart|force-reload)
+        $0 stop
+        $0 start
+        ;;
+    status)
+        status_of_proc -p "$PIDFILE" "$SERVICE_BIN" $SERVICE
+        ;;
+    *)
+        log_action_msg "Usage: /etc/init.d/$SERVICE {start|stop|force-reload|restart|status}" || true
+        exit 1
+        ;;
+esac

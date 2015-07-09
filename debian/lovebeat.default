@@ -1,0 +1,9 @@
+# The home directory of the Lovebeat user but also the directory where
+# it stores its data files.
+LOVEBEAT_HOME="/var/lib/lovebeat"
+
+# Additional options to pass to Lovebeat when it starts.
+LOVEBEAT_OPTS="-syslog -config-dir=/etc/lovebeat.conf.d"
+
+# The user (and group) that Lovebeat should run as.
+LOVEBEAT_USER="lovebeat"
