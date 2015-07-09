@@ -34,7 +34,6 @@ var (
 )
 
 func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
-	service.update(ts)
 	service.save(svcs.be, &ref, ts)
 	if service.data.State != ref.data.State {
 		log.Info("SERVICE '%s', state %s -> %s",
@@ -101,11 +100,11 @@ func (svcs *Services) Monitor(cfg config.Config) {
 		case <-ticker.C:
 			var ts = now()
 			for _, s := range svcs.services {
-				if s.data.State == model.STATE_PAUSED ||
-					s.data.State == s.stateAt(ts) {
+				if s.data.State == model.StatePaused || s.data.State == s.stateAt(ts) {
 					continue
 				}
 				var ref = *s
+				s.updateState(ts)
 				svcs.updateService(ref, s, ts)
 			}
 		case c := <-svcs.getServicesChan:
@@ -154,25 +153,15 @@ func (svcs *Services) Monitor(cfg config.Config) {
 				s.registerBeat(ts)
 			}
 
-			// Don't re-calculate 'auto' if we already have values
-			if c.WarningTimeout == TIMEOUT_AUTO &&
-				s.data.WarningTimeout == -1 {
-				s.data.WarningTimeout = TIMEOUT_AUTO
-				s.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
-			} else if c.WarningTimeout == TIMEOUT_CLEAR {
-				s.data.WarningTimeout = TIMEOUT_CLEAR
-			} else if c.WarningTimeout > 0 {
+			if c.WarningTimeout != 0 {
 				s.data.WarningTimeout = c.WarningTimeout
 			}
-			if c.ErrorTimeout == TIMEOUT_AUTO &&
-				s.data.ErrorTimeout == -1 {
-				s.data.ErrorTimeout = TIMEOUT_AUTO
-				s.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
-			} else if c.ErrorTimeout == TIMEOUT_CLEAR {
-				s.data.ErrorTimeout = TIMEOUT_CLEAR
-			} else if c.ErrorTimeout > 0 {
+			if c.ErrorTimeout != 0 {
 				s.data.ErrorTimeout = c.ErrorTimeout
 			}
+
+			s.updateExpiry(ts)
+			s.updateState(ts)
 			svcs.updateService(ref, s, ts)
 		}
 	}
@@ -186,7 +175,7 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 		data: model.View{
 			Name:   "all",
 			Regexp: "",
-			State:  model.STATE_PAUSED,
+			State:  model.StatePaused,
 			Alerts: make([]string, 0),
 		},
 		ree: regexp.MustCompile(""),
@@ -199,7 +188,7 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 			data: model.View{
 				Name:   name,
 				Regexp: v.Regexp,
-				State:  model.STATE_PAUSED,
+				State:  model.StatePaused,
 				Alerts: v.Alerts,
 			},
 			ree: ree,
@@ -210,14 +199,12 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 }
 
 func (svcs *Services) reload(cfg config.Config) {
+	ts := now()
 	svcs.services = make(map[string]*Service)
 
 	for _, s := range svcs.be.LoadServices() {
 		var svc = &Service{data: *s}
-		if svc.data.PreviousBeats == nil ||
-			len(svc.data.PreviousBeats) != model.PREVIOUS_BEATS_COUNT {
-			svc.data.PreviousBeats = make([]int64, model.PREVIOUS_BEATS_COUNT)
-		}
+		svc.updateExpiry(ts)
 		svcs.services[s.Name] = svc
 	}
 
@@ -225,11 +212,9 @@ func (svcs *Services) reload(cfg config.Config) {
 	backendViews := svcs.be.LoadViews()
 
 	svcs.views = make(map[string]View)
-	ts := now()
 	for _, view := range views {
 		if be, ok := backendViews[view.data.Name]; ok {
 			view.data.State = be.State
-			view.data.LastUpdated = be.LastUpdated
 			view.data.IncidentNbr = be.IncidentNbr
 		}
 		log.Info("Created view '%s' ('%s'), state = %s",

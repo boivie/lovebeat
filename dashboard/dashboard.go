@@ -25,9 +25,9 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	var services = client.GetServices(viewName)
 	var errors, warnings, ok = 0, 0, 0
 	for _, s := range services {
-		if s.State == model.STATE_WARNING {
+		if s.State == model.StateWarning {
 			warnings++
-		} else if s.State == model.STATE_ERROR {
+		} else if s.State == model.StateError {
 			errors++
 		} else {
 			ok++

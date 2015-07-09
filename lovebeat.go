@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/boivie/lovebeat/alert"
+	"github.com/boivie/lovebeat/algorithms"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
@@ -36,6 +37,7 @@ var (
 	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
 	cfgDir      = flag.String("config-dir", "/etc/lovebeat.conf.d", "Configuration directory")
 	useSyslog   = flag.Bool("syslog", false, "Log to syslog instead of stderr")
+	validate    = flag.Bool("validate-auto", false, "Evaluate auto-algorithm")
 )
 
 var (
@@ -92,6 +94,12 @@ func main() {
 
 	if *showVersion {
 		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
+		return
+	}
+
+	if *validate {
+		fmt.Fprintf(os.Stderr, "Validating auto-algorithm from stdin\n")
+		algorithms.Validate()
 		return
 	}
 

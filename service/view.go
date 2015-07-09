@@ -18,15 +18,14 @@ var (
 
 func (v *View) name() string { return v.data.Name }
 func (v *View) update(ts int64) {
-	v.data.State = model.STATE_OK
-	v.data.LastUpdated = ts
+	v.data.State = model.StateOk
 	for _, s := range v.services {
 		if v.contains(s.name()) {
-			if s.data.State == model.STATE_WARNING &&
-				v.data.State == model.STATE_OK {
-				v.data.State = model.STATE_WARNING
-			} else if s.data.State == model.STATE_ERROR {
-				v.data.State = model.STATE_ERROR
+			if s.data.State == model.StateWarning &&
+				v.data.State == model.StateOk {
+				v.data.State = model.StateWarning
+			} else if s.data.State == model.StateError {
+				v.data.State = model.StateError
 			}
 		}
 	}
@@ -37,7 +36,7 @@ func (v *View) contains(serviceName string) bool {
 }
 
 func (v *View) save(be backend.Backend, ref *View, ts int64) {
-	if v.data.State != ref.data.State && ref.data.State == model.STATE_OK {
+	if v.data.State != ref.data.State && ref.data.State == model.StateOk {
 		v.data.IncidentNbr += 1
 	}
 	be.SaveView(&v.data)

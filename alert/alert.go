@@ -19,7 +19,7 @@ type Alerter interface {
 }
 
 func ViewStateChanged(ev service.ViewStateChangedEvent) {
-	if ev.Current == model.STATE_PAUSED || ev.Previous == model.STATE_PAUSED {
+	if ev.Current == model.StatePaused || ev.Previous == model.StatePaused {
 		return
 	}
 	for _, alert := range ev.View.Alerts {

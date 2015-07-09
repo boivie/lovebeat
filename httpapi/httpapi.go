@@ -17,7 +17,7 @@ var (
 	client service.ServiceIf
 )
 
-func now() int64 { return time.Now().Unix() }
+func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
 
 var log = logging.MustGetLogger("lovebeat")
 
@@ -118,6 +118,7 @@ type JsonService struct {
 	ErrorTimeout   int64         `json:"error_timeout"`
 	State          string        `json:"state"`
 	Views          []JsonViewRef `json:"views,omitempty"`
+	History        []int64       `json:"history,omitempty"`
 }
 
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
@@ -165,6 +166,7 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 		WarningTimeout: s.WarningTimeout,
 		ErrorTimeout:   s.ErrorTimeout,
 		State:          s.State,
+		History:        s.BeatHistory,
 	}
 
 	if _, ok := r.URL.Query()["details"]; ok {
