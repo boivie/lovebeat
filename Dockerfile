@@ -11,4 +11,4 @@ EXPOSE 8080
 
 USER default
 
-CMD ["/bin/lovebeat"]
+ENTRYPOINT ["/bin/lovebeat"]
