@@ -14,6 +14,11 @@ If you can use docker, simply:
 
     $ docker run -it -p 8127:8127/udp -p 8127:8127/tcp -p 8080:8080 boivie/lovebeat
 
+If you just want to use it (and not develop it), download the binary matching
+your architecture and OS at:
+
+https://github.com/boivie/lovebeat/releases
+
 If you have go installed, simply:
 
     $ mkdir go
@@ -41,13 +46,6 @@ Key Concepts
     The service will change state into WARNING or ERROR when the timeouts have
     expired. Both timeouts are optional.
 
-    The timeouts can also be automatically calculated based on the frequency
-    of the heartbeats. The algorithm is currently quite basic - when it has
-    gathered at least 6 samples, it will take the median time between the
-    heartbeats and add an additional 50%. So if the hearbeats are generated
-    every ten seconds, the timeout will be set to 15. Please see the examples
-    below for details.
-
   * *view*
     A view shows a filtered subset of your services. You specify a regular expression
     and all services whose identifiers match this regexp will be part of the view.
@@ -65,7 +63,19 @@ Key Concepts
     Another option is to let lovebeat send mails or do a HTTP POST to your web
     service whenever a view changes state. Every view allows you to set these
     alarms.
-  
+
+Automatic Setting of Timeouts
+=============================
+
+While you can set the error and/or warning timeout manually, they can also be
+automatically calculated based on the frequency and regularity of the heartbeats.
+
+A regular heartbeat results in a low threshold (compared to the median frequency
+of the heartbeats) and an irregular heartbeat sets the threshold higher so that
+it doesn't expire during normal operations.
+
+The algorithm is rather well performing in theory and modeled (and tested) using
+the bundled Jupyter Notebook bundled in the docs/ directory.
 
 Protocol Details
 ================
