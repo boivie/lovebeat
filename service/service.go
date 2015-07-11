@@ -18,7 +18,6 @@ func newService(name string) *Service {
 	return &Service{
 		data: model.Service{
 			Name:           name,
-			LastValue:      -1,
 			LastBeat:       -1,
 			WarningTimeout: -1,
 			ErrorTimeout:   -1,

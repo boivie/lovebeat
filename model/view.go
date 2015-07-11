@@ -18,7 +18,6 @@ const BeatHistoryCount = 100
 // Service is something that can issue a beat
 type Service struct {
 	Name           string
-	LastValue      int
 	LastBeat       int64
 	BeatHistory    []int64
 	WarningTimeout int64
