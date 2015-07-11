@@ -12,6 +12,7 @@ import (
 	"github.com/boivie/lovebeat/httpapi"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/service"
+	"github.com/boivie/lovebeat/stream"
 	"github.com/boivie/lovebeat/tcpapi"
 	"github.com/boivie/lovebeat/udpapi"
 	"github.com/gorilla/mux"
@@ -55,9 +56,10 @@ func signalHandler(be backend.Backend) {
 	}
 }
 
-func httpServer(cfg *config.ConfigBind, svcs *service.Services) {
+func httpServer(cfg *config.ConfigBind, svcs *service.Services, bus *eventbus.EventBus) {
 	rtr := mux.NewRouter()
 	httpapi.Register(rtr, svcs.GetClient())
+	stream.Register(rtr, bus)
 	dashboard.Register(rtr, svcs.GetClient())
 	http.Handle("/", rtr)
 	log.Info("HTTP listening on %s\n", cfg.Listen)
@@ -122,7 +124,7 @@ func main() {
 	signal.Notify(signalchan, os.Interrupt)
 
 	go svcs.Monitor(cfg)
-	go httpServer(&cfg.Http, svcs)
+	go httpServer(&cfg.Http, svcs, bus)
 	go udpapi.Listener(&cfg.Udp, svcs.GetClient())
 	go tcpapi.Listener(&cfg.Tcp, svcs.GetClient())
 
