@@ -37,6 +37,10 @@ func Parse(data []byte) []LineCommand {
 			continue
 		}
 
+		if vali > 0 {
+			vali = vali * 1000
+		}
+
 		cmd := LineCommand{
 			Action: string(item[2]),
 			Name:   string(item[1]),

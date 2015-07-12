@@ -67,17 +67,17 @@ lovebeatApp.config(['$routeProvider',
   }]);
 
 lovebeatApp.filter('delta_ago', function() {
-  return function(seconds) {
-      if (seconds <= 0)
+  return function(milliseconds) {
+      if (milliseconds <= 0)
 	  return "now";
-      return juration.stringify(seconds, {format:'micro', units: 2}) + " ago";
+      return juration.stringify(milliseconds / 1000, {format:'micro', units: 2}) + " ago";
   }
 });
 
 lovebeatApp.filter('delta', function() {
-    return function(seconds) {
-	if (seconds < 0)
+    return function(milliseconds) {
+	if (milliseconds < 0)
 	    return "not set";
-	return juration.stringify(seconds);
+	return juration.stringify(milliseconds / 1000);
   }
 });

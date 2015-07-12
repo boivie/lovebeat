@@ -25,7 +25,7 @@ func parseTimeout(tmo string) int64 {
 		return service.TIMEOUT_AUTO
 	} else {
 		val, _ := strconv.Atoi(tmo)
-		return int64(val)
+		return int64(val) * 1000
 	}
 }
 

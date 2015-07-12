@@ -11,6 +11,7 @@ const TIMEOUT_AUTO int64 = -2
 type ServiceIf interface {
 	DeleteService(name string)
 
+	// Updates the service. The timeouts are in milliseconds.
 	UpdateService(name string, registerBeat bool, warningTimeout int64, errorTimeout int64)
 
 	GetServices(view string) []model.Service
