@@ -17,19 +17,19 @@ const BeatHistoryCount = 100
 
 // Service is something that can issue a beat
 type Service struct {
-	Name           string
-	LastBeat       int64
-	BeatHistory    []int64
-	WarningTimeout int64
-	ErrorTimeout   int64
-	State          string
+	Name           string  // Name of the service
+	LastBeat       int64   // Timestamp, in milliseconds since epoch, of last beat
+	BeatHistory    []int64 // The last X duration (in milliseconds) between heartbeats
+	WarningTimeout int64   // The warning timeout, in milliseconds
+	ErrorTimeout   int64   // The error timeout, in milliseconds
+	State          string  // One of the StateXX constants
 }
 
 // View is a collection of services
 type View struct {
-	Name        string
-	State       string
-	Regexp      string
-	IncidentNbr int
+	Name        string // Name of the view
+	State       string // One of the StateXX constant
+	Regexp      string // Services matching this expression will be included in the view
+	IncidentNbr int    // Incrementing number everytime the view leaves the StateOk state
 	Alerts      []string
 }
