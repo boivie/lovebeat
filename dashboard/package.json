@@ -4,8 +4,7 @@
   "description": "Heartbeat Monitor",
   "main": "app.js",
   "dependencies": {
-  },
-  "devDependencies": {
+    "bower": "^1.4.1",
     "gulp": "~3.8.11",
     "gulp-rename": "~1.2.2",
     "gulp-concat": "~2.5.2",

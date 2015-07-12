@@ -3,3 +3,4 @@ node_modules
 static/dist/
 assets/lovebeat.css
 assets/lovebeat.js
+assets.go
