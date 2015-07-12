@@ -7,7 +7,7 @@ ASSETS := $(shell find assets/ -print)
 BINDATA_DEBUG ?=
 
 assets.go: $(ASSETS) assets/lovebeat.js assets/lovebeat.css
-	go install github.com/jteeuwen/go-bindata/go-bindata
+	go get -u github.com/jteeuwen/go-bindata/...
 	$(GO_BINDATA) $(BINDATA_DEBUG) -pkg=dashboard -prefix "assets/" -o assets.go assets/...
 
 assets/lovebeat.js: js/app.js js/controllers.js js/services.js bower_components/ | $(GULP)
