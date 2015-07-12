@@ -3,10 +3,36 @@
 /* App Module */
 
 var lovebeatApp = angular.module('lovebeatApp', [
-  'ngRoute',
-  'lovebeatControllers',
-  'lovebeatServices'
-]);
+    'ngRoute',
+    'lovebeatControllers',
+    'lovebeatServices',
+    'ngWebSocket'
+  ]).factory('LovebeatStream', ['$websocket', '$rootScope',
+  function($websocket, $rootScope) {
+    var loc = window.location, ws_uri;
+    if (loc.protocol === "https:") {
+      ws_uri = "wss:";
+    } else {
+      ws_uri = "ws:";
+    }
+    ws_uri += "//" + loc.host + "/ws";
+    var dataStream = $websocket(ws_uri, null, {reconnectIfNotNormalClose: true});
+
+    dataStream.onMessage(function(message) {
+      var payload = JSON.parse(message.data)
+      $rootScope.$broadcast("LovebeatStream::" + payload.m, payload.args);
+    });
+
+    var methods = {
+      get: function() {
+        dataStream.send(JSON.stringify({
+          action: 'get'
+        }));
+      }
+    };
+
+    return methods;
+  }]);
 
 lovebeatApp.config(['$routeProvider',
   function($routeProvider) {
