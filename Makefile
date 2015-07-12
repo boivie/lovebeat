@@ -1,14 +1,14 @@
 .PHONY: all
 all: lovebeat
 
-ASSETS := $(shell find data -print)
+ASSETS := $(shell find dashboard/assets/ -print)
 BINDATA_DEBUG ?=
 GO_BINDATA := $(if $(GOBIN),$(GOBIN),$(GOPATH)/bin)/go-bindata
 DESTDIR ?= /
 
 dashboard/assets.go: $(ASSETS)
 	go install github.com/jteeuwen/go-bindata/go-bindata
-	$(GO_BINDATA) $(BINDATA_DEBUG) -pkg=dashboard -o dashboard/assets.go data/...
+	$(GO_BINDATA) $(BINDATA_DEBUG) -pkg=dashboard -prefix "dashboard/assets/" -o dashboard/assets.go dashboard/assets/...
 
 GO_FILES := $(shell find . -name "*.go" -print)
 lovebeat: dashboard/assets.go $(GO_FILES)
