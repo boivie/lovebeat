@@ -4,8 +4,11 @@ all: lovebeat
 dashboard-assets:
 	$(MAKE) -C dashboard
 
+dependencies:
+	go get -t ./...
+
 GO_FILES := $(shell find . -name "*.go" -print)
-lovebeat: $(GO_FILES) dashboard-assets
+lovebeat: $(GO_FILES) dependencies | dashboard-assets
 	go build
 
 .PHONY: clean
