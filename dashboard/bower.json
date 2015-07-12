@@ -1,0 +1,19 @@
+{
+  "name": "lovebeat",
+  "version": "1.0.0",
+  "homepage": "https://github.com/boivie/lovebeat",
+  "authors": [
+    "Victor Boivie <victor@boivie.com>"
+  ],
+  "description": "Heartbeat monitor",
+  "license": "Apache License 2.0",
+  "dependencies": {
+    "jquery": "2.1.4",
+    "angular": "1.4.2",
+    "angular-route": "1.4.2",
+    "angular-resource": "1.4.2",
+    "angular-websocket": "1.0.13",
+    "juration": "531b9d35a1e7af5a946f3da920b9d562bdca3fd2",
+    "bootstrap-sass": "~3.3.5"
+  }
+}

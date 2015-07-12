@@ -13,6 +13,7 @@ import (
 )
 
 var client service.ServiceIf
+var rootDir = "./dashboard/assets"
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	viewName := "all"
@@ -52,5 +53,5 @@ func Register(rtr *mux.Router, client_ service.ServiceIf) {
 	rtr.HandleFunc("/", RedirectHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.PathPrefix("/").Handler(http.FileServer(
-		&assetfs.AssetFS{Asset, AssetDir, "data/"}))
+		&assetfs.AssetFS{Asset, AssetDir, "/"}))
 }
