@@ -97,10 +97,10 @@ lovebeatControllers.controller('EditServiceCtrl', ['$scope', '$routeParams', 'Se
         serviceId: $routeParams.serviceId
       }, function(service) {
         if (service.warning_timeout > 0) {
-          $scope.service.warn_tmo_hr = juration.stringify(service.warning_timeout);
+          $scope.service.warn_tmo_hr = juration.stringify(service.warning_timeout / 1000);
         }
         if (service.error_timeout > 0) {
-          $scope.service.err_tmo_hr = juration.stringify(service.error_timeout);
+          $scope.service.err_tmo_hr = juration.stringify(service.error_timeout / 1000);
         }
       }),
       $scope.editService = function() {
