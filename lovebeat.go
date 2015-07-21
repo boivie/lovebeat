@@ -9,6 +9,7 @@ import (
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
 	"github.com/boivie/lovebeat/eventbus"
+	"github.com/boivie/lovebeat/eventlog"
 	"github.com/boivie/lovebeat/httpapi"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/service"
@@ -16,6 +17,7 @@ import (
 	"github.com/boivie/lovebeat/tcpapi"
 	"github.com/boivie/lovebeat/udpapi"
 	"github.com/gorilla/mux"
+	"github.com/mipearson/rfw"
 	"github.com/op/go-logging"
 	"log/syslog"
 	"net/http"
@@ -74,6 +76,20 @@ func getHostname() string {
 	return strings.Split(hostname, ".")[0]
 }
 
+func setUpEventlog(cfg config.Config, bus *eventbus.EventBus) {
+	if len(cfg.Eventlog.Path) == 0 {
+		return
+	}
+	eventwriter, err := rfw.Open(cfg.Eventlog.Path, cfg.Eventlog.Mode)
+	if err != nil {
+		log.Error("Error opening event log for writing: %s", err)
+	} else {
+		log.Info("Logging events to %s", cfg.Eventlog.Path)
+		evtlog := eventlog.New(eventwriter)
+		evtlog.Register(bus)
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -111,6 +127,8 @@ func main() {
 
 	var cfg = config.ReadConfig(*cfgFile, *cfgDir)
 	bus := eventbus.New()
+
+	setUpEventlog(cfg, bus)
 
 	m := metrics.New(&cfg.Metrics)
 
