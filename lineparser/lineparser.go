@@ -16,7 +16,8 @@ type LineCommand struct {
 
 var log = logging.MustGetLogger("lovebeat")
 
-var packetRegexp = regexp.MustCompile("^([^:]+)\\.(beat|warn|err|autobeat):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
+var packetRegexp = regexp.MustCompile("^(" + service.ServiceNamePattern +
+	")\\.(beat|warn|err|autobeat):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
 func Parse(data []byte) []LineCommand {
 	var commands []LineCommand

@@ -83,3 +83,18 @@ func TestParseMultiple(t *testing.T) {
 		t.Errorf("Failed %v %v", cmds, ref)
 	}
 }
+
+func TestServiceWithUnderscore(t *testing.T) {
+	cmds := Parse([]byte("foo_bar.beat:1|c"))
+	ref := []LineCommand{LineCommand{"beat", "foo_bar", 1000}}
+	if !testEq(cmds, ref) {
+		t.Errorf("Failed %v %v", cmds, ref)
+	}
+}
+
+func TestIgnoreBadServiceName(t *testing.T) {
+	cmds := Parse([]byte("foo/bar.beat:1|c"))
+	if len(cmds) != 0 {
+		t.Errorf("Failed")
+	}
+}
