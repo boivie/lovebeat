@@ -38,6 +38,9 @@ func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
 	if service.data.State != ref.data.State {
 		log.Info("SERVICE '%s', state %s -> %s",
 			service.name(), ref.data.State, service.data.State)
+		if ref.data.LastBeat == -1 {
+			svcs.bus.Publish(ServiceAddedEvent{service.data})
+		}
 		svcs.bus.Publish(ServiceStateChangedEvent{
 			service.data,
 			ref.data.State,
@@ -144,6 +147,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 			delete(svcs.services, s.name())
 			svcs.be.DeleteService(s.name())
 			svcs.updateMatchingViews(ts, s.name())
+			svcs.bus.Publish(ServiceRemovedEvent{s.data})
 		case c := <-svcs.upsertServiceCmdChan:
 			var ts = now()
 			var s = svcs.getService(c.Service)

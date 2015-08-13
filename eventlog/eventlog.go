@@ -24,7 +24,9 @@ func (el *EventLog) Register(bus *eventbus.EventBus) {
 	bus.RegisterHandler(
 		el.eventHandler,
 		service.ServiceStateChangedEvent{},
-		service.ViewStateChangedEvent{})
+		service.ViewStateChangedEvent{},
+		service.ServiceAddedEvent{},
+		service.ServiceRemovedEvent{})
 }
 
 func (el *EventLog) eventHandler(ev interface{}) {
