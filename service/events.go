@@ -5,13 +5,17 @@ import (
 )
 
 type ViewStateChangedEvent struct {
-	View     model.View
-	Previous string
-	Current  string
+	View     model.View `json:"view"`
+	Previous string     `json:"previous"`
+	Current  string     `json:"current"`
 }
 
 type ServiceStateChangedEvent struct {
-	Service  model.Service
-	Previous string
-	Current  string
+	Service  model.Service `json:"service"`
+	Previous string        `json:"previous"`
+	Current  string        `json:"current"`
 }
+
+// When adding a new expression struct type here, don't forget
+// to add it to the test cases so the member names are checked
+// for conformity.
