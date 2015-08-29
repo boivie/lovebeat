@@ -26,7 +26,7 @@ If you have go installed, simply:
     $ export GOPATH=`pwd`
     $ go get github.com/boivie/lovebeat
     $ cd src/github.com/boivie/lovebeat
-    $ go build
+    $ make
     $ ./lovebeat
 
 Developers will want to install go-bindata to re-generate the assets from the

@@ -30,10 +30,6 @@ import (
 
 var log = logging.MustGetLogger("lovebeat")
 
-const (
-	VERSION = "0.8.0"
-)
-
 var (
 	debug       = flag.Bool("debug", false, "Enable debug logs")
 	showVersion = flag.Bool("version", false, "Print version string")
