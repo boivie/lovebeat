@@ -90,7 +90,7 @@ func (c *connection) writePump() {
 func upgradeHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Error("Failed to upgrade", err)
+		log.Error("Failed to upgrade: %s", err)
 		return
 	}
 	c := &connection{send: make(chan []byte, 256), ws: ws}
