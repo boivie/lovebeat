@@ -71,6 +71,7 @@ func (m slackhookAlerter) Worker(q chan slackhook, cfg *config.ConfigSlackhook) 
 			req.AddHeader("X-Lovebeat", "1")
 
 			res, err := req.Do()
+
 			if err != nil {
 				log.Error("Failed to post slackhook:%v:", err)
 			}
