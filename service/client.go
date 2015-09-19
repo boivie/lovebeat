@@ -8,6 +8,8 @@ import (
 const TIMEOUT_CLEAR int64 = -1
 const TIMEOUT_AUTO int64 = -2
 
+const ServiceNamePattern = "[a-z0-9._-]+"
+
 type ServiceIf interface {
 	DeleteService(name string)
 

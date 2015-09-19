@@ -189,14 +189,14 @@ func Register(rtr *mux.Router, client_ service.ServiceIf) {
 	client = client_
 	rtr.HandleFunc("/api/services/",
 		GetServicesHandler).Methods("GET")
-	rtr.HandleFunc("/api/services/{name:[a-z0-9.-]+}",
+	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}",
 		ServiceHandler).Methods("POST")
-	rtr.HandleFunc("/api/services/{name:[a-z0-9.-]+}",
+	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}",
 		GetServiceHandler).Methods("GET")
-	rtr.HandleFunc("/api/services/{name:[a-z0-9.-]+}",
+	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}",
 		DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/",
 		GetViewsHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/{name:[a-z0-9.-]+}",
+	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}",
 		GetViewHandler).Methods("GET")
 }

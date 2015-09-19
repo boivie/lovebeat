@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 type Config struct {
@@ -18,6 +19,7 @@ type Config struct {
 	Metrics  ConfigMetrics
 	Alerts   map[string]ConfigAlert
 	Views    map[string]ConfigView
+	Eventlog ConfigEventlog
 }
 
 type ConfigMail struct {
@@ -53,6 +55,11 @@ type ConfigAlert struct {
 type ConfigView struct {
 	Regexp string
 	Alerts []string
+}
+
+type ConfigEventlog struct {
+	Path string
+	Mode os.FileMode
 }
 
 var log = logging.MustGetLogger("lovebeat")
@@ -104,6 +111,10 @@ func ReadConfig(fname string, dirname string) Config {
 			Server: "",
 			Prefix: "lovebeat",
 		},
+		Eventlog: ConfigEventlog{
+			Path: "",
+			Mode: 644, // Reinterpreted as octal below
+		},
 	}
 	readFile(&conf, fname)
 	if dirname != "" {
@@ -115,5 +126,7 @@ func ReadConfig(fname string, dirname string) Config {
 			}
 		}
 	}
+	mode, _ := strconv.ParseInt(strconv.FormatInt(int64(conf.Eventlog.Mode), 10), 8, 64)
+	conf.Eventlog.Mode = os.FileMode(mode)
 	return conf
 }

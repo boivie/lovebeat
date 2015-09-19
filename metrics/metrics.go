@@ -34,7 +34,7 @@ func (s *UdpMetrics) SetGauge(name string, value int) {
 func (s *UdpMetrics) send(data []byte) {
 	n, err := s.con.Write(data)
 	if err != nil {
-		log.Error("Failed to write metrics", err)
+		log.Error("Failed to write metrics: %s", err)
 	}
 	if n == 0 {
 		log.Error("Failed to write metrics")

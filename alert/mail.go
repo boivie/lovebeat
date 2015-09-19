@@ -38,14 +38,14 @@ func renderTemplate(tmpl string, context map[string]interface{}) string {
 	}
 	t, err := template.New("template").Funcs(funcMap).Parse(tmpl)
 	if err != nil {
-		log.Error("error trying to parse mail template", err)
+		log.Error("error trying to parse mail template: %s", err)
 		return ""
 	}
 	var doc bytes.Buffer
 
 	err = t.Execute(&doc, context)
 	if err != nil {
-		log.Error("Failed to render template", err)
+		log.Error("Failed to render template: %s", err)
 		return ""
 	}
 	return doc.String()
