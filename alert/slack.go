@@ -2,14 +2,14 @@ package alert
 
 import (
 	"bytes"
-	"net/http"
-	"io/ioutil"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/service"
 	"github.com/franela/goreq"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"text/template"
 	"time"
-	"net/url"
 )
 
 type slackhook struct {
@@ -25,7 +25,7 @@ func (m slackhookAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateCha
 
 	if cfg.Slackhook != "" {
 
-		m.cmds <- slackhook{Uri: cfg.Slackhook, Data: ev }
+		m.cmds <- slackhook{Uri: cfg.Slackhook, Data: ev}
 	}
 
 }
@@ -59,7 +59,7 @@ func (m slackhookAlerter) Worker(q chan slackhook, cfg *config.ConfigSlackhook) 
 			}
 
 			req := goreq.Request{
-			    Method: "POST",
+				Method:      "POST",
 				Uri:         cfg.Uri,
 				Accept:      "*/*",
 				ContentType: "application/x-www-form-urlencoded",
