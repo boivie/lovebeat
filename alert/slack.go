@@ -19,6 +19,7 @@ type slackhook struct {
 
 type slackhookAlerter struct {
 	cmds chan slackhook
+	template *template.Template
 }
 
 func (m slackhookAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
@@ -43,16 +44,9 @@ func (m slackhookAlerter) Worker(q chan slackhook, cfg *config.ConfigSlackhook) 
 			context["Previous"] = slackhook.Data.Previous
 			context["Current"] = slackhook.Data.Current
 
-			tmpl := cfg.Template
-
-			t, err := template.New("template").Parse(tmpl)
-			if err != nil {
-				log.Error("error trying to parse slackhook template:%s:err:%v:", tmpl, err)
-				return
-			}
 			var doc bytes.Buffer
 
-			err = t.Execute(&doc, context)
+			err = m.template.Execute(&doc, context)
 			if err != nil {
 				log.Error("Failed to render template", err)
 				return
@@ -94,9 +88,21 @@ func (m slackhookAlerter) Worker(q chan slackhook, cfg *config.ConfigSlackhook) 
 }
 
 func NewSlackhookAlerter(cfg config.Config) Alerter {
+
+
+	tmpl := cfg.Slackhook.Template
+
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		log.Fatalf("skipping slackhook:error trying to parse slackhook template:%s:err:%v:", tmpl, err)
+	}
+
 	goreq.SetConnectTimeout(5 * time.Second)
 	var q = make(chan slackhook, 100)
-	var w = slackhookAlerter{cmds: q}
+	var w = slackhookAlerter{cmds: q, template: t}
 	go w.Worker(q, &cfg.Slackhook)
 	return &w
 }
+
+
+
