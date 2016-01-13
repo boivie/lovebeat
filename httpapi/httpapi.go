@@ -35,7 +35,7 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 
 	var err = r.ParseForm()
 	if err != nil {
-		log.Error("error parsing form ", err)
+		log.Error("error parsing form: %s", err)
 		return
 	}
 
