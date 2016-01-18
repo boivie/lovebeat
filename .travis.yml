@@ -1,7 +1,7 @@
 sudo: false
 language: go
 go:
-- 1.4.2
+- 1.5.3
 env:
 - PATH=/home/travis/gopath/bin:$PATH
 before_install:
@@ -11,8 +11,9 @@ before_install:
 - go get github.com/axw/gocov/gocov
 - go get github.com/mattn/goveralls
 - go get golang.org/x/tools/cmd/cover
+- go get github.com/tools/godep
 script:
-- make && go test ./... && ./runcover.sh ./...
+- make deps all && go test ./... && ./runcover.sh ./...
 - goveralls -coverprofile=profile.cov -service travis-ci -repotoken $COVERALLS_TOKEN
 after_success:
 - gox -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"

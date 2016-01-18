@@ -17,20 +17,14 @@ If you can use docker, simply:
 If you just want to use it (and not develop it), download the binary matching
 your architecture and OS at:
 
-https://github.com/boivie/lovebeat/releases
+  https://github.com/boivie/lovebeat/releases
 
-If you have go installed, simply:
+If you are a developer, simply:
 
-    $ mkdir go
-    $ cd go
-    $ export GOPATH=`pwd`
-    $ go get github.com/boivie/lovebeat
-    $ cd src/github.com/boivie/lovebeat
+    $ go get github.com/tools/godep
+    $ make deps  # only once
     $ make
     $ ./lovebeat
-
-Developers will want to install go-bindata to re-generate the assets from the
-data/ directory. Then type "make" to build it.
 
 Key Concepts
 ============
@@ -100,7 +94,7 @@ Examples:
 
     # UDP
     $ echo "invoice.mailer.beat:1|c" | nc -4u -w0 localhost 8127
-    
+
     # TCP
     $ echo "invoice.mailer.warn:3600|g" | nc -c localhost 8127
 
@@ -175,4 +169,3 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-

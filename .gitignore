@@ -4,3 +4,4 @@ lovebeat.db
 profile.cov
 version.go
 .idea/
+vendor/
