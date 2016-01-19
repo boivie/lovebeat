@@ -4,14 +4,14 @@ all: lovebeat
 dashboard-assets:
 	$(MAKE) -C dashboard
 
+dependencies: dashboard-assets
+	go get -t ./...
+
 # Explicitly listing version.go since it might not exist when
 # the makefile is parsed.
 GO_FILES := $(shell find . -name "*.go" -print) version.go
-lovebeat: $(GO_FILES) dashboard-assets
-	GO15VENDOREXPERIMENT=1 go build
-
-deps:
-	GO15VENDOREXPERIMENT=1 godep restore
+lovebeat: $(GO_FILES) dependencies dashboard-assets
+	go build
 
 # Generate version.go based on the "git describe" output so that
 # Lovebeat's reported version number is always descriptive and useful.
