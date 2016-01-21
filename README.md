@@ -11,9 +11,7 @@ Documentation
 =============
 
 For installation and usage instructions, please head over to our documentation
-at:
-
-    http://lovebeat.readthedocs.org/
+at http://lovebeat.readthedocs.org/
 
 Notable software included
 =========================
