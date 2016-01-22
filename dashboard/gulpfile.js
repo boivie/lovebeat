@@ -6,13 +6,16 @@ var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var minifyCss = require('gulp-minify-css');
+var sourcemaps = require('gulp-sourcemaps');
 var rename = require("gulp-rename");
 
 gulp.task('css', function() {
   return gulp.src(['css/application.scss'])
+    .pipe(sourcemaps.init())
     .pipe(sass())
     .pipe(minifyCss())
     .pipe(rename("lovebeat.css"))
+    .pipe(sourcemaps.write("."))
     .pipe(gulp.dest('assets/'));
 });
 
@@ -28,9 +31,11 @@ gulp.task('scripts', function() {
       'js/controllers.js',
       'js/services.js'
     ])
+    .pipe(sourcemaps.init())
     .pipe(concat('lovebeat.js'))
     .pipe(uglify())
     .pipe(rename("lovebeat.js"))
+    .pipe(sourcemaps.write("."))
     .pipe(gulp.dest('assets/'));
 });
 
