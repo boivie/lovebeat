@@ -42,5 +42,13 @@ of the provided view will be used.
 You can let e.g. nagios_ monitor it. There is a
 provided nagios plugin in the contrib/ directory.
 
+Logging
+-------
+
+Lovebeat prints its logs to stderr. If you want the logs to be sent to the local
+syslog service, add the command line switch ``-syslog``.
+
+You can also increase the verbosity of the logs by adding ``-debug``.
+
 .. _nagios: https://www.nagios.org/
 .. _jupyter: http://jupyter.org/
