@@ -50,5 +50,28 @@ syslog service, add the command line switch ``-syslog``.
 
 You can also increase the verbosity of the logs by adding ``-debug``.
 
+Metrics reporting
+-----------------
+
+Lovebeat can send metrics to a statsd_ proxy using the UDP protocol, to allow
+them to be shown in  e.g. graphite_, influxdb_ or similar.
+
+You will get some health information about Lovebeat itself, such as the time
+it takes to save its database, and also status information (as gauges) of
+all services and views. This allows you to correlate service status with other
+metrics you collect.
+
+Simply specify a server and the prefix that Lovebeat will use for all metrics
+in the lovebeat configuration file:
+
+.. code-block:: ini
+
+    [metrics]
+    server = "localhost:8125"
+    prefix = "lovebeat"
+
 .. _nagios: https://www.nagios.org/
 .. _jupyter: http://jupyter.org/
+.. _statsd: https://github.com/etsy/statsd
+.. _graphite: http://graphite.wikidot.com/
+.. _influxdb: https://influxdata.com/
