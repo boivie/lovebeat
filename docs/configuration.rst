@@ -44,7 +44,7 @@ documented as well.
     ## TCP listener, for the dashboard and the HTTP API
     #
     #[http]
-    #listen = ":8081"
+    #listen = ":8080"
 
     ##
     ## SMTP settings, for the mail alerter.
