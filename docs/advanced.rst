@@ -70,8 +70,27 @@ in the lovebeat configuration file:
     server = "localhost:8125"
     prefix = "lovebeat"
 
+Behind a reverse proxy
+----------------------
+
+Lovebeat can be located behind a reverse proxy and properly handle that it's
+served from a different path than the root path. Please keep in mind that the
+websocket functionality requires a proxy server with proper support for them.
+
+In nginx_, this would be a working configuration:
+
+.. code-block:: nginx
+
+    location /monitoring/lovebeat/ {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_pass http://localhost:8080/;
+    }
+
 .. _nagios: https://www.nagios.org/
 .. _jupyter: http://jupyter.org/
 .. _statsd: https://github.com/etsy/statsd
 .. _graphite: http://graphite.wikidot.com/
 .. _influxdb: https://influxdata.com/
+.. _nginx: https://www.nginx.com/
