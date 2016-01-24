@@ -44,13 +44,17 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	io.WriteString(c, body)
 }
 
-func RedirectHandler(c http.ResponseWriter, req *http.Request) {
-	http.Redirect(c, req, "/dashboard.html", 301)
+func DashboardHandler(c http.ResponseWriter, req *http.Request) {
+	bytes, err := dashboardHtmlBytes()
+	if err == nil {
+		c.Header().Set("Content-Type", "text/html")
+		c.Write(bytes)
+	}
 }
 
 func Register(rtr *mux.Router, client_ service.ServiceIf) {
 	client = client_
-	rtr.HandleFunc("/", RedirectHandler).Methods("GET")
+	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.PathPrefix("/").Handler(http.FileServer(
 		&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/"}))
