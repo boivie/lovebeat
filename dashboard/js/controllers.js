@@ -26,7 +26,7 @@ lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams',
     $scope.lbTrigger = function(service) {
         $http({
           method: 'POST',
-          url: '/api/services/' + service.name,
+          url: 'api/services/' + service.name,
           data: '',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -79,7 +79,7 @@ lovebeatControllers.controller('AddServiceCtrl', ['$scope', '$http',
 
       $http({
         method: 'POST',
-        url: '/api/services/' + $scope.service.name,
+        url: 'api/services/' + $scope.service.name,
         data: 'err-tmo=' + err_tmo + '&warn-tmo=' + warn_tmo,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
@@ -117,7 +117,7 @@ lovebeatControllers.controller('EditServiceCtrl', ['$scope', '$routeParams', 'Se
 
         $http({
           method: 'POST',
-          url: '/api/services/' + $scope.service.name,
+          url: 'api/services/' + $scope.service.name,
           data: 'err-tmo=' + err_tmo + '&warn-tmo=' + warn_tmo,
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -129,7 +129,7 @@ lovebeatControllers.controller('EditServiceCtrl', ['$scope', '$routeParams', 'Se
       $scope.deleteService = function() {
         $http({
           method: 'DELETE',
-          url: '/api/services/' + $scope.service.name
+          url: 'api/services/' + $scope.service.name
         }).success(function(data, status, headers, config) {
           window.location = "#/"
         })

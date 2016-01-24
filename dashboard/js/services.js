@@ -2,7 +2,7 @@ var lovebeatServices = angular.module('lovebeatServices', ['ngResource']);
 
 lovebeatServices.factory('Service', ['$resource',
   function($resource) {
-    return $resource('/api/services/:serviceId?view=:viewId', {
+    return $resource('api/services/:serviceId?view=:viewId', {
       serviceId: '@name'
     }, {
       get: {
@@ -18,7 +18,7 @@ lovebeatServices.factory('Service', ['$resource',
 
 lovebeatServices.factory('View', ['$resource',
   function($resource) {
-    return $resource('/api/views/:viewId?', {
+    return $resource('api/views/:viewId?', {
       viewId: '@name'
     }, {
       query: {

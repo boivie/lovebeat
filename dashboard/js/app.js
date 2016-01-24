@@ -9,12 +9,13 @@ var lovebeatApp = angular.module('lovebeatApp', [
   function($websocket, $rootScope) {
     var loc = window.location,
       ws_uri;
+    var path = loc.pathname.substr(0, loc.pathname.lastIndexOf('/')) + "/"
     if (loc.protocol === "https:") {
       ws_uri = "wss:";
     } else {
       ws_uri = "ws:";
     }
-    ws_uri += "//" + loc.host + "/ws";
+    ws_uri += "//" + loc.host + path + "ws";
     var dataStream = $websocket(ws_uri, null, {
       reconnectIfNotNormalClose: true
     });
