@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	Mail     ConfigMail
+	Slackhook     ConfigSlackhook
 	Udp      ConfigBind
 	Tcp      ConfigBind
 	Http     ConfigBind
@@ -24,6 +25,11 @@ type Config struct {
 type ConfigMail struct {
 	From   string
 	Server string
+}
+
+type ConfigSlackhook struct {
+	Uri   string
+	Template string
 }
 
 type ConfigBind struct {
@@ -43,6 +49,7 @@ type ConfigMetrics struct {
 type ConfigAlert struct {
 	Mail    string
 	Webhook string
+	Slackhook string
 }
 
 type ConfigView struct {
@@ -82,6 +89,10 @@ func ReadConfig(fname string, dirname string) Config {
 		Mail: ConfigMail{
 			From:   "lovebeat@example.com",
 			Server: "localhost:25",
+		},
+		Slackhook: ConfigSlackhook{
+			Uri:   "http://localhost:1323/services/deded/wswswsw/erferferferferf",
+			Template: `{"channel": "#alert-test", "username": "webhookbot", "text": "slack check {{.View.Name}}-{{.View.IncidentNbr}}", "icon_emoji": ":ghost:"}`,
 		},
 		Udp: ConfigBind{
 			Listen: ":8127",
