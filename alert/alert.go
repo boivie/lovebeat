@@ -34,7 +34,7 @@ func ViewStateChanged(ev service.ViewStateChangedEvent) {
 func RegisterAlerters(bus *eventbus.EventBus, cfg config.Config) {
 	alerters = []Alerter{
 		NewMailAlerter(cfg),
-		NewSlackhookAlerter(cfg),
+		NewSlackAlerter(cfg),
 		NewWebhooksAlerter(cfg),
 	}
 	alerts = cfg.Alerts

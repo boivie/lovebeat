@@ -10,16 +10,16 @@ import (
 )
 
 type Config struct {
-	Mail      ConfigMail
-	Slackhook ConfigSlackhook
-	Udp       ConfigBind
-	Tcp       ConfigBind
-	Http      ConfigBind
-	Database  ConfigDatabase
-	Metrics   ConfigMetrics
-	Alerts    map[string]ConfigAlert
-	Views     map[string]ConfigView
-	Eventlog  ConfigEventlog
+	Mail     ConfigMail
+	Slack    ConfigSlack
+	Udp      ConfigBind
+	Tcp      ConfigBind
+	Http     ConfigBind
+	Database ConfigDatabase
+	Metrics  ConfigMetrics
+	Alerts   map[string]ConfigAlert
+	Views    map[string]ConfigView
+	Eventlog ConfigEventlog
 }
 
 type ConfigMail struct {
@@ -27,9 +27,8 @@ type ConfigMail struct {
 	Server string
 }
 
-type ConfigSlackhook struct {
-	Uri      string
-	Template string
+type ConfigSlack struct {
+	WebhookUrl string `toml:"webhook_url"`
 }
 
 type ConfigBind struct {
@@ -47,9 +46,9 @@ type ConfigMetrics struct {
 }
 
 type ConfigAlert struct {
-	Mail      string
-	Webhook   string
-	Slackhook string
+	Mail         string
+	Webhook      string
+	SlackChannel string `toml:"slack_channel"`
 }
 
 type ConfigView struct {
@@ -90,9 +89,8 @@ func ReadConfig(fname string, dirname string) Config {
 			From:   "lovebeat@example.com",
 			Server: "localhost:25",
 		},
-		Slackhook: ConfigSlackhook{
-			Uri:      "https://hooks.slack.com/services/TXXXXXXXX/BXXXXXXXX/XXXXXXXXXXXXXXXXX",
-			Template: `{"channel": "#alert-test", "username": "webhookbot", "text": "slack check {{.View.Name}}-{{.View.IncidentNbr}}", "icon_emoji": ":ghost:"}`,
+		Slack: ConfigSlack{
+			WebhookUrl: "https://hooks.slack.com/services/TXXXXXXXX/BXXXXXXXX/XXXXXXXXXXXXXXXXX",
 		},
 		Udp: ConfigBind{
 			Listen: ":8127",

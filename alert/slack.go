@@ -1,94 +1,108 @@
 package alert
 
 import (
-	"bytes"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/service"
 	"github.com/franela/goreq"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"text/template"
 	"time"
+	"fmt"
+	"github.com/boivie/lovebeat/model"
+	"strings"
 )
 
-type slackhook struct {
-	Uri  string
-	Data service.ViewStateChangedEvent
+type slackAlert struct {
+	Channel string
+	Data    service.ViewStateChangedEvent
 }
 
-type slackhookAlerter struct {
-	cmds     chan slackhook
-	template *template.Template
+type slackAlerter struct {
+	cmds chan slackAlert
 }
 
-func (m slackhookAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
-	if cfg.Slackhook != "" {
-		m.cmds <- slackhook{Uri: cfg.Slackhook, Data: ev}
+func (m slackAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
+	if cfg.SlackChannel != "" {
+		m.cmds <- slackAlert{Channel: cfg.SlackChannel, Data: ev}
 	}
 }
 
-func (m slackhookAlerter) Worker(q chan slackhook, cfg *config.ConfigSlackhook) {
+func (m slackAlerter) Worker(q chan slackAlert, cfg *config.ConfigSlack) {
 	for {
 		select {
-		case slackhook := <-q:
-			var err error
-			var context = make(map[string]interface{})
-
-			context["View"] = slackhook.Data.View
-			context["Previous"] = slackhook.Data.Previous
-			context["Current"] = slackhook.Data.Current
-
-			var doc bytes.Buffer
-
-			err = m.template.Execute(&doc, context)
-			if err != nil {
-				log.Error("Failed to render template", err)
-				return
+		case slackAlert := <-q:
+			type SlackField struct {
+				Title string `json:"title"`
+				Value string `json:"value"`
+				Short bool `json:"short"`
 			}
 
+			type SlackAttachment struct {
+				Fallback string `json:"fallback"`
+				Color    string `json:"color"`
+				Title    string `json:"title"`
+				Fields   []SlackField `json:"fields"`
+			}
+
+			var color string
+			if slackAlert.Data.Current == model.StateWarning {
+				color = "warning"
+			} else if slackAlert.Data.Current == model.StateError {
+				color = "danger"
+			} else {
+				color = "good"
+			}
+
+			prevUpper := strings.ToUpper(slackAlert.Data.Previous)
+			currentUpper := strings.ToUpper(slackAlert.Data.Current)
+			view := slackAlert.Data.View
+
+			payload := struct {
+				Username    string `json:"username"`
+				IconEmoji   string `json:"icon_emoji"`
+				Channel     string `json:"channel"`
+				Attachments []SlackAttachment `json:"attachments"`
+			}{
+				Username: "Lovebeat",
+				IconEmoji: ":loud_sound:",
+				Channel: slackAlert.Channel,
+				Attachments: []SlackAttachment{
+					SlackAttachment{
+						Fallback: fmt.Sprintf("lovebeat: %s changed from %s to %s", view.Name, prevUpper, currentUpper),
+						Color: color,
+						Title: fmt.Sprintf("\"%s\" has changed from %s to %s", view.Name, prevUpper, currentUpper),
+						Fields: []SlackField{
+							SlackField{Title: "View Name", Value: view.Name, Short: true },
+							SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true },
+							SlackField{Title: "From State", Value: prevUpper, Short: true },
+							SlackField{Title: "To State", Value: currentUpper, Short: true },
+						},
+					},
+				},
+			}
+
+			log.Debug("Performing slack request at %v", cfg.WebhookUrl)
 			req := goreq.Request{
 				Method:      "POST",
-				Uri:         cfg.Uri,
-				Accept:      "*/*",
-				ContentType: "application/x-www-form-urlencoded",
+				Uri:         cfg.WebhookUrl,
+				Accept:      "application/json",
+				ContentType: "application/json",
 				UserAgent:   "Lovebeat",
 				Timeout:     10 * time.Second,
-				Body:        "payload=" + url.QueryEscape(doc.String()),
+				Body:        payload,
 			}
-			res, err := req.Do()
+			_, err := req.Do()
 
 			if err != nil {
-				log.Error("Failed to post slackhook:%v:", err)
-			}
-
-			robots, err := ioutil.ReadAll(res.Body)
-			res.Body.Close()
-
-			// it returned a 200 so ignore any error here
-			if err != nil {
-				log.Error("OK:unreadable response:%v:", err)
-			} else if res.StatusCode != http.StatusOK {
-				log.Error("NOK:non-200:%d:", res.StatusCode)
-			} else {
-				log.Info("OK:response:%s:", string(robots))
+				log.Error("Failed to post slack alert: %v", err)
 			}
 		}
 	}
 }
 
-func NewSlackhookAlerter(cfg config.Config) Alerter {
-	tmpl := cfg.Slackhook.Template
-
-	t, err := template.New("template").Parse(tmpl)
-	if err != nil {
-		log.Fatalf("skipping slackhook:error trying to parse slackhook template:%s:err:%v:", tmpl, err)
-	}
-
+func NewSlackAlerter(cfg config.Config) Alerter {
 	goreq.SetConnectTimeout(5 * time.Second)
 
-	var q = make(chan slackhook, 100)
-	var w = slackhookAlerter{cmds: q, template: t}
-	go w.Worker(q, &cfg.Slackhook)
+	var q = make(chan slackAlert, 100)
+	var w = slackAlerter{cmds: q}
+	go w.Worker(q, &cfg.Slack)
 	return &w
 }
