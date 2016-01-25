@@ -25,7 +25,7 @@ And don't forget the web UI.
 
    installation
    getting_started
-   alarms
+   alerters
    advanced
    api
    configuration

@@ -1,5 +1,5 @@
-Alarms
-======
+Alerters
+========
 
 You can setup lovebeat to send mails or issue outgoing webhooks (HTTP POST) to
 your web service whenever a view changes state. This is done on a view by
@@ -46,3 +46,26 @@ configuration. The JSON data that is sent follows:
 
 The incident number is a monotonically incrementing counter that increases every
 time a view transitions between **OK** and either **WARNING** or **ERROR**.
+
+Slack
+-----
+
+Lovebeat can post messages to a slack_ channel whenever a view changes state.
+First of all, setup an incoming webhook to get a Webhook URL that you will
+enter in the lovebeat configuration file.
+
+A working example would look like:
+
+.. code-block:: ini
+
+    [views.example]
+    regexp = ".*"
+    alerts = ["message-to-ops"]
+
+    [alerts.message-to-ops]
+    slack_channel = "#ops"
+
+    [slack]
+    webhook_url = "https://hooks.slack.com/services/T12345678/B12345678/abrakadabra"
+
+.. _slack: https://slack.com/
