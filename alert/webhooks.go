@@ -37,28 +37,25 @@ func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChan
 
 func (m webhooksAlerter) Worker(q chan webhook) {
 	for {
-		select {
-		case webhook := <-q:
-			log.Info("Sending webhook alert to %s", webhook.Url)
+		webhook := <-q
+		log.Info("Sending webhook alert to %s", webhook.Url)
 
-			req := goreq.Request{
-				Uri:         webhook.Url,
-				Accept:      "application/json",
-				ContentType: "application/json",
-				UserAgent:   "Lovebeat",
-				Timeout:     10 * time.Second,
-				Body:        webhook.Data,
-			}
+		req := goreq.Request{
+			Uri:         webhook.Url,
+			Accept:      "application/json",
+			ContentType: "application/json",
+			UserAgent:   "Lovebeat",
+			Timeout:     10 * time.Second,
+			Body:        webhook.Data,
+		}
 
-			req.AddHeader("X-Lovebeat", "1")
+		req.AddHeader("X-Lovebeat", "1")
 
-			_, err := req.Do()
-			if err != nil {
-				log.Error("Failed to post webhook: %s", err)
-			}
+		_, err := req.Do()
+		if err != nil {
+			log.Error("Failed to post webhook: %s", err)
 		}
 	}
-
 }
 
 func NewWebhooksAlerter(cfg config.Config) Alerter {

@@ -23,7 +23,7 @@ const (
 	TMPL_BODY = `The status for view '{{.View.Name}}' has changed from '{{.Previous | ToUpper}}' to '{{.Current | ToUpper}}'
 `
 	TMPL_SUBJECT = `[LOVEBEAT] {{.View.Name}}-{{.View.IncidentNbr}}`
-	TMPL_EMAIL   = `From: {{.From}}
+	TMPL_EMAIL = `From: {{.From}}
 To: {{.To}}
 Subject: {{.Subject}}
 MIME-version: 1.0
@@ -74,25 +74,22 @@ func (m mailAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedE
 
 func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
 	for {
-		select {
-		case mail := <-q:
-			log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
-			var context = make(map[string]interface{})
-			context["From"] = cfg.From
-			context["To"] = mail.To
-			context["Subject"] = mail.Subject
-			context["Message"] = mail.Body
+		mail := <-q
+		log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
+		var context = make(map[string]interface{})
+		context["From"] = cfg.From
+		context["To"] = mail.To
+		context["Subject"] = mail.Subject
+		context["Message"] = mail.Body
 
-			contents := renderTemplate(TMPL_EMAIL, context)
-			var to = strings.Split(mail.To, ",")
-			var err = smtp.SendMail(cfg.Server, nil, cfg.From, to,
-				[]byte(contents))
-			if err != nil {
-				log.Error("Failed to send e-mail: %s", err)
-			}
+		contents := renderTemplate(TMPL_EMAIL, context)
+		var to = strings.Split(mail.To, ",")
+		var err = smtp.SendMail(cfg.Server, nil, cfg.From, to,
+			[]byte(contents))
+		if err != nil {
+			log.Error("Failed to send e-mail: %s", err)
 		}
 	}
-
 }
 
 func NewMailAlerter(cfg config.Config) Alerter {
