@@ -36,6 +36,7 @@ func RegisterAlerters(bus *eventbus.EventBus, cfg config.Config) {
 		NewMailAlerter(cfg),
 		NewSlackAlerter(cfg),
 		NewWebhooksAlerter(cfg),
+		NewScriptAlerter(cfg),
 	}
 	alerts = cfg.Alerts
 	bus.RegisterHandler(ViewStateChanged)

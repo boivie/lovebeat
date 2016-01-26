@@ -49,6 +49,7 @@ type ConfigAlert struct {
 	Mail         string
 	Webhook      string
 	SlackChannel string `toml:"slack_channel"`
+	Script       string
 }
 
 type ConfigView struct {
