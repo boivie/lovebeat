@@ -19,7 +19,7 @@ Monitoring
 ----------
 
 If it recommended to have an external monitoring system check the status of
-lovebeat. There is an API endpoint, `/status` for that purpose.
+lovebeat. There is an API endpoint, ``/status`` for that purpose.
 
 Calling it will result in the following response:
 
@@ -33,10 +33,25 @@ Calling it will result in the following response:
     has_error true
     good false
 
-`good` will be **true** only if there are no services in **WARNING** or
+If you call it with the ``Accept`` HTTP header set to ``application/json``, the
+following will be the response instead:
+
+.. code-block:: bash
+
+    $ curl -H "Accept: application/json" http://localhost:8080/status
+    {
+      "num_ok": 4,
+      "num_warning": 0,
+      "num_error": 2,
+      "has_warning": false,
+      "has_error": true,
+      "good": false
+    }
+
+``good`` will be **true** only if there are no services in **WARNING** or
 **ERROR** state.
 
-By specifying a `?view=name` query parameters, only services that are members
+By specifying a ``?view=name`` query parameters, only services that are members
 of the provided view will be used.
 
 You can let e.g. nagios_ monitor it. There is a

@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"encoding/json"
 )
 
 var client service.ServiceIf
@@ -34,14 +35,33 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 			ok++
 		}
 	}
-	buffer.WriteString(fmt.Sprintf("num_ok %d\nnum_warning %d\nnum_error %d\n",
-		ok, warnings, errors))
-	buffer.WriteString(fmt.Sprintf("has_warning %t\nhas_error %t\ngood %t\n",
-		warnings > 0, errors > 0, warnings == 0 && errors == 0))
-	body := buffer.String()
-	c.Header().Add("Content-Type", "text/plain")
-	c.Header().Add("Content-Length", strconv.Itoa(len(body)))
-	io.WriteString(c, body)
+	if (req.Header.Get("Accept") == "application/json") {
+		ret := struct {
+			NumOk      int `json:"num_ok"`
+			NumWarning int `json:"num_warning"`
+			NumError   int `json:"num_error"`
+			HasWarning bool `json:"has_warning"`
+			HasError   bool `json:"has_error"`
+			Good       bool `json:"good"`
+		}{
+			ok, warnings, errors,
+			warnings > 0, errors > 0, warnings == 0 && errors == 0,
+		}
+		var encoded, _ = json.MarshalIndent(ret, "", "  ")
+
+		c.Header().Add("Content-Type", "application/json")
+		c.Header().Add("Content-Length", strconv.Itoa(len(encoded) + 1))
+		c.Write(encoded)
+		io.WriteString(c, "\n")
+	} else {
+		buffer.WriteString(fmt.Sprintf("num_ok %d\nnum_warning %d\nnum_error %d\n", ok, warnings, errors))
+		buffer.WriteString(fmt.Sprintf("has_warning %t\nhas_error %t\ngood %t\n",
+			warnings > 0, errors > 0, warnings == 0 && errors == 0))
+		body := buffer.String()
+		c.Header().Add("Content-Type", "text/plain")
+		c.Header().Add("Content-Length", strconv.Itoa(len(body)))
+		io.WriteString(c, body)
+	}
 }
 
 func DashboardHandler(c http.ResponseWriter, req *http.Request) {
