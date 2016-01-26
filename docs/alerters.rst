@@ -68,4 +68,55 @@ A working example would look like:
     [slack]
     webhook_url = "https://hooks.slack.com/services/T12345678/B12345678/abrakadabra"
 
+Script
+------
+
+Lovebeat can run arbitrary scripts (or other executable files) whenever a view
+changes state. The details of the alert will be posted as environment variables:
+
+  * LOVEBEAT_VIEW=<name of the view>
+  * LOVEBEAT_STATE=<the current state>
+  * LOVEBEAT_PREVIOUS_STATE=<the previous state>
+  * LOVEBEAT_INCIDENT=<incident number>
+
+The script will also inherit any environment variables that Lovebeat was started
+with.
+
+The script's stdout and stderr will be printed, and the script will be invoked
+with no arguments. If a script doesn't finish within 10 seconds, it will be
+terminated. Remember to make your script executable using
+``chmod a+x script.sh``.
+
+Example of the configuration file:
+
+.. code-block:: ini
+
+    [views.example]
+    regexp = ".*"
+    alerts = ["test-alert"]
+
+    [alerts.test-alert]
+    script = "/path/to/script.sh"
+
+The script (/path/to/script.sh) could look like:
+
+.. code-block:: bash
+
+    #!/bin/bash
+
+    echo "Hello World"
+    env
+
+The output would then be (among other environment variables):
+
+.. code-block:: text
+
+    2016/01/26 18:10:56 INFO VIEW 'example', 11: state ok -> warning
+    2016/01/26 18:10:56 INFO Running alert script /path/to/script.sh
+    Hello World
+    LOVEBEAT_VIEW=slack
+    LOVEBEAT_STATE=WARNING
+    LOVEBEAT_PREVIOUS_STATE=OK
+    LOVEBEAT_INCIDENT=11
+
 .. _slack: https://slack.com/
