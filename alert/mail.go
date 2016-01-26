@@ -72,9 +72,8 @@ func (m mailAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedE
 	}
 }
 
-func (m mailAlerter) Worker(q chan mail, cfg *config.ConfigMail) {
-	for {
-		mail := <-q
+func (m mailAlerter) Worker(q <- chan mail, cfg *config.ConfigMail) {
+	for mail := range q {
 		log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
 		var context = make(map[string]interface{})
 		context["From"] = cfg.From

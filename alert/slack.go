@@ -25,9 +25,8 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChanged
 	}
 }
 
-func (m slackAlerter) Worker(q chan slackAlert, cfg *config.ConfigSlack) {
-	for {
-		slackAlert := <-q
+func (m slackAlerter) Worker(q <- chan slackAlert, cfg *config.ConfigSlack) {
+	for slackAlert := range q {
 		type SlackField struct {
 			Title string `json:"title"`
 			Value string `json:"value"`
