@@ -48,7 +48,7 @@ with "backup."
 .. code-block:: ini
 
     [views.backups]
-    pattern = "backup.*"
+    regexp = "backup.*"
 
 Web UI
 ------
