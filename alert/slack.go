@@ -71,7 +71,7 @@ func (m slackAlerter) Worker(q <- chan slackAlert, cfg *config.ConfigSlack) {
 						SlackField{Title: "View Name", Value: view.Name, Short: true },
 						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true },
 						SlackField{Title: "From State", Value: prevUpper, Short: true },
-						SlackField{Title: "Failed Service(s)", Value: strings.Join(slackAlert.Data.FailedServices[:],","), Short: true },
+						SlackField{Title: "Failed Service(s)", Value: strings.Join(formatFailedServices(slackAlert.Data)[:],","), Short: true },
 						SlackField{Title: "To State", Value: currentUpper, Short: true },
 					},
 				},
@@ -94,6 +94,14 @@ func (m slackAlerter) Worker(q <- chan slackAlert, cfg *config.ConfigSlack) {
 			log.Error("Failed to post slack alert: %v", err)
 		}
 	}
+}
+
+func formatFailedServices(event service.ViewStateChangedEvent) []string {
+	var services = make([]string, 0)
+	for _, service := range event.FailedServices {
+		services = append(services, fmt.Sprintf("%s (%s)", service.Name, service.State))
+	}
+	return services
 }
 
 func NewSlackAlerter(cfg config.Config) Alerter {
