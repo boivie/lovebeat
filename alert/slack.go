@@ -71,6 +71,7 @@ func (m slackAlerter) Worker(q <- chan slackAlert, cfg *config.ConfigSlack) {
 						SlackField{Title: "View Name", Value: view.Name, Short: true },
 						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true },
 						SlackField{Title: "From State", Value: prevUpper, Short: true },
+						SlackField{Title: "Failed Service(s)", Value: strings.Join(slackAlert.Data.FailedServices[:],","), Short: true },
 						SlackField{Title: "To State", Value: currentUpper, Short: true },
 					},
 				},

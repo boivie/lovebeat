@@ -6,6 +6,7 @@ import (
 	"regexp"
 )
 
+
 type View struct {
 	services map[string]*Service
 	data     model.View
@@ -36,4 +37,16 @@ func (v *View) save(be backend.Backend, ref *View, ts int64) {
 		v.data.IncidentNbr += 1
 	}
 	be.SaveView(&v.data)
+}
+
+func(v *View) failingServices() []string {
+	var failedServices = make([]string, 0)
+	for _, s := range v.services {
+		if v.contains(s.name()) {
+			if (s.data.State == model.StateError || s.data.State == model.StateWarning) {
+				failedServices = append(failedServices, s.name() + " (" + s.data.State + ")")
+			}
+		}
+	}
+	return failedServices
 }
