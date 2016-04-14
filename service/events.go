@@ -6,9 +6,10 @@ import (
 
 // ViewStateChangedEvent will be sent when a view has changed state
 type ViewStateChangedEvent struct {
-	View     model.View `json:"view"`
-	Previous string     `json:"previous"`
-	Current  string     `json:"current"`
+	View           model.View        `json:"view"`
+	Previous       string            `json:"previous"`
+	Current        string            `json:"current"`
+	FailedServices []model.Service   `json:"failed"`
 }
 
 // ServiceStateChangedEvent will be sent when a service has changed state

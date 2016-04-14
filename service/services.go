@@ -71,7 +71,7 @@ func (svcs *Services) updateView(view View, ts int64) {
 			view.name(), view.data.IncidentNbr, ref.data.State,
 			view.data.State)
 
-		svcs.bus.Publish(ViewStateChangedEvent{view.data, ref.data.State, view.data.State})
+		svcs.bus.Publish(ViewStateChangedEvent{view.data, ref.data.State, view.data.State, view.failingServices()})
 	}
 }
 
