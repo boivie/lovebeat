@@ -2,16 +2,15 @@ package service
 
 import (
 	"github.com/boivie/lovebeat/algorithms"
-	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/model"
-	"time"
 )
 
 type Service struct {
-	data            model.Service
-	sessionLastBeat int64
-	warningExpiry   int64
-	errorExpiry     int64
+	data          model.Service
+	inViews       []*View
+	lastBeat      int64
+	warningExpiry int64
+	errorExpiry   int64
 }
 
 func newService(name string) *Service {
@@ -25,8 +24,6 @@ func newService(name string) *Service {
 		},
 	}
 }
-
-func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
 
 func (s *Service) updateExpiry(ts int64) {
 	s.warningExpiry = 0
@@ -60,10 +57,6 @@ func (s *Service) updateExpiry(ts int64) {
 
 func (s *Service) name() string { return s.data.Name }
 
-func (s *Service) updateState(ts int64) {
-	s.data.State = s.stateAt(ts)
-}
-
 func (s *Service) stateAt(ts int64) string {
 	var state = model.StateOk
 	if s.warningExpiry > 0 && ts >= s.warningExpiry {
@@ -81,17 +74,13 @@ func (s *Service) registerBeat(ts int64) {
 	} else {
 		log.Debug("Beat from %s (first!)", s.name())
 	}
-	if s.sessionLastBeat > 0 {
-		s.data.BeatHistory = append(s.data.BeatHistory, ts-s.sessionLastBeat)
+	if s.lastBeat > 0 {
+		s.data.BeatHistory = append(s.data.BeatHistory, ts-s.lastBeat)
 		if len(s.data.BeatHistory) > model.BeatHistoryCount {
 			idx := len(s.data.BeatHistory) - model.BeatHistoryCount
 			s.data.BeatHistory = s.data.BeatHistory[idx:]
 		}
 	}
 	s.data.LastBeat = ts
-	s.sessionLastBeat = ts
-}
-
-func (s *Service) save(be backend.Backend, ref *Service, ts int64) {
-	be.SaveService(&s.data)
+	s.lastBeat = ts
 }

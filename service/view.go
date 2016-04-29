@@ -1,52 +1,47 @@
 package service
 
 import (
-	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/model"
 	"regexp"
 )
 
 
 type View struct {
-	services map[string]*Service
-	data     model.View
-	ree      *regexp.Regexp
+	servicesInView []*Service
+	data           model.View
+	ree            *regexp.Regexp
 }
 
 func (v *View) name() string { return v.data.Name }
-func (v *View) update(ts int64) {
-	v.data.State = model.StateOk
-	for _, s := range v.services {
-		if v.contains(s.name()) {
-			if s.data.State == model.StateWarning &&
-				v.data.State == model.StateOk {
-				v.data.State = model.StateWarning
-			} else if s.data.State == model.StateError {
-				v.data.State = model.StateError
-			}
+
+func (v *View) calculateState() string {
+	state := model.StateOk
+	for _, s := range v.servicesInView {
+		if s.data.State == model.StateWarning && state == model.StateOk {
+			state = model.StateWarning
+		} else if s.data.State == model.StateError {
+			state= model.StateError
 		}
 	}
+	return state
 }
 
-func (v *View) contains(serviceName string) bool {
-	return v.ree.Match([]byte(serviceName))
-}
-
-func (v *View) save(be backend.Backend, ref *View, ts int64) {
-	if v.data.State != ref.data.State && ref.data.State == model.StateOk {
-		v.data.IncidentNbr += 1
-	}
-	be.SaveView(&v.data)
-}
-
-func(v *View) failingServices() []model.Service {
+func (v *View) failingServices() []model.Service {
 	var failedServices = make([]model.Service, 0)
-	for _, s := range v.services {
-		if v.contains(s.name()) {
-			if (s.data.State == model.StateError || s.data.State == model.StateWarning) {
-				failedServices = append(failedServices, s.data)
-			}
+	for _, s := range v.servicesInView {
+		if (s.data.State == model.StateError || s.data.State == model.StateWarning) {
+			failedServices = append(failedServices, s.data)
 		}
 	}
 	return failedServices
+}
+
+func (v *View) removeService(service *Service) {
+	services := v.servicesInView[:0]
+	for _, x := range v.servicesInView {
+		if x != service {
+			services = append(services, x)
+		}
+	}
+	v.servicesInView = services
 }

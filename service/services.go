@@ -15,7 +15,7 @@ type Services struct {
 	be                   backend.Backend
 	bus                  *eventbus.EventBus
 	services             map[string]*Service
-	views                map[string]View
+	views                map[string]*View
 	upsertServiceCmdChan chan *upsertServiceCmd
 	deleteServiceCmdChan chan string
 	getServicesChan      chan *getServicesCmd
@@ -26,76 +26,45 @@ type Services struct {
 
 const (
 	MAX_UNPROCESSED_PACKETS = 1000
-	EXPIRY_INTERVAL         = 1
+	EXPIRY_INTERVAL = 1
 )
 
-var (
-	log = logging.MustGetLogger("lovebeat")
-)
+var log = logging.MustGetLogger("lovebeat")
+
+func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
 
 func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
-	service.save(svcs.be, &ref, ts)
+	service.data.State = service.stateAt(ts)
+	svcs.be.SaveService(&service.data)
 	if service.data.State != ref.data.State {
-		log.Info("SERVICE '%s', state %s -> %s",
-			service.name(), ref.data.State, service.data.State)
-		if ref.data.LastBeat == -1 {
-			svcs.bus.Publish(ServiceAddedEvent{service.data})
-		}
-		svcs.bus.Publish(ServiceStateChangedEvent{
-			service.data,
-			ref.data.State,
-			service.data.State,
-		})
+		log.Info("SERVICE '%s', state %s -> %s", service.name(), ref.data.State, service.data.State)
+		svcs.bus.Publish(ServiceStateChangedEvent{service.data, ref.data.State, service.data.State})
 	}
 	if service.data.WarningTimeout != ref.data.WarningTimeout {
-		log.Info("SERVICE '%s', warn %d -> %d",
-			service.name(), ref.data.WarningTimeout,
-			service.data.WarningTimeout)
+		log.Info("SERVICE '%s', warn %d -> %d", service.name(), ref.data.WarningTimeout, service.data.WarningTimeout)
 	}
 	if service.data.ErrorTimeout != ref.data.ErrorTimeout {
-		log.Info("SERVICE '%s', err %d -> %d",
-			service.name(), ref.data.ErrorTimeout,
-			service.data.ErrorTimeout)
+		log.Info("SERVICE '%s', err %d -> %d", service.name(), ref.data.ErrorTimeout, service.data.ErrorTimeout)
 	}
-	svcs.updateMatchingViews(ts, service.name())
 }
 
-func (svcs *Services) updateView(view View, ts int64) {
-	var ref = view
-	view.update(ts)
-	if view.data.State != ref.data.State {
-		view.save(svcs.be, &ref, ts)
+func (svcs *Services) updateView(view *View, ts int64) {
+	oldState := view.data.State
+	view.data.State = view.calculateState()
+	if view.data.State != oldState {
+		if oldState == model.StateOk {
+			view.data.IncidentNbr += 1
+		}
+		svcs.be.SaveView(&view.data)
 		svcs.views[view.data.Name] = view
 
-		log.Info("VIEW '%s', %d: state %s -> %s",
-			view.name(), view.data.IncidentNbr, ref.data.State,
-			view.data.State)
-
-		svcs.bus.Publish(ViewStateChangedEvent{view.data, ref.data.State, view.data.State, view.failingServices()})
+		log.Info("VIEW '%s', %d: state %s -> %s", view.name(), view.data.IncidentNbr, oldState, view.data.State)
+		svcs.bus.Publish(ViewStateChangedEvent{view.data, oldState, view.data.State, view.failingServices()})
 	}
-}
-
-func (svcs *Services) updateMatchingViews(ts int64, serviceName string) {
-	for _, view := range svcs.views {
-		if view.contains(serviceName) {
-			svcs.updateView(view, ts)
-		}
-	}
-}
-
-func (svcs *Services) getService(name string) *Service {
-	var s, ok = svcs.services[name]
-	if !ok {
-		log.Debug("Asked for unknown service %s", name)
-		s = newService(name)
-		svcs.services[name] = s
-	}
-	return s
 }
 
 func (svcs *Services) Monitor(cfg config.Config) {
-	period := time.Duration(EXPIRY_INTERVAL) * time.Second
-	ticker := time.NewTicker(period)
+	ticker := time.NewTicker(time.Duration(EXPIRY_INTERVAL) * time.Second)
 	svcs.reload(cfg)
 
 	for {
@@ -107,17 +76,16 @@ func (svcs *Services) Monitor(cfg config.Config) {
 					continue
 				}
 				var ref = *s
-				s.updateState(ts)
 				svcs.updateService(ref, s, ts)
+				for _, view := range s.inViews {
+					svcs.updateView(view, ts)
+				}
 			}
 		case c := <-svcs.getServicesChan:
 			var ret []model.Service
-			var view, ok = svcs.views[c.View]
-			if ok {
-				for _, s := range svcs.services {
-					if view.contains(s.name()) {
-						ret = append(ret, s.data)
-					}
+			if view, ok := svcs.views[c.View]; ok {
+				for _, s := range view.servicesInView {
+					ret = append(ret, s.data)
 				}
 			}
 			c.Reply <- ret
@@ -142,15 +110,27 @@ func (svcs *Services) Monitor(cfg config.Config) {
 			}
 		case c := <-svcs.deleteServiceCmdChan:
 			log.Info("SERVICE '%s', deleted", c)
-			var ts = now()
-			var s = svcs.getService(c)
-			delete(svcs.services, s.name())
-			svcs.be.DeleteService(s.name())
-			svcs.updateMatchingViews(ts, s.name())
-			svcs.bus.Publish(ServiceRemovedEvent{s.data})
+			if s, ok := svcs.services[c]; ok {
+				ts := now()
+				delete(svcs.services, s.name())
+				svcs.be.DeleteService(s.name())
+
+				svcs.bus.Publish(ServiceRemovedEvent{s.data})
+
+				for _, view := range s.inViews {
+					view.removeService(s)
+					svcs.updateView(view, ts)
+				}
+			}
 		case c := <-svcs.upsertServiceCmdChan:
 			var ts = now()
-			var s = svcs.getService(c.Service)
+			var s, exist = svcs.services[c.Service]
+			if !exist {
+				log.Debug("Asked for unknown service %s", c.Service)
+				s = newService(c.Service)
+				svcs.services[c.Service] = s
+				svcs.addServiceToMatchingViews(s)
+			}
 			var ref = *s
 
 			if c.RegisterBeat {
@@ -164,18 +144,23 @@ func (svcs *Services) Monitor(cfg config.Config) {
 				s.data.ErrorTimeout = c.ErrorTimeout
 			}
 
+			if !exist {
+				svcs.bus.Publish(ServiceAddedEvent{s.data})
+			}
+
 			s.updateExpiry(ts)
-			s.updateState(ts)
 			svcs.updateService(ref, s, ts)
+			for _, view := range s.inViews {
+				svcs.updateView(view, ts)
+			}
 		}
 	}
 }
 
-func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
-	views := make([]View, 0)
+func (svcs *Services) loadViewsFromConfig(cfg config.Config) []*View {
+	views := make([]*View, 0)
 
-	views = append(views, View{
-		services: svcs.services,
+	views = append(views, &View{
 		data: model.View{
 			Name:   "all",
 			Regexp: "",
@@ -187,8 +172,7 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 
 	for name, v := range cfg.Views {
 		var ree, _ = regexp.Compile(v.Regexp)
-		view := View{
-			services: svcs.services,
+		views = append(views, &View{
 			data: model.View{
 				Name:   name,
 				Regexp: v.Regexp,
@@ -196,35 +180,49 @@ func (svcs *Services) loadViewsFromConfig(cfg config.Config) []View {
 				Alerts: v.Alerts,
 			},
 			ree: ree,
-		}
-		views = append(views, view)
+		})
 	}
 	return views
 }
 
 func (svcs *Services) reload(cfg config.Config) {
 	ts := now()
+
+	svcs.views = make(map[string]*View)
+
+	views := svcs.loadViewsFromConfig(cfg)
+	backendViews := svcs.be.LoadViews()
+	for _, view := range views {
+		if be, ok := backendViews[view.data.Name]; ok {
+			view.data.State = be.State
+			view.data.IncidentNbr = be.IncidentNbr
+		}
+		log.Info("Created view '%s' ('%s'), state = %s", view.data.Name, view.data.Regexp, view.data.State)
+		svcs.views[view.data.Name] = view
+	}
+
 	svcs.services = make(map[string]*Service)
 
 	for _, s := range svcs.be.LoadServices() {
 		var svc = &Service{data: *s}
 		svc.updateExpiry(ts)
 		svcs.services[s.Name] = svc
+
+		svcs.addServiceToMatchingViews(svc)
 	}
 
-	views := svcs.loadViewsFromConfig(cfg)
-	backendViews := svcs.be.LoadViews()
+	// Set initial state for views
+	for _, v := range svcs.views {
+		svcs.updateView(v, ts)
+	}
+}
 
-	svcs.views = make(map[string]View)
-	for _, view := range views {
-		if be, ok := backendViews[view.data.Name]; ok {
-			view.data.State = be.State
-			view.data.IncidentNbr = be.IncidentNbr
+func (svcs *Services) addServiceToMatchingViews(svc *Service) {
+	for _, v := range svcs.views {
+		if v.ree.Match([]byte(svc.data.Name)) {
+			v.servicesInView = append(v.servicesInView, svc)
+			svc.inViews = append(svc.inViews, v)
 		}
-		log.Info("Created view '%s' ('%s'), state = %s",
-			view.data.Name, view.data.Regexp, view.data.State)
-		svcs.views[view.data.Name] = view
-		svcs.updateView(view, ts)
 	}
 }
 
