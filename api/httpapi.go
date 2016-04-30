@@ -1,24 +1,14 @@
-package httpapi
+package api
 
 import (
 	"encoding/json"
 	"github.com/boivie/lovebeat/service"
 	"github.com/gorilla/mux"
-	"github.com/op/go-logging"
 	"io"
 	"net/http"
 	"regexp"
 	"strconv"
-	"time"
 )
-
-var (
-	client service.ServiceIf
-)
-
-func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
-
-var log = logging.MustGetLogger("lovebeat")
 
 func parseTimeout(tmo string) int64 {
 	if tmo == "auto" {
@@ -185,8 +175,7 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "\n")
 }
 
-func Register(rtr *mux.Router, client_ service.ServiceIf) {
-	client = client_
+func AddEndpoints(rtr *mux.Router) {
 	rtr.HandleFunc("/api/services/",
 		GetServicesHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}",

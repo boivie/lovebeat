@@ -1,27 +1,22 @@
-package tcpapi
+package api
 
 import (
 	"bufio"
 	"github.com/boivie/lovebeat/config"
-	"github.com/boivie/lovebeat/lineparser"
-	"github.com/boivie/lovebeat/service"
-	"github.com/op/go-logging"
 	"net"
 )
 
-var log = logging.MustGetLogger("lovebeat")
-
-func tcpHandle(c *net.TCPConn, iface service.ServiceIf) {
+func tcpHandle(c *net.TCPConn) {
 	defer c.Close()
 	r := bufio.NewReaderSize(c, 4096)
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		var buf = scanner.Bytes()
-		lineparser.Execute(lineparser.Parse(buf), iface)
+		Execute(Parse(buf), client)
 	}
 }
 
-func Listener(cfg *config.ConfigBind, iface service.ServiceIf) {
+func TcpListener(cfg *config.ConfigBind) {
 	address, _ := net.ResolveTCPAddr("tcp", cfg.Listen)
 	log.Info("TCP listening on %s", address)
 	listener, err := net.ListenTCP("tcp", address)
@@ -34,6 +29,6 @@ func Listener(cfg *config.ConfigBind, iface service.ServiceIf) {
 			log.Error("Error: %s", err)
 			break
 		}
-		go tcpHandle(c, iface)
+		go tcpHandle(c)
 	}
 }

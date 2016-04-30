@@ -1,20 +1,15 @@
-package udpapi
+package api
 
 import (
 	"github.com/boivie/lovebeat/config"
-	"github.com/boivie/lovebeat/lineparser"
-	"github.com/boivie/lovebeat/service"
-	"github.com/op/go-logging"
 	"net"
 )
-
-var log = logging.MustGetLogger("lovebeat")
 
 const (
 	MAX_UDP_PACKET_SIZE = 512
 )
 
-func Listener(cfg *config.ConfigBind, iface service.ServiceIf) {
+func UdpListener(cfg *config.ConfigBind) {
 	address, _ := net.ResolveUDPAddr("udp", cfg.Listen)
 	log.Info("UDP listening on %s", address)
 	listener, err := net.ListenUDP("udp", address)
@@ -31,6 +26,6 @@ func Listener(cfg *config.ConfigBind, iface service.ServiceIf) {
 			continue
 		}
 
-		lineparser.Execute(lineparser.Parse(message[:n]), iface)
+		Execute(Parse(message[:n]), client)
 	}
 }

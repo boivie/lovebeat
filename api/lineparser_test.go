@@ -1,4 +1,4 @@
-package lineparser
+package api
 
 import (
 	"testing"

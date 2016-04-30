@@ -1,9 +1,8 @@
-package lineparser
+package api
 
 import (
 	"bytes"
 	"github.com/boivie/lovebeat/service"
-	"github.com/op/go-logging"
 	"regexp"
 	"strconv"
 )
@@ -14,10 +13,8 @@ type LineCommand struct {
 	Value  int64
 }
 
-var log = logging.MustGetLogger("lovebeat")
-
 var packetRegexp = regexp.MustCompile("^(" + service.ServiceNamePattern +
-	")\\.(beat|warn|err|autobeat):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
+")\\.(beat|warn|err|autobeat):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
 func Parse(data []byte) []LineCommand {
 	var commands []LineCommand

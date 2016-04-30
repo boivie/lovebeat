@@ -10,12 +10,10 @@ import (
 	"github.com/boivie/lovebeat/dashboard"
 	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/eventlog"
-	"github.com/boivie/lovebeat/httpapi"
+	"github.com/boivie/lovebeat/api"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/service"
 	"github.com/boivie/lovebeat/stream"
-	"github.com/boivie/lovebeat/tcpapi"
-	"github.com/boivie/lovebeat/udpapi"
 	"github.com/gorilla/mux"
 	"github.com/mipearson/rfw"
 	"github.com/op/go-logging"
@@ -56,7 +54,7 @@ func signalHandler(be backend.Backend) {
 
 func httpServer(cfg *config.ConfigBind, svcs *service.Services, bus *eventbus.EventBus) {
 	rtr := mux.NewRouter()
-	httpapi.Register(rtr, svcs.GetClient())
+	api.AddEndpoints(rtr)
 	stream.Register(rtr, bus)
 	dashboard.Register(rtr, svcs.GetClient())
 	http.Handle("/", rtr)
@@ -137,10 +135,12 @@ func main() {
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
 
+	api.Init(svcs.GetClient())
+
 	go svcs.Monitor(cfg)
 	go httpServer(&cfg.Http, svcs, bus)
-	go udpapi.Listener(&cfg.Udp, svcs.GetClient())
-	go tcpapi.Listener(&cfg.Tcp, svcs.GetClient())
+	go api.UdpListener(&cfg.Udp)
+	go api.TcpListener(&cfg.Tcp)
 
 	m.IncCounter("started.count")
 
