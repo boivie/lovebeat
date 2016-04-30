@@ -26,23 +26,19 @@ import (
 	"syscall"
 )
 
-var log = logging.MustGetLogger("lovebeat")
-
 var (
-	debug       = flag.Bool("debug", false, "Enable debug logs")
+	debug = flag.Bool("debug", false, "Enable debug logs")
 	showVersion = flag.Bool("version", false, "Print version string")
-	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
-	cfgDir      = flag.String("config-dir", "/etc/lovebeat.conf.d", "Configuration directory")
-	useSyslog   = flag.Bool("syslog", false, "Log to syslog instead of stderr")
-	validate    = flag.Bool("validate-auto", false, "Evaluate auto-algorithm")
+	cfgFile = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
+	cfgDir = flag.String("config-dir", "/etc/lovebeat.conf.d", "Configuration directory")
+	useSyslog = flag.Bool("syslog", false, "Log to syslog instead of stderr")
+	validate = flag.Bool("validate-auto", false, "Evaluate auto-algorithm")
 )
 
+var log = logging.MustGetLogger("lovebeat")
 var VERSION = "unknown"
 var BUILD_TIMESTAMP = "unknown"
-
-var (
-	signalchan = make(chan os.Signal, 1)
-)
+var signalchan = make(chan os.Signal, 1)
 
 func signalHandler(be backend.Backend) {
 	for {
@@ -66,7 +62,7 @@ func httpServer(cfg *config.ConfigBind, svcs *service.Services, bus *eventbus.Ev
 }
 
 func getHostname() string {
-	var hostname, err = os.Hostname()
+	hostname, err := os.Hostname()
 	if err != nil {
 		return fmt.Sprintf("unknown_%d", os.Getpid())
 	}
@@ -96,13 +92,13 @@ func main() {
 		logging.SetLevel(logging.INFO, "lovebeat")
 	}
 	if *useSyslog {
-		var backend, err = logging.NewSyslogBackendPriority("lovebeat", syslog.LOG_DAEMON)
+		backend, err := logging.NewSyslogBackendPriority("lovebeat", syslog.LOG_DAEMON)
 		if err != nil {
 			panic(err)
 		}
 		logging.SetBackend(logging.AddModuleLevel(backend))
 	} else {
-		var format = logging.MustStringFormatter("%{level} %{message}")
+		format := logging.MustStringFormatter("%{level} %{message}")
 		logging.SetFormatter(format)
 	}
 	log.Debug("Debug logs enabled")
@@ -118,20 +114,19 @@ func main() {
 		return
 	}
 
-	var hostname = getHostname()
 	wd, _ := os.Getwd()
-	log.Info("Lovebeat v%s started as host %s, PID %d, running from %s", VERSION, hostname, os.Getpid(), wd)
+	log.Info("Lovebeat v%s started on %s, PID %d, running from %s", VERSION, getHostname(), os.Getpid(), wd)
 
-	var cfg = config.ReadConfig(*cfgFile, *cfgDir)
+	cfg := config.ReadConfig(*cfgFile, *cfgDir)
 	bus := eventbus.New()
 
 	setUpEventlog(cfg, bus)
 
 	m := metrics.New(&cfg.Metrics)
-
 	service.RegisterMetrics(bus, m)
-	var be = backend.NewFileBackend(&cfg.Database, m)
-	var svcs = service.NewServices(be, bus)
+
+	be := backend.NewFileBackend(&cfg.Database, m)
+	svcs := service.NewServices(be, bus)
 
 	alert.RegisterAlerters(bus, cfg)
 
