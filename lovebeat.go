@@ -13,7 +13,7 @@ import (
 	"github.com/boivie/lovebeat/api"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/service"
-	"github.com/boivie/lovebeat/stream"
+	"github.com/boivie/lovebeat/websocket"
 	"github.com/gorilla/mux"
 	"github.com/mipearson/rfw"
 	"github.com/op/go-logging"
@@ -55,7 +55,7 @@ func signalHandler(be backend.Backend) {
 func httpServer(cfg *config.ConfigBind, svcs *service.Services, bus *eventbus.EventBus) {
 	rtr := mux.NewRouter()
 	api.AddEndpoints(rtr)
-	stream.Register(rtr, bus)
+	websocket.Register(rtr, bus)
 	dashboard.Register(rtr, svcs.GetClient())
 	http.Handle("/", rtr)
 	log.Info("HTTP listening on %s\n", cfg.Listen)

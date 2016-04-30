@@ -1,4 +1,4 @@
-package stream
+package websocket
 
 type hub struct {
 	connections map[*connection]bool

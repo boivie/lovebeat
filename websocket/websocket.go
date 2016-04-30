@@ -1,4 +1,4 @@
-package stream
+package websocket
 
 import (
 	"github.com/boivie/lovebeat/eventbus"
