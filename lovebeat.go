@@ -37,6 +37,9 @@ var (
 	validate    = flag.Bool("validate-auto", false, "Evaluate auto-algorithm")
 )
 
+var VERSION = "unknown"
+var BUILD_TIMESTAMP = "unknown"
+
 var (
 	signalchan = make(chan os.Signal, 1)
 )
@@ -105,7 +108,7 @@ func main() {
 	log.Debug("Debug logs enabled")
 
 	if *showVersion {
-		fmt.Printf("lovebeats v%s (built w/%s)\n", VERSION, runtime.Version())
+		fmt.Printf("lovebeat v%s (built w/%s at %s)\n", VERSION, runtime.Version(), BUILD_TIMESTAMP)
 		return
 	}
 

@@ -7,28 +7,10 @@ dashboard-assets:
 dependencies: dashboard-assets
 	go get -t ./...
 
-# Explicitly listing version.go since it might not exist when
-# the makefile is parsed.
-GO_FILES := $(shell find . -name "*.go" -print) version.go
+GO_FILES := $(shell find . -name "*.go" -print)
 lovebeat: $(GO_FILES) dependencies dashboard-assets
-	go build
+	go build -ldflags "-X main.BUILD_TIMESTAMP=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.VERSION=`git describe --tags --always`"
 
-# Generate version.go based on the "git describe" output so that
-# Lovebeat's reported version number is always descriptive and useful.
-# This rule must always run but the target file is only updated if
-# there's an actual change in the version number.
-.FORCE:
-.PRECIOUS: version.go
-version.go: .FORCE
-	TMPFILE=$$(mktemp $@.XXXX) && \
-	    echo "package main" >> $$TMPFILE && \
-	    echo "const VERSION = \"$$(git describe --tags --always)\"" \
-	            >> $$TMPFILE && \
-	    gofmt -w $$TMPFILE && \
-	    if ! cmp --quiet $$TMPFILE $@ ; then \
-	        mv $$TMPFILE $@ ; \
-	    fi && \
-	    rm -f $$TMPFILE
 
 .PHONY: clean
 clean:
