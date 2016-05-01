@@ -39,6 +39,7 @@ var log = logging.MustGetLogger("lovebeat")
 var VERSION = "unknown"
 var BUILD_TIMESTAMP = "unknown"
 var signalchan = make(chan os.Signal, 1)
+var sigQuitChan = make(chan os.Signal, 1)
 
 func signalHandler(be backend.Backend) {
 	for {
@@ -47,6 +48,10 @@ func signalHandler(be backend.Backend) {
 			fmt.Printf("!! Caught signal %d... shutting down\n", sig)
 			be.Sync()
 			return
+		case <-sigQuitChan:
+			buf := make([]byte, 1<<20)
+			stacklen := runtime.Stack(buf, true)
+			fmt.Printf("=== received SIGQUIT ===\n*** goroutine dump...\n%s\n*** end\n", buf[:stacklen])
 		}
 	}
 }
@@ -128,10 +133,11 @@ func main() {
 	be := backend.NewFileBackend(&cfg.Database, m)
 	svcs := service.NewServices(be, bus)
 
-	alert.RegisterAlerters(bus, cfg)
+	alert.RegisterAlerters(bus, cfg, svcs.GetClient())
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
+	signal.Notify(sigQuitChan, syscall.SIGQUIT)
 
 	api.Init(svcs.GetClient())
 

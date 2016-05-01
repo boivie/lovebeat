@@ -29,7 +29,5 @@ type Service struct {
 type View struct {
 	Name        string   `json:"name"`         // Name of the view
 	State       string   `json:"state"`        // One of the StateXX constant
-	Regexp      string   `json:"regexp"`       // Services matching this expression will be included in the view
 	IncidentNbr int      `json:"incident_nbr"` // Incrementing number everytime the view leaves the StateOk state
-	Alerts      []string `json:"alerts"`
 }

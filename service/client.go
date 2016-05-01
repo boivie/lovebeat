@@ -20,6 +20,7 @@ type ServiceIf interface {
 	GetService(name string) *model.Service
 	GetViews() []model.View
 	GetView(name string) *model.View
+	GetViewAlerts(name string) []string
 }
 
 type upsertServiceCmd struct {
@@ -53,6 +54,11 @@ type getViewsCmd struct {
 type getViewCmd struct {
 	Name  string
 	Reply chan *model.View
+}
+
+type getViewAlertsCmd struct {
+	Name  string
+	Reply chan []string
 }
 
 type client struct {
@@ -96,6 +102,13 @@ func (c *client) GetViews() []model.View {
 func (c *client) GetView(name string) *model.View {
 	myc := make(chan *model.View)
 	c.svcs.getViewChan <- &getViewCmd{Name: name, Reply: myc}
+	ret := <-myc
+	return ret
+}
+
+func (c *client) GetViewAlerts(name string) []string {
+	myc := make(chan []string)
+	c.svcs.getViewAlertsChan <- &getViewAlertsCmd{Name: name, Reply: myc}
 	ret := <-myc
 	return ret
 }

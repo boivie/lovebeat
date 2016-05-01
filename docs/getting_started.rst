@@ -31,24 +31,48 @@ timeouts have expired. Both timeouts are optional.
 Views
 -----
 
-A view shows a filtered subset of your services. You specify a regular
-expression and all services whose identifiers match this pattern will be part of
+A view shows a filtered subset of your services. You specify a matching pattern
+and all services whose identifiers match this pattern will be part of
 the view.
+
+This is an example of a view called "backup-jobs" that match all servies
+starting with "backup."
+
+.. code-block:: ini
+
+    [[views]]
+    name = "backup-jobs"
+    pattern = "backup.*"
 
 The views will inherit state from their services. If all services are **OK**,
 the view will be **OK**. But if any service is in **WARNING** or **ERROR**
 state, the view will transition into the **WARNING** or **ERROR** state.
 
-Configuration
-~~~~~~~~~~~~~
+Views can be automatically created based on the service names, which is a
+powerful feature when your service names have a structure.
 
-This is an example of a view called "backups" that match all servies starting
-with "backup."
+Say that you have an application running on three servers (alpha, beta and
+delta), and the application provides two heartbeats, ".healthcheck" and
+".background-job-1". The complete list of services will thus be:
+
+ * application-name.alpha.healthcheck
+ * application-name.alpha.background-job-1
+ * application-name.beta.healthcheck
+ * application-name.beta.background-job-1
+ * application-name.delta.healthcheck
+ * application-name.delta.background-job-1
+
+By having a view configuration such as:
 
 .. code-block:: ini
 
-    [views.backups]
-    regexp = "backup.*"
+    [[views]]
+    name = "server-$name"
+    pattern = "application-name.$name.*"
+
+You will then end up with three views, "server-alpha" including the services
+"application-name.alpha.healthcheck" and "application-name.alpha.background-job-1"
+and similar for "server-beta" and "server-delta".
 
 Web UI
 ------

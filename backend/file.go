@@ -60,10 +60,12 @@ func (r FileBackend) LoadServices() []*model.Service {
 	return v
 }
 
-func (r FileBackend) LoadViews() map[string]*model.View {
-	v := make(map[string]*model.View)
+func (r FileBackend) LoadViews() []*model.View {
+	v := make([]*model.View, len(r.views))
+	idx := 0
 	for _, value := range r.views {
-		v[value.Name] = value
+		v[idx] = value
+		idx++
 	}
 	return v
 }

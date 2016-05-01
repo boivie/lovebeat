@@ -18,7 +18,7 @@ type Config struct {
 	Database ConfigDatabase
 	Metrics  ConfigMetrics
 	Alerts   map[string]ConfigAlert
-	Views    map[string]ConfigView
+	Views    []ConfigView
 	Eventlog ConfigEventlog
 }
 
@@ -53,8 +53,9 @@ type ConfigAlert struct {
 }
 
 type ConfigView struct {
-	Regexp string
-	Alerts []string
+	Name    string
+	Pattern string
+	Alerts  []string
 }
 
 type ConfigEventlog struct {

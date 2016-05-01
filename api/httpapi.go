@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
-	"regexp"
 	"strconv"
 )
 
@@ -84,7 +83,6 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 	js := JsonView{
 		Name:   v.Name,
 		State:  v.State,
-		Regexp: v.Regexp,
 	}
 
 	var encoded, _ = json.MarshalIndent(js, "", "  ")
@@ -158,15 +156,6 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 		History:        s.BeatHistory,
 	}
 
-	if _, ok := r.URL.Query()["details"]; ok {
-		js.Views = make([]JsonViewRef, 0)
-		for _, view := range client.GetViews() {
-			matched, err := regexp.MatchString(view.Regexp, s.Name)
-			if err == nil && matched {
-				js.Views = append(js.Views, JsonViewRef{Name: view.Name})
-			}
-		}
-	}
 	var encoded, _ = json.MarshalIndent(js, "", "  ")
 
 	c.Header().Add("Content-Type", "application/json")

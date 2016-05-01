@@ -15,13 +15,18 @@ type Services struct {
 	be                   backend.Backend
 	bus                  *eventbus.EventBus
 	services             map[string]*Service
+
 	views                map[string]*View
+	viewTemplates        []ViewTemplate
+	viewStates           []*model.View
+
 	upsertServiceCmdChan chan *upsertServiceCmd
 	deleteServiceCmdChan chan string
 	getServicesChan      chan *getServicesCmd
 	getServiceChan       chan *getServiceCmd
 	getViewsChan         chan *getViewsCmd
 	getViewChan          chan *getViewCmd
+	getViewAlertsChan    chan *getViewAlertsCmd
 }
 
 const (
@@ -108,6 +113,12 @@ func (svcs *Services) Monitor(cfg config.Config) {
 			} else {
 				c.Reply <- nil
 			}
+		case c := <-svcs.getViewAlertsChan:
+			if ret, ok := svcs.views[c.Name]; ok {
+				c.Reply <- ret.tmpl.config.Alerts
+			} else {
+				c.Reply <- []string{}
+			}
 		case c := <-svcs.deleteServiceCmdChan:
 			log.Info("SERVICE '%s', deleted", c)
 			if s, ok := svcs.services[c]; ok {
@@ -129,7 +140,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 				log.Debug("Asked for unknown service %s", c.Service)
 				s = newService(c.Service)
 				svcs.services[c.Service] = s
-				svcs.addServiceToMatchingViews(s)
+				svcs.addViewsToService(s)
 			}
 			var ref = *s
 
@@ -157,30 +168,14 @@ func (svcs *Services) Monitor(cfg config.Config) {
 	}
 }
 
-func (svcs *Services) loadViewsFromConfig(cfg config.Config) []*View {
-	views := make([]*View, 0)
+func (svcs *Services) loadViewTemplates(cfg config.Config) []ViewTemplate {
+	views := make([]ViewTemplate, 0)
 
-	views = append(views, &View{
-		data: model.View{
-			Name:   "all",
-			Regexp: "",
-			State:  model.StatePaused,
-			Alerts: make([]string, 0),
-		},
-		ree: regexp.MustCompile(""),
-	})
+	views = append(views, ViewTemplate{config.ConfigView{Name: "all"}, regexp.MustCompile("")})
 
-	for name, v := range cfg.Views {
-		var ree, _ = regexp.Compile(v.Regexp)
-		views = append(views, &View{
-			data: model.View{
-				Name:   name,
-				Regexp: v.Regexp,
-				State:  model.StatePaused,
-				Alerts: v.Alerts,
-			},
-			ree: ree,
-		})
+	for _, v := range cfg.Views {
+		ree, _ := regexp.Compile(makePattern(v.Pattern))
+		views = append(views, ViewTemplate{v, ree})
 	}
 	return views
 }
@@ -190,16 +185,8 @@ func (svcs *Services) reload(cfg config.Config) {
 
 	svcs.views = make(map[string]*View)
 
-	views := svcs.loadViewsFromConfig(cfg)
-	backendViews := svcs.be.LoadViews()
-	for _, view := range views {
-		if be, ok := backendViews[view.data.Name]; ok {
-			view.data.State = be.State
-			view.data.IncidentNbr = be.IncidentNbr
-		}
-		log.Info("Created view '%s' ('%s'), state = %s", view.data.Name, view.data.Regexp, view.data.State)
-		svcs.views[view.data.Name] = view
-	}
+	svcs.viewTemplates = svcs.loadViewTemplates(cfg)
+	svcs.viewStates = svcs.be.LoadViews()
 
 	svcs.services = make(map[string]*Service)
 
@@ -208,7 +195,7 @@ func (svcs *Services) reload(cfg config.Config) {
 		svc.updateExpiry(ts)
 		svcs.services[s.Name] = svc
 
-		svcs.addServiceToMatchingViews(svc)
+		svcs.addViewsToService(svc)
 	}
 
 	// Set initial state for views
@@ -217,9 +204,21 @@ func (svcs *Services) reload(cfg config.Config) {
 	}
 }
 
-func (svcs *Services) addServiceToMatchingViews(svc *Service) {
-	for _, v := range svcs.views {
-		if v.ree.Match([]byte(svc.data.Name)) {
+func (svcs *Services) addViewsToService(svc *Service) {
+	for _, tmpl := range svcs.viewTemplates {
+		if tmpl.ree.Match([]byte(svc.data.Name)) {
+			name := expandName(tmpl.ree, svc.data.Name, tmpl.config.Name)
+			v, exists := svcs.views[name]
+			if !exists {
+				v = &View{tmpl: &tmpl, data: model.View{name, model.StatePaused, 0}}
+				for _, sv := range svcs.viewStates {
+					if sv.Name == name {
+						v.data = *sv
+					}
+				}
+				svcs.views[name] = v
+				log.Info("Created view %s from %s", v.data.Name, tmpl.config.Name)
+			}
 			v.servicesInView = append(v.servicesInView, svc)
 			svc.inViews = append(svc.inViews, v)
 		}
@@ -236,6 +235,7 @@ func NewServices(beiface backend.Backend, bus *eventbus.EventBus) *Services {
 	svcs.getServiceChan = make(chan *getServiceCmd, 5)
 	svcs.getViewsChan = make(chan *getViewsCmd, 5)
 	svcs.getViewChan = make(chan *getViewCmd, 5)
+	svcs.getViewAlertsChan = make(chan *getViewAlertsCmd, 5)
 
 	return svcs
 }
