@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
 	"github.com/gorilla/mux"
 	"io"
@@ -11,7 +12,7 @@ import (
 
 func parseTimeout(tmo string) int64 {
 	if tmo == "auto" {
-		return service.TIMEOUT_AUTO
+		return model.TIMEOUT_AUTO
 	} else {
 		val, _ := strconv.Atoi(tmo)
 		return int64(val) * 1000

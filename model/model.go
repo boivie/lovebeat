@@ -12,6 +12,10 @@ const StateError = "error"
 // The number of beats that we save
 const BeatHistoryCount = 100
 
+// Special values for error and warning timeouts
+const TIMEOUT_CLEAR int64 = -1
+const TIMEOUT_AUTO int64 = -2
+
 // Service is something that can issue a beat
 type Service struct {
 	Name        string  `json:"name"`         // Name of the service

@@ -28,9 +28,9 @@ func (s *Service) updateExpiry(ts int64) {
 
 	if s.data.Timeout > 0 {
 		s.expiry = s.data.LastBeat + s.data.Timeout
-	} else if s.data.Timeout == TIMEOUT_AUTO {
+	} else if s.data.Timeout == model.TIMEOUT_AUTO {
 		auto := algorithms.AutoAlg(s.data.BeatHistory)
-		if auto != TIMEOUT_AUTO {
+		if auto != model.TIMEOUT_AUTO {
 			s.expiry = s.data.LastBeat + auto
 		}
 	}
