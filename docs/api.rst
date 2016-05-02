@@ -13,10 +13,10 @@ if the lovebeat server isn't running for any reason.
 
   * To trigger a heartbeat, send a counter value >= 0 to "<service>.beat"
   * To set a timeout (in seconds), set the gauge value of "<service>.timeout"
-  * To clear a value, set the timeout to -1.
-  * To set the timeout to be automatically calculated, set the timeout to -2.
-  * A shortcut for setting the timeout to -2 and issuing a beat (since this is a
-    fairly common pattern), send a counter to "<service>.autobeat"
+  * To clear a value, set the timeout to ``-1``.
+  * To set the timeout to be automatically calculated, set the timeout to ``-2``.
+  * A shortcut for setting the timeout to ``-2`` and issuing a beat (since this is a
+    fairly common pattern), send a counter to ``<service>.autobeat``.
 
 Examples:
 
@@ -52,7 +52,7 @@ Generates a heartbeat.
   * To set a timeout, add the form field "timeout" and specify the
     time in seconds or "auto" to calculate one.
   * You can also set the timeout value using a query parameter, e.g.
-    ?timeout=3600
+    ``?timeout=3600``.
   * Last, but not least, you can also post a JSON payload to this endpoint
     and let the JSON object's timeout field be set to the timeout value. Note
     that the ``Content-Type`` must be set to ``application/json``.
