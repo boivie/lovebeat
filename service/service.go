@@ -44,7 +44,9 @@ func (s *Service) name() string { return s.data.Name }
 
 func (s *Service) stateAt(ts int64) string {
 	var state = model.StateOk
-	if s.expiry > 0 && ts >= s.expiry {
+	if s.data.Timeout == 0 {
+		state = model.StateError
+	} else if s.expiry > 0 && ts >= s.expiry {
 		state = model.StateError
 	}
 	return state

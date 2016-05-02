@@ -85,6 +85,8 @@ lovebeatApp.filter('delta', function() {
   return function(milliseconds) {
     if (milliseconds < 0)
       return "not set";
+    if (milliseconds == 0)
+      return "now";
     return juration.stringify(milliseconds / 1000);
   }
 });

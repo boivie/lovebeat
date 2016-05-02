@@ -10,7 +10,7 @@ type ServiceIf interface {
 	DeleteService(name string)
 
 	// Updates the service. The timeouts are in milliseconds.
-	UpdateService(name string, registerBeat bool, timeout int64)
+	UpdateService(name string, registerBeat bool, changeTimeout bool, timeout int64)
 
 	GetServices(view string) []model.Service
 	GetService(name string) *model.Service
@@ -22,6 +22,7 @@ type ServiceIf interface {
 type upsertServiceCmd struct {
 	RegisterBeat bool
 	Service      string
+	HasTimeout   bool
 	Timeout      int64
 }
 
@@ -64,10 +65,11 @@ func (c *client) DeleteService(name string) {
 	c.svcs.deleteServiceCmdChan <- name
 }
 
-func (c *client) UpdateService(name string, registerBeat bool, timeout int64) {
+func (c *client) UpdateService(name string, registerBeat bool, changeTimeout bool, timeout int64) {
 	c.svcs.upsertServiceCmdChan <- &upsertServiceCmd{
 		Service:      name,
 		RegisterBeat: registerBeat,
+		HasTimeout:   changeTimeout,
 		Timeout:      timeout,
 	}
 }

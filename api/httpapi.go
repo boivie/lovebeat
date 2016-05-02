@@ -29,8 +29,12 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeout := parseTimeout(r.FormValue("timeout"))
-	client.UpdateService(name, true, timeout)
+	if r.FormValue("timeout") != "" {
+		timeout := parseTimeout(r.FormValue("timeout"))
+		client.UpdateService(name, true, true, timeout)
+	} else {
+		client.UpdateService(name, true, false, 0)
+	}
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")

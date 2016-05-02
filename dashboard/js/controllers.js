@@ -93,6 +93,8 @@ lovebeatControllers.controller('EditServiceCtrl', ['$scope', '$routeParams', 'Se
       }, function(service) {
         if (service.timeout > 0) {
           $scope.service.timeout_hr = juration.stringify(service.timeout / 1000);
+        } else if (service.timeout == 0) {
+          $scope.service.timeout_hr = "0s";
         }
       }),
       $scope.editService = function() {

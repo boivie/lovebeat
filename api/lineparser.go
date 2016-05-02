@@ -52,11 +52,11 @@ func Execute(commands []LineCommand, iface service.ServiceIf) {
 	for _, cmd := range commands {
 		switch cmd.Action {
 		case "timeout":
-			iface.UpdateService(cmd.Name, false, cmd.Value)
+			iface.UpdateService(cmd.Name, false, true, cmd.Value)
 		case "beat":
-			iface.UpdateService(cmd.Name, true, 0)
+			iface.UpdateService(cmd.Name, true, false, 0)
 		case "autobeat":
-			iface.UpdateService(cmd.Name, true, 0)
+			iface.UpdateService(cmd.Name, true, false, 0)
 		}
 	}
 }

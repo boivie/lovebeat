@@ -145,7 +145,7 @@ func (svcs *Services) Monitor(cfg config.Config) {
 				s.registerBeat(ts)
 			}
 
-			if c.Timeout != 0 {
+			if c.HasTimeout {
 				s.data.Timeout = c.Timeout
 			}
 
