@@ -51,15 +51,36 @@ Generates a heartbeat.
 
   * To set a timeout, add the form field "timeout" and specify the
     time in seconds or "auto" to calculate one.
+  * You can also set the timeout value using a query parameter, e.g.
+    ?timeout=3600
+  * Last, but not least, you can also post a JSON payload to this endpoint
+    and let the JSON object's timeout field be set to the timeout value. Note
+    that the ``Content-Type`` must be set to ``application/json``.
 
 This endpoint returns an empty JSON object as response.
+
+Examples:
+
+.. code-block:: bash
+
+    # Only trigger a beat - don't set any value
+    $ curl -X POST http://localhost:8080/api/services/invoice.mailer
+
+    # Set the timeout using a form field value
+    $ curl -d timeout=3600 http://localhost:8080/api/services/invoice.mailer
+
+    # Set the timeout using a query parameter
+    $ curl -X POST http://localhost:8080/api/services/invoice.mailer?timeout=3600
+
+    # Setting the timeout as a JSON object.
+    $ curl -H "Content-Type: application/json" -d '{"timeout":3600}' http://localhost:8080/api/services/invoice.mailer
 
 GET /api/services
 ~~~~~~~~~~~~~~~~~
 
 Returns the list of services.
 
-  * By specifying a `?view=<name>` query parameter, only services that are
+  * By specifying a ``?view=<name>`` query parameter, only services that are
     members of the specified view will be returned.
 
 GET /api/services/<service_name>
@@ -67,7 +88,7 @@ GET /api/services/<service_name>
 
 Returns information about a specific service.
 
-* By setting the `?details=1` query parameter, additional information may
+* By setting the ``?details=1`` query parameter, additional information may
   be returned.
 
 DELETE /api/services/<service_name>
@@ -84,12 +105,5 @@ GET /api/views/<view_name>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Returns details of a specific view.
-
-Examples:
-
-.. code-block:: bash
-
-    $ curl -X POST http://localhost:8080/api/services/invoice.mailer
-    $ curl -d err-tmo=1800 http://localhost:8080/api/services/invoice.mailer
 
 .. _graphite: http://graphite.wikidot.com/

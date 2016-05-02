@@ -22,19 +22,43 @@ func parseTimeout(tmo string) int64 {
 func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
+	hasTimeout := false
+	var timeout int64
 
-	var err = r.ParseForm()
-	if err != nil {
-		log.Error("error parsing form: %s", err)
-		return
+	// Timeout as query parameter
+	if val, ok := r.URL.Query()["timeout"]; ok {
+		hasTimeout = true
+		timeout = parseTimeout(val[0])
 	}
 
-	if r.FormValue("timeout") != "" {
-		timeout := parseTimeout(r.FormValue("timeout"))
-		client.UpdateService(name, true, true, timeout)
+	if r.Header.Get("Content-Type") == "application/json" {
+		decoder := json.NewDecoder(r.Body)
+		var t struct {
+			Timeout *int64 `json:"timeout"`
+		}
+		err := decoder.Decode(&t)
+		if err == nil && t.Timeout != nil {
+			hasTimeout = true
+			if *t.Timeout > 0 {
+				timeout = *t.Timeout * 1000
+			} else {
+				timeout = *t.Timeout
+			}
+		}
 	} else {
-		client.UpdateService(name, true, false, 0)
+		var err = r.ParseForm()
+		if err != nil {
+			log.Error("error parsing form: %s", err)
+			return
+		}
+
+		if r.FormValue("timeout") != "" {
+			hasTimeout = true
+			timeout = parseTimeout(r.FormValue("timeout"))
+		}
 	}
+
+	client.UpdateService(name, true, hasTimeout, timeout)
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
