@@ -14,7 +14,7 @@ type LineCommand struct {
 }
 
 var packetRegexp = regexp.MustCompile("^(" + service.ServiceNamePattern +
-")\\.(beat|warn|err|autobeat):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
+")\\.(beat|autobeat|timeout):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
 func Parse(data []byte) []LineCommand {
 	var commands []LineCommand
@@ -51,14 +51,12 @@ func Parse(data []byte) []LineCommand {
 func Execute(commands []LineCommand, iface service.ServiceIf) {
 	for _, cmd := range commands {
 		switch cmd.Action {
-		case "warn":
-			iface.UpdateService(cmd.Name, false, cmd.Value, 0)
-		case "err":
-			iface.UpdateService(cmd.Name, false, 0, cmd.Value)
+		case "timeout":
+			iface.UpdateService(cmd.Name, false, cmd.Value)
 		case "beat":
-			iface.UpdateService(cmd.Name, true, 0, 0)
+			iface.UpdateService(cmd.Name, true, 0)
 		case "autobeat":
-			iface.UpdateService(cmd.Name, true, 0, service.TIMEOUT_AUTO)
+			iface.UpdateService(cmd.Name, true, 0)
 		}
 	}
 }

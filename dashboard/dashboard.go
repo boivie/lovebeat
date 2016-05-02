@@ -25,11 +25,9 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 
 	var buffer bytes.Buffer
 	var services = client.GetServices(viewName)
-	var errors, warnings, ok = 0, 0, 0
+	var errors, ok = 0, 0
 	for _, s := range services {
-		if s.State == model.StateWarning {
-			warnings++
-		} else if s.State == model.StateError {
+		if s.State == model.StateError {
 			errors++
 		} else {
 			ok++
@@ -37,15 +35,13 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	}
 	if (req.Header.Get("Accept") == "application/json") {
 		ret := struct {
-			NumOk      int `json:"num_ok"`
-			NumWarning int `json:"num_warning"`
-			NumError   int `json:"num_error"`
-			HasWarning bool `json:"has_warning"`
-			HasError   bool `json:"has_error"`
-			Good       bool `json:"good"`
+			NumOk    int `json:"num_ok"`
+			NumError int `json:"num_error"`
+			HasError bool `json:"has_error"`
+			Good     bool `json:"good"`
 		}{
-			ok, warnings, errors,
-			warnings > 0, errors > 0, warnings == 0 && errors == 0,
+			ok, errors,
+			errors > 0, errors == 0,
 		}
 		var encoded, _ = json.MarshalIndent(ret, "", "  ")
 
@@ -54,9 +50,8 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 		c.Write(encoded)
 		io.WriteString(c, "\n")
 	} else {
-		buffer.WriteString(fmt.Sprintf("num_ok %d\nnum_warning %d\nnum_error %d\n", ok, warnings, errors))
-		buffer.WriteString(fmt.Sprintf("has_warning %t\nhas_error %t\ngood %t\n",
-			warnings > 0, errors > 0, warnings == 0 && errors == 0))
+		buffer.WriteString(fmt.Sprintf("num_ok %d\nnum_error %d\n", ok, errors))
+		buffer.WriteString(fmt.Sprintf("has_error %t\ngood %t\n", errors > 0, errors == 0))
 		body := buffer.String()
 		c.Header().Add("Content-Type", "text/plain")
 		c.Header().Add("Content-Length", strconv.Itoa(len(body)))

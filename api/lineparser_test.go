@@ -11,8 +11,8 @@ func testEq(a, b []LineCommand) bool {
 
 	for i := range a {
 		if a[i].Action != b[i].Action ||
-			a[i].Name != b[i].Name ||
-			a[i].Value != b[i].Value {
+		a[i].Name != b[i].Name ||
+		a[i].Value != b[i].Value {
 			return false
 		}
 	}
@@ -35,17 +35,9 @@ func TestParseBeat(t *testing.T) {
 	}
 }
 
-func TestParseErr(t *testing.T) {
-	cmds := Parse([]byte("foo.bar.err:1|c"))
-	ref := []LineCommand{LineCommand{"err", "foo.bar", 1000}}
-	if !testEq(cmds, ref) {
-		t.Errorf("Failed %v %v", cmds, ref)
-	}
-}
-
-func TestParseWarn(t *testing.T) {
-	cmds := Parse([]byte("foo.bar.warn:1|c"))
-	ref := []LineCommand{LineCommand{"warn", "foo.bar", 1000}}
+func TestParseTimeout(t *testing.T) {
+	cmds := Parse([]byte("foo.bar.timeout:1|c"))
+	ref := []LineCommand{LineCommand{"timeout", "foo.bar", 1000}}
 	if !testEq(cmds, ref) {
 		t.Errorf("Failed %v %v", cmds, ref)
 	}
@@ -60,8 +52,8 @@ func TestParseAutoBeat(t *testing.T) {
 }
 
 func TestParseNegative(t *testing.T) {
-	cmds := Parse([]byte("foo.bar.err:-2|g"))
-	ref := []LineCommand{LineCommand{"err", "foo.bar", -2}}
+	cmds := Parse([]byte("foo.bar.timeout:-2|g"))
+	ref := []LineCommand{LineCommand{"timeout", "foo.bar", -2}}
 	if !testEq(cmds, ref) {
 		t.Errorf("Failed %v %v", cmds, ref)
 	}
@@ -75,9 +67,9 @@ func TestParseInvalid(t *testing.T) {
 }
 
 func TestParseMultiple(t *testing.T) {
-	cmds := Parse([]byte("foo.bar.warn:1|c\nfoo.fum.err:4|g\nfoo.fie.beat:8|c"))
-	ref := []LineCommand{LineCommand{"warn", "foo.bar", 1000},
-		LineCommand{"err", "foo.fum", 4000},
+	cmds := Parse([]byte("foo.bar.timeout:1|c\nfoo.fum.timeout:4|g\nfoo.fie.beat:8|c"))
+	ref := []LineCommand{LineCommand{"timeout", "foo.bar", 1000},
+		LineCommand{"timeout", "foo.fum", 4000},
 		LineCommand{"beat", "foo.fie", 8000}}
 	if !testEq(cmds, ref) {
 		t.Errorf("Failed %v %v", cmds, ref)

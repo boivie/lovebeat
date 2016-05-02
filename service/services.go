@@ -45,11 +45,8 @@ func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
 		log.Info("SERVICE '%s', state %s -> %s", service.name(), ref.data.State, service.data.State)
 		svcs.bus.Publish(ServiceStateChangedEvent{service.data, ref.data.State, service.data.State})
 	}
-	if service.data.WarningTimeout != ref.data.WarningTimeout {
-		log.Info("SERVICE '%s', warn %d -> %d", service.name(), ref.data.WarningTimeout, service.data.WarningTimeout)
-	}
-	if service.data.ErrorTimeout != ref.data.ErrorTimeout {
-		log.Info("SERVICE '%s', err %d -> %d", service.name(), ref.data.ErrorTimeout, service.data.ErrorTimeout)
+	if service.data.Timeout != ref.data.Timeout {
+		log.Info("SERVICE '%s', tmo %d -> %d", service.name(), ref.data.Timeout, service.data.Timeout)
 	}
 }
 
@@ -148,11 +145,8 @@ func (svcs *Services) Monitor(cfg config.Config) {
 				s.registerBeat(ts)
 			}
 
-			if c.WarningTimeout != 0 {
-				s.data.WarningTimeout = c.WarningTimeout
-			}
-			if c.ErrorTimeout != 0 {
-				s.data.ErrorTimeout = c.ErrorTimeout
+			if c.Timeout != 0 {
+				s.data.Timeout = c.Timeout
 			}
 
 			if !exist {

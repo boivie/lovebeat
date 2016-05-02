@@ -66,21 +66,16 @@ lovebeatControllers.controller('AddServiceCtrl', ['$scope', '$http',
   function($scope, $http) {
     $scope.service = {}
     $scope.createService = function() {
-      var err_tmo = -1
-      var warn_tmo = -1
+      var timeout = -1
 
       try {
-        err_tmo = juration.parse($scope.service.err_tmo_hr)
-      } catch (e) {}
-
-      try {
-        warn_tmo = juration.parse($scope.service.warn_tmo_hr)
+        timeout = juration.parse($scope.service.timeout_hr)
       } catch (e) {}
 
       $http({
         method: 'POST',
         url: 'api/services/' + $scope.service.name,
-        data: 'err-tmo=' + err_tmo + '&warn-tmo=' + warn_tmo,
+        data: 'timeout=' + timeout,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -96,29 +91,21 @@ lovebeatControllers.controller('EditServiceCtrl', ['$scope', '$routeParams', 'Se
     $scope.service = Service.get({
         serviceId: $routeParams.serviceId
       }, function(service) {
-        if (service.warning_timeout > 0) {
-          $scope.service.warn_tmo_hr = juration.stringify(service.warning_timeout / 1000);
-        }
-        if (service.error_timeout > 0) {
-          $scope.service.err_tmo_hr = juration.stringify(service.error_timeout / 1000);
+        if (service.timeout > 0) {
+          $scope.service.timeout_hr = juration.stringify(service.timeout / 1000);
         }
       }),
       $scope.editService = function() {
-        var err_tmo = -1
-        var warn_tmo = -1
+        var timeout = -1
 
         try {
-          err_tmo = juration.parse($scope.service.err_tmo_hr)
-        } catch (e) {}
-
-        try {
-          warn_tmo = juration.parse($scope.service.warn_tmo_hr)
+          timeout = juration.parse($scope.service.timeout_hr)
         } catch (e) {}
 
         $http({
           method: 'POST',
           url: 'api/services/' + $scope.service.name,
-          data: 'err-tmo=' + err_tmo + '&warn-tmo=' + warn_tmo,
+          data: 'timeout=' + timeout,
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           }

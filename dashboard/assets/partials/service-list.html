@@ -17,7 +17,7 @@
 	<div><span class="">There are services in 'error' state!</span></div>
       </div>
       <div class="row">
-        <div class="col-md-3 col-sm-6 col-xs-12">
+        <div class="col-md-4 col-sm-6 col-xs-12">
           <div class="widget">
             <div class="widget-body">
               <div class="widget-icon red pull-left">
@@ -31,21 +31,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3 col-sm-6 col-xs-12">
-          <div class="widget">
-            <div class="widget-body">
-              <div class="widget-icon orange pull-left">
-                <i class="fa fa-warning"></i>
-              </div>
-              <div class="widget-content pull-left">
-                <div class="title">{{(services|filter:{state:'warning'}).length}}</div>
-                <div class="comment">Warning</div>
-              </div>
-              <div class="clearfix"></div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3 col-sm-6 col-xs-12">
+        <div class="col-md-4 col-sm-6 col-xs-12">
           <div class="widget">
             <div class="widget-body">
               <div class="widget-icon green pull-left">
@@ -60,7 +46,7 @@
           </div>
         </div>
         <div class="spacer visible-xs"></div>
-        <div class="col-md-3 col-sm-6 col-xs-12">
+        <div class="col-md-4 col-sm-6 col-xs-12">
           <div class="widget">
             <div class="widget-body">
               <div class="widget-icon blue pull-left">
@@ -91,11 +77,9 @@
 		<tbody>
 		  <tr ng-repeat="service in services | orderBy:'name'">
 		    <td ng-if="service.state == 'ok'"><span class="text-success ng-scope"><i class="fa fa-check"></i></span></td>
-		    <td ng-if="service.state == 'warning'"><span class="text-warning ng-scope"><i class="fa fa-warning"></i></span></td>
 		    <td ng-if="service.state == 'error'"><span class="text-danger ng-scope"><i class="fa fa-times"></i></span></td>
 		    <td>{{service.name}}</td>
-		    <td><span ng-if="service.warning_timeout > 0"><i class="fa fa-warning"> {{service.warning_timeout | delta}}</span></td>
-		    <td><span ng-if="service.error_timeout > 0"><i class="fa fa-times"> {{service.error_timeout | delta}}</span></td>
+		    <td><span ng-if="service.timeout > 0"><i class="fa fa-times"> {{service.timeout | delta}}</span></td>
 		    <td>{{service.last_beat_delta | delta_ago}}</td>
 		    <td>
 		      <a class="btn btn-sm btn-info pull-right" href="#/services/{{service.name}}">Edit</a>

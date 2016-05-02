@@ -6,11 +6,10 @@ import (
 )
 
 type Service struct {
-	data          model.Service
-	inViews       []*View
-	lastBeat      int64
-	warningExpiry int64
-	errorExpiry   int64
+	data     model.Service
+	inViews  []*View
+	lastBeat int64
+	expiry   int64
 }
 
 func newService(name string) *Service {
@@ -18,40 +17,26 @@ func newService(name string) *Service {
 		data: model.Service{
 			Name:           name,
 			LastBeat:       -1,
-			WarningTimeout: -1,
-			ErrorTimeout:   -1,
+			Timeout: -1,
 			State:          model.StatePaused,
 		},
 	}
 }
 
 func (s *Service) updateExpiry(ts int64) {
-	s.warningExpiry = 0
-	s.errorExpiry = 0
+	s.expiry = 0
 
-	if s.data.WarningTimeout > 0 {
-		s.warningExpiry = s.data.LastBeat + s.data.WarningTimeout
-	} else if s.data.WarningTimeout == TIMEOUT_AUTO {
+	if s.data.Timeout > 0 {
+		s.expiry = s.data.LastBeat + s.data.Timeout
+	} else if s.data.Timeout == TIMEOUT_AUTO {
 		auto := algorithms.AutoAlg(s.data.BeatHistory)
 		if auto != TIMEOUT_AUTO {
-			s.warningExpiry = s.data.LastBeat + auto
+			s.expiry = s.data.LastBeat + auto
 		}
 	}
 
-	if s.data.ErrorTimeout > 0 {
-		s.errorExpiry = s.data.LastBeat + s.data.ErrorTimeout
-	} else if s.data.ErrorTimeout == TIMEOUT_AUTO {
-		auto := algorithms.AutoAlg(s.data.BeatHistory)
-		if auto != TIMEOUT_AUTO {
-			s.errorExpiry = s.data.LastBeat + auto
-		}
-	}
-
-	if s.warningExpiry > 0 {
-		log.Debug("Warning expiry for %s = %d (%d ms)", s.name(), s.warningExpiry, s.warningExpiry-ts)
-	}
-	if s.errorExpiry > 0 {
-		log.Debug("Error expiry for %s = %d (%d ms)", s.name(), s.errorExpiry, s.errorExpiry-ts)
+	if s.expiry > 0 {
+		log.Debug("Expiry for %s = %d (%d ms)", s.name(), s.expiry, s.expiry-ts)
 	}
 }
 
@@ -59,10 +44,7 @@ func (s *Service) name() string { return s.data.Name }
 
 func (s *Service) stateAt(ts int64) string {
 	var state = model.StateOk
-	if s.warningExpiry > 0 && ts >= s.warningExpiry {
-		state = model.StateWarning
-	}
-	if s.errorExpiry > 0 && ts >= s.errorExpiry {
+	if s.expiry > 0 && ts >= s.expiry {
 		state = model.StateError
 	}
 	return state

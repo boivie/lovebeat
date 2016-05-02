@@ -20,12 +20,8 @@
 	  <input ng-model="service.name" type="text" class="form-control" id="identifier" placeholder="your.name.here">
 	</div>
 	<div class="form-group">
-	  <label for="warn_tmo">Warning Timeout</label>
-	  <input ng-model="service.warn_tmo_hr" type="text" class="form-control" id="warn_tmo" placeholder="e.g. 2d or 3h 30m">
-	</div>
-	<div class="form-group">
-	  <label for="err_tmo">Error Timeout</label>
-	  <input ng-model="service.err_tmo_hr" type="text" class="form-control" id="err_tmo" placeholder="e.g. 2d or 3h 30m">
+	  <label for="timeout">Timeout</label>
+	  <input ng-model="service.timeout_hr" type="text" class="form-control" id="timeout" placeholder="e.g. 2d or 3h 30m">
 	</div>
 	<button type="submit" class="btn btn-default">Create</button>
       </form>

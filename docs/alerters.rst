@@ -45,7 +45,7 @@ configuration. The JSON data that is sent follows:
     }
 
 The incident number is a monotonically incrementing counter that increases every
-time a view transitions between **OK** and either **WARNING** or **ERROR**.
+time a view transitions between **OK** and **ERROR**.
 
 Slack
 -----
@@ -58,8 +58,9 @@ A working example would look like:
 
 .. code-block:: ini
 
-    [views.example]
-    regexp = ".*"
+    [[views]]
+    name = "example"
+    pattern = "test.*"
     alerts = ["message-to-ops"]
 
     [alerts.message-to-ops]
@@ -91,8 +92,9 @@ Example of the configuration file:
 
 .. code-block:: ini
 
-    [views.example]
-    regexp = ".*"
+    [[views]]
+    name = "example"
+    pattern = "test.*"
     alerts = ["test-alert"]
 
     [alerts.test-alert]
@@ -111,11 +113,11 @@ The output would then be (among other environment variables):
 
 .. code-block:: text
 
-    2016/01/26 18:10:56 INFO VIEW 'example', 11: state ok -> warning
+    2016/01/26 18:10:56 INFO VIEW 'example', 11: state ok -> error
     2016/01/26 18:10:56 INFO Running alert script /path/to/script.sh
     Hello World
     LOVEBEAT_VIEW=slack
-    LOVEBEAT_STATE=WARNING
+    LOVEBEAT_STATE=ERROR
     LOVEBEAT_PREVIOUS_STATE=OK
     LOVEBEAT_INCIDENT=11
 

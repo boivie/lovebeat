@@ -10,20 +10,13 @@ then
 fi
 
 NUM_OK=$(echo "$STATUS" | awk '/num_ok/ { print $2 }')
-NUM_WARNING=$(echo "$STATUS" | awk '/num_warning/ { print $2 }')
 NUM_ERROR=$(echo "$STATUS" | awk '/num_error/ { print $2 }')
 
-LINE="ok: ${NUM_OK}, warnings: ${NUM_WARNING}, errors: ${NUM_ERROR}"
+LINE="ok: ${NUM_OK}, errors: ${NUM_ERROR}"
 if [ "$NUM_ERROR" != "0" ];
 then
     echo "CRITICAL - $LINE"
     exit 2
-fi
-
-if [ "$NUM_WARNING" != "0" ];
-then
-    echo "WARNING - $LINE"
-    exit 1
 fi
 
 echo "OK - $LINE"

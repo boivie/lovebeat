@@ -28,10 +28,8 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errval := parseTimeout(r.FormValue("err-tmo"))
-	warnval := parseTimeout(r.FormValue("warn-tmo"))
-
-	client.UpdateService(name, true, warnval, errval)
+	timeout := parseTimeout(r.FormValue("timeout"))
+	client.UpdateService(name, true, timeout)
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -81,8 +79,8 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 	js := JsonView{
-		Name:   v.Name,
-		State:  v.State,
+		Name:  v.Name,
+		State: v.State,
 	}
 
 	var encoded, _ = json.MarshalIndent(js, "", "  ")
@@ -98,14 +96,13 @@ type JsonViewRef struct {
 }
 
 type JsonService struct {
-	Name           string        `json:"name"`
-	LastBeat       int64         `json:"last_beat"`
-	LastBeatDelta  int64         `json:"last_beat_delta"`
-	WarningTimeout int64         `json:"warning_timeout"`
-	ErrorTimeout   int64         `json:"error_timeout"`
-	State          string        `json:"state"`
-	Views          []JsonViewRef `json:"views,omitempty"`
-	History        []int64       `json:"history,omitempty"`
+	Name          string        `json:"name"`
+	LastBeat      int64         `json:"last_beat"`
+	LastBeatDelta int64         `json:"last_beat_delta"`
+	Timeout       int64         `json:"timeout"`
+	State         string        `json:"state"`
+	Views         []JsonViewRef `json:"views,omitempty"`
+	History       []int64       `json:"history,omitempty"`
 }
 
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
@@ -118,12 +115,11 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	var ret = make([]JsonService, 0)
 	for _, s := range client.GetServices(viewName) {
 		js := JsonService{
-			Name:           s.Name,
-			LastBeat:       s.LastBeat,
-			LastBeatDelta:  now - s.LastBeat,
-			WarningTimeout: s.WarningTimeout,
-			ErrorTimeout:   s.ErrorTimeout,
-			State:          s.State,
+			Name:          s.Name,
+			LastBeat:      s.LastBeat,
+			LastBeatDelta: now - s.LastBeat,
+			Timeout:       s.Timeout,
+			State:         s.State,
 		}
 		ret = append(ret, js)
 	}
@@ -147,13 +143,12 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 	}
 
 	js := JsonService{
-		Name:           s.Name,
-		LastBeat:       s.LastBeat,
-		LastBeatDelta:  now - s.LastBeat,
-		WarningTimeout: s.WarningTimeout,
-		ErrorTimeout:   s.ErrorTimeout,
-		State:          s.State,
-		History:        s.BeatHistory,
+		Name:          s.Name,
+		LastBeat:      s.LastBeat,
+		LastBeatDelta: now - s.LastBeat,
+		Timeout:       s.Timeout,
+		State:         s.State,
+		History:       s.BeatHistory,
 	}
 
 	var encoded, _ = json.MarshalIndent(js, "", "  ")

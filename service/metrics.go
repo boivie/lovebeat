@@ -11,8 +11,7 @@ var (
 	StateMap = map[string]int{
 		model.StatePaused:  0,
 		model.StateOk:      1,
-		model.StateWarning: 2,
-		model.StateError:   3,
+		model.StateError:   2,
 	}
 )
 

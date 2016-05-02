@@ -24,9 +24,8 @@ States
 ------
 
 A service can be in different states. **OK** is the state you want to keep
-your services in. You can set two timeouts, a *warning* and an *error*
-timeout. The service will change state into **WARNING** or **ERROR** when the
-timeouts have expired. Both timeouts are optional.
+your services in. You can set a timeout so that the service will change state
+into **ERROR** if the service hasn't issued a beat within that period of time.
 
 Views
 -----
@@ -45,8 +44,8 @@ starting with "backup."
     pattern = "backup.*"
 
 The views will inherit state from their services. If all services are **OK**,
-the view will be **OK**. But if any service is in **WARNING** or **ERROR**
-state, the view will transition into the **WARNING** or **ERROR** state.
+the view will be **OK**. But if any service is **ERROR** state, the view will
+transition into the **ERROR** state.
 
 Views can be automatically created based on the service names, which is a
 powerful feature when your service names have a structure.
