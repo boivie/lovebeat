@@ -14,7 +14,7 @@ type LineCommand struct {
 }
 
 var packetRegexp = regexp.MustCompile("^(" + service.ServiceNamePattern +
-")\\.(beat|autobeat|timeout):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
+	")\\.(beat|autobeat|timeout):(-?[0-9]+)\\|(g|c|ms)(\\|@([0-9\\.]+))?\n?$")
 
 func Parse(data []byte) []LineCommand {
 	var commands []LineCommand

@@ -1,8 +1,9 @@
 package api
+
 import (
+	"github.com/boivie/lovebeat/service"
 	"github.com/op/go-logging"
 	"time"
-	"github.com/boivie/lovebeat/service"
 )
 
 var log = logging.MustGetLogger("lovebeat")

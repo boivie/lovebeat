@@ -35,7 +35,7 @@ func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChan
 	}
 }
 
-func (m webhooksAlerter) Worker(q <- chan webhook) {
+func (m webhooksAlerter) Worker(q <-chan webhook) {
 	for webhook := range q {
 		log.Info("Sending webhook alert to %s", webhook.Url)
 

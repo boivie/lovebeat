@@ -24,9 +24,9 @@ type ServiceIf interface {
 }
 
 type upsertServiceCmd struct {
-	RegisterBeat   bool
-	Service        string
-	Timeout int64
+	RegisterBeat bool
+	Service      string
+	Timeout      int64
 }
 
 type upsertViewCmd struct {
@@ -70,9 +70,9 @@ func (c *client) DeleteService(name string) {
 
 func (c *client) UpdateService(name string, registerBeat bool, timeout int64) {
 	c.svcs.upsertServiceCmdChan <- &upsertServiceCmd{
-		Service:        name,
-		RegisterBeat:   registerBeat,
-		Timeout: timeout,
+		Service:      name,
+		RegisterBeat: registerBeat,
+		Timeout:      timeout,
 	}
 }
 

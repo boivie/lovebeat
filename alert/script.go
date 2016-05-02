@@ -3,11 +3,11 @@ package alert
 import (
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/service"
-	"strings"
+	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
-	"os"
 )
 
 type scriptAlerter struct {

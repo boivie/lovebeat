@@ -15,10 +15,10 @@ type Service struct {
 func newService(name string) *Service {
 	return &Service{
 		data: model.Service{
-			Name:           name,
-			LastBeat:       -1,
-			Timeout: -1,
-			State:          model.StatePaused,
+			Name:     name,
+			LastBeat: -1,
+			Timeout:  -1,
+			State:    model.StatePaused,
 		},
 	}
 }

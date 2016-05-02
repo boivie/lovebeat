@@ -1,13 +1,13 @@
 package alert
 
 import (
+	"fmt"
 	"github.com/boivie/lovebeat/config"
+	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
 	"github.com/franela/goreq"
-	"time"
-	"fmt"
-	"github.com/boivie/lovebeat/model"
 	"strings"
+	"time"
 )
 
 type slackAlert struct {
@@ -25,18 +25,18 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChanged
 	}
 }
 
-func (m slackAlerter) Worker(q <- chan slackAlert, cfg *config.ConfigSlack) {
+func (m slackAlerter) Worker(q <-chan slackAlert, cfg *config.ConfigSlack) {
 	for slackAlert := range q {
 		type SlackField struct {
 			Title string `json:"title"`
 			Value string `json:"value"`
-			Short bool `json:"short"`
+			Short bool   `json:"short"`
 		}
 
 		type SlackAttachment struct {
-			Fallback string `json:"fallback"`
-			Color    string `json:"color"`
-			Title    string `json:"title"`
+			Fallback string       `json:"fallback"`
+			Color    string       `json:"color"`
+			Title    string       `json:"title"`
 			Fields   []SlackField `json:"fields"`
 		}
 
@@ -52,25 +52,25 @@ func (m slackAlerter) Worker(q <- chan slackAlert, cfg *config.ConfigSlack) {
 		view := slackAlert.Data.View
 
 		payload := struct {
-			Username    string `json:"username"`
-			IconEmoji   string `json:"icon_emoji"`
-			Channel     string `json:"channel"`
+			Username    string            `json:"username"`
+			IconEmoji   string            `json:"icon_emoji"`
+			Channel     string            `json:"channel"`
 			Attachments []SlackAttachment `json:"attachments"`
 		}{
-			Username: "Lovebeat",
+			Username:  "Lovebeat",
 			IconEmoji: ":loud_sound:",
-			Channel: slackAlert.Channel,
+			Channel:   slackAlert.Channel,
 			Attachments: []SlackAttachment{
 				SlackAttachment{
 					Fallback: fmt.Sprintf("lovebeat: %s changed from %s to %s", view.Name, prevUpper, currentUpper),
-					Color: color,
-					Title: fmt.Sprintf("\"%s\" has changed from %s to %s", view.Name, prevUpper, currentUpper),
+					Color:    color,
+					Title:    fmt.Sprintf("\"%s\" has changed from %s to %s", view.Name, prevUpper, currentUpper),
 					Fields: []SlackField{
-						SlackField{Title: "View Name", Value: view.Name, Short: true },
-						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true },
-						SlackField{Title: "From State", Value: prevUpper, Short: true },
-						SlackField{Title: "Failed Service(s)", Value: strings.Join(formatFailedServices(slackAlert.Data)[:], ","), Short: true },
-						SlackField{Title: "To State", Value: currentUpper, Short: true },
+						SlackField{Title: "View Name", Value: view.Name, Short: true},
+						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true},
+						SlackField{Title: "From State", Value: prevUpper, Short: true},
+						SlackField{Title: "Failed Service(s)", Value: strings.Join(formatFailedServices(slackAlert.Data)[:], ","), Short: true},
+						SlackField{Title: "To State", Value: currentUpper, Short: true},
 					},
 				},
 			},

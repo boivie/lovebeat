@@ -11,8 +11,8 @@ func testEq(a, b []LineCommand) bool {
 
 	for i := range a {
 		if a[i].Action != b[i].Action ||
-		a[i].Name != b[i].Name ||
-		a[i].Value != b[i].Value {
+			a[i].Name != b[i].Name ||
+			a[i].Value != b[i].Value {
 			return false
 		}
 	}

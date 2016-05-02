@@ -23,7 +23,7 @@ const (
 	TMPL_BODY = `The status for view '{{.View.Name}}' has changed from '{{.Previous | ToUpper}}' to '{{.Current | ToUpper}}'
 `
 	TMPL_SUBJECT = `[LOVEBEAT] {{.View.Name}}-{{.View.IncidentNbr}}`
-	TMPL_EMAIL = `From: {{.From}}
+	TMPL_EMAIL   = `From: {{.From}}
 To: {{.To}}
 Subject: {{.Subject}}
 MIME-version: 1.0
@@ -72,7 +72,7 @@ func (m mailAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedE
 	}
 }
 
-func (m mailAlerter) Worker(q <- chan mail, cfg *config.ConfigMail) {
+func (m mailAlerter) Worker(q <-chan mail, cfg *config.ConfigMail) {
 	for mail := range q {
 		log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
 		var context = make(map[string]interface{})

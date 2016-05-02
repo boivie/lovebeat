@@ -23,7 +23,7 @@ type Service struct {
 
 // View is a collection of services
 type View struct {
-	Name        string   `json:"name"`         // Name of the view
-	State       string   `json:"state"`        // One of the StateXX constant
-	IncidentNbr int      `json:"incident_nbr"` // Incrementing number everytime the view leaves the StateOk state
+	Name        string `json:"name"`         // Name of the view
+	State       string `json:"state"`        // One of the StateXX constant
+	IncidentNbr int    `json:"incident_nbr"` // Incrementing number everytime the view leaves the StateOk state
 }

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"testing"
 	"regexp"
+	"testing"
 )
 
 func TestMakePattern(t *testing.T) {
@@ -48,7 +48,6 @@ func TestExpandNameUnknownField(t *testing.T) {
 	}
 }
 
-
 func TestExpandNamePrefix(t *testing.T) {
 	pattern := makePattern("test.$name.$namefoo")
 	pre := regexp.MustCompile(pattern)
@@ -58,7 +57,3 @@ func TestExpandNamePrefix(t *testing.T) {
 		t.Errorf("Was: %v", name)
 	}
 }
-
-
-
-

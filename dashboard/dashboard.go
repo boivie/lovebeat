@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
@@ -10,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"encoding/json"
 )
 
 var client service.ServiceIf
@@ -33,10 +33,10 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 			ok++
 		}
 	}
-	if (req.Header.Get("Accept") == "application/json") {
+	if req.Header.Get("Accept") == "application/json" {
 		ret := struct {
-			NumOk    int `json:"num_ok"`
-			NumError int `json:"num_error"`
+			NumOk    int  `json:"num_ok"`
+			NumError int  `json:"num_error"`
 			HasError bool `json:"has_error"`
 			Good     bool `json:"good"`
 		}{
@@ -46,7 +46,7 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 		var encoded, _ = json.MarshalIndent(ret, "", "  ")
 
 		c.Header().Add("Content-Type", "application/json")
-		c.Header().Add("Content-Length", strconv.Itoa(len(encoded) + 1))
+		c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
 		c.Write(encoded)
 		io.WriteString(c, "\n")
 	} else {

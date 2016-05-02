@@ -1,12 +1,11 @@
 package service
 
 import (
+	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/model"
 	"regexp"
 	"strings"
-	"github.com/boivie/lovebeat/config"
 )
-
 
 // Instantiated from a view template
 type View struct {

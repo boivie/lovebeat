@@ -12,13 +12,13 @@ import (
 )
 
 type Services struct {
-	be                   backend.Backend
-	bus                  *eventbus.EventBus
-	services             map[string]*Service
+	be       backend.Backend
+	bus      *eventbus.EventBus
+	services map[string]*Service
 
-	views                map[string]*View
-	viewTemplates        []ViewTemplate
-	viewStates           []*model.View
+	views         map[string]*View
+	viewTemplates []ViewTemplate
+	viewStates    []*model.View
 
 	upsertServiceCmdChan chan *upsertServiceCmd
 	deleteServiceCmdChan chan string
@@ -31,7 +31,7 @@ type Services struct {
 
 const (
 	MAX_UNPROCESSED_PACKETS = 1000
-	EXPIRY_INTERVAL = 1
+	EXPIRY_INTERVAL         = 1
 )
 
 var log = logging.MustGetLogger("lovebeat")

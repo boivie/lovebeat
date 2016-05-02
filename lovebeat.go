@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/algorithms"
+	"github.com/boivie/lovebeat/api"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
 	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/eventlog"
-	"github.com/boivie/lovebeat/api"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/service"
 	"github.com/boivie/lovebeat/websocket"
@@ -27,12 +27,12 @@ import (
 )
 
 var (
-	debug = flag.Bool("debug", false, "Enable debug logs")
+	debug       = flag.Bool("debug", false, "Enable debug logs")
 	showVersion = flag.Bool("version", false, "Print version string")
-	cfgFile = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
-	cfgDir = flag.String("config-dir", "/etc/lovebeat.conf.d", "Configuration directory")
-	useSyslog = flag.Bool("syslog", false, "Log to syslog instead of stderr")
-	validate = flag.Bool("validate-auto", false, "Evaluate auto-algorithm")
+	cfgFile     = flag.String("config", "/etc/lovebeat.cfg", "Configuration file")
+	cfgDir      = flag.String("config-dir", "/etc/lovebeat.conf.d", "Configuration directory")
+	useSyslog   = flag.Bool("syslog", false, "Log to syslog instead of stderr")
+	validate    = flag.Bool("validate-auto", false, "Evaluate auto-algorithm")
 )
 
 var log = logging.MustGetLogger("lovebeat")

@@ -14,7 +14,6 @@ type Alerter interface {
 	Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent)
 }
 
-
 func RegisterAlerters(bus *eventbus.EventBus, cfg config.Config, client service.ServiceIf) {
 	alerters := []Alerter{
 		NewMailAlerter(cfg),

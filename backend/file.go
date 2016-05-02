@@ -19,12 +19,12 @@ const (
 
 var (
 	RECORD_SERVICE = []byte("SERV\t")
-	RECORD_VIEW = []byte("VIEW\t")
-	NEWLINE = []byte("\n")
+	RECORD_VIEW    = []byte("VIEW\t")
+	NEWLINE        = []byte("\n")
 )
 
 var (
-	log = logging.MustGetLogger("lovebeat")
+	log      = logging.MustGetLogger("lovebeat")
 	counters = metrics.NopMetrics()
 )
 
