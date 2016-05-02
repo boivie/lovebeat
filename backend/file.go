@@ -13,9 +13,7 @@ import (
 	"time"
 )
 
-const (
-	MAX_PENDING_WRITES = 1000
-)
+const MAX_PENDING_WRITES = 1000
 
 var (
 	RECORD_SERVICE = []byte("SERV\t")
@@ -23,10 +21,7 @@ var (
 	NEWLINE        = []byte("\n")
 )
 
-var (
-	log      = logging.MustGetLogger("lovebeat")
-	counters = metrics.NopMetrics()
-)
+var log = logging.MustGetLogger("lovebeat")
 
 type FileBackend struct {
 	cfg      *config.ConfigDatabase
@@ -78,18 +73,6 @@ func (f FileBackend) DeleteView(name string) {
 	f.q <- update{deleteView: name}
 }
 
-func (f FileBackend) loadService(data []byte) {
-	service := &model.Service{}
-	json.Unmarshal(data, &service)
-	f.services[service.Name] = service
-}
-
-func (f FileBackend) loadView(data []byte) {
-	view := &model.View{}
-	json.Unmarshal(data, &view)
-	f.views[view.Name] = view
-}
-
 func (f FileBackend) readAll() {
 	s := f.cfg.Filename
 	fi, err := os.Open(s)
@@ -110,9 +93,13 @@ func (f FileBackend) readAll() {
 			break
 		}
 		if bytes.HasPrefix(line, RECORD_SERVICE) {
-			f.loadService(line[5:])
+			service := &model.Service{}
+			json.Unmarshal(line[5:], &service)
+			f.services[service.Name] = service
 		} else if bytes.HasPrefix(line, RECORD_VIEW) {
-			f.loadView(line[5:])
+			view := &model.View{}
+			json.Unmarshal(line[5:], &view)
+			f.views[view.Name] = view
 		} else {
 			log.Info("Found unexpected line in database - skipping")
 		}
@@ -121,7 +108,7 @@ func (f FileBackend) readAll() {
 		len(f.services), len(f.views), s)
 }
 
-func (f FileBackend) saveAll() {
+func (f FileBackend) saveAll(counters metrics.Metrics) {
 	start := time.Now()
 	s := f.cfg.Filename + ".new"
 	fi, err := os.OpenFile(s, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
@@ -166,15 +153,15 @@ type update struct {
 	deleteView    string
 }
 
-func (f FileBackend) fileSaver() {
+func (f FileBackend) fileSaver(counters metrics.Metrics) {
 	period := time.Duration(f.cfg.Interval) * time.Second
 	ticker := time.NewTicker(period)
 	for {
 		select {
 		case <-ticker.C:
-			f.saveAll()
+			f.saveAll(counters)
 		case reply := <-f.sync:
-			f.saveAll()
+			f.saveAll(counters)
 			reply <- true
 		case upd := <-f.q:
 			if upd.setService != nil {
@@ -194,7 +181,6 @@ func (f FileBackend) fileSaver() {
 }
 
 func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics) Backend {
-	counters = m
 	var q = make(chan update, MAX_PENDING_WRITES)
 	be := FileBackend{
 		cfg:      cfg,
@@ -204,6 +190,6 @@ func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics) Backend {
 		views:    make(map[string]*model.View),
 	}
 	be.readAll()
-	go be.fileSaver()
+	go be.fileSaver(m)
 	return be
 }
