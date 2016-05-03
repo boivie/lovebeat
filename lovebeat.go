@@ -130,13 +130,13 @@ func main() {
 	setUpEventlog(cfg, bus)
 
 	notifier := notify.Init(myName, cfg.Notify)
+	alerter := alert.Init(cfg, notifier)
+
 	m := metrics.New(&cfg.Metrics)
 	service.RegisterMetrics(bus, m)
 
 	be := backend.NewFileBackend(&cfg.Database, m, notifier)
-	svcs := service.NewServices(be, bus)
-
-	alert.RegisterAlerters(bus, cfg, svcs.GetClient())
+	svcs := service.NewServices(be, bus, alerter)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)

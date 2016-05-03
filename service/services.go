@@ -7,6 +7,7 @@ import (
 	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
 
+	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/notify"
 	"regexp"
 	"time"
@@ -15,6 +16,7 @@ import (
 type Services struct {
 	be       backend.Backend
 	bus      *eventbus.EventBus
+	alerter  alert.Alerter
 	services map[string]*Service
 
 	views         map[string]*View
@@ -27,7 +29,6 @@ type Services struct {
 	getServiceChan       chan *getServiceCmd
 	getViewsChan         chan *getViewsCmd
 	getViewChan          chan *getViewCmd
-	getViewAlertsChan    chan *getViewAlertsCmd
 }
 
 const (
@@ -62,6 +63,7 @@ func (svcs *Services) updateView(view *View, ts int64) {
 
 		log.Info("VIEW '%s', %d: state %s -> %s", view.name(), view.data.IncidentNbr, oldState, view.data.State)
 		svcs.bus.Publish(ViewStateChangedEvent{view.data, oldState, view.data.State, view.failingServices()})
+		svcs.alerter.Notify(alert.AlertInfo{view.data, oldState, view.data.State, view.failingServices(), view.tmpl.config})
 	}
 }
 
@@ -112,12 +114,6 @@ func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
 				c.Reply <- &ret.data
 			} else {
 				c.Reply <- nil
-			}
-		case c := <-svcs.getViewAlertsChan:
-			if ret, ok := svcs.views[c.Name]; ok {
-				c.Reply <- ret.tmpl.config.Alerts
-			} else {
-				c.Reply <- []string{}
 			}
 		case c := <-svcs.deleteServiceCmdChan:
 			log.Info("SERVICE '%s', deleted", c)
@@ -222,9 +218,10 @@ func (svcs *Services) addViewsToService(svc *Service) {
 	}
 }
 
-func NewServices(beiface backend.Backend, bus *eventbus.EventBus) *Services {
+func NewServices(beiface backend.Backend, bus *eventbus.EventBus, alerter alert.Alerter) *Services {
 	svcs := new(Services)
 	svcs.bus = bus
+	svcs.alerter = alerter
 	svcs.be = beiface
 	svcs.deleteServiceCmdChan = make(chan string, 5)
 	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
@@ -232,7 +229,6 @@ func NewServices(beiface backend.Backend, bus *eventbus.EventBus) *Services {
 	svcs.getServiceChan = make(chan *getServiceCmd, 5)
 	svcs.getViewsChan = make(chan *getViewsCmd, 5)
 	svcs.getViewChan = make(chan *getViewCmd, 5)
-	svcs.getViewAlertsChan = make(chan *getViewAlertsCmd, 5)
 
 	return svcs
 }

@@ -2,50 +2,34 @@ package alert
 
 import (
 	"github.com/boivie/lovebeat/config"
-	"github.com/boivie/lovebeat/service"
 	"github.com/franela/goreq"
 	"strings"
 	"time"
 )
 
-type webhook struct {
-	Url  string
-	Data webhookData
-}
+type webhooksAlerter struct{}
 
-type webhooksAlerter struct {
-	cmds chan webhook
-}
-
-type webhookData struct {
-	Name        string `json:"name"`
-	FromState   string `json:"from_state"`
-	ToState     string `json:"to_state"`
-	IncidentNbr int    `json:"incident_number"`
-}
-
-func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
+func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 	if cfg.Webhook != "" {
-		js := webhookData{
-			Name:        ev.View.Name,
-			FromState:   strings.ToUpper(ev.Previous),
-			ToState:     strings.ToUpper(ev.Current),
-			IncidentNbr: ev.View.IncidentNbr}
-		m.cmds <- webhook{Url: cfg.Webhook, Data: js}
-	}
-}
+		log.Info("Sending webhook alert to %s", cfg.Webhook)
 
-func (m webhooksAlerter) Worker(q <-chan webhook) {
-	for webhook := range q {
-		log.Info("Sending webhook alert to %s", webhook.Url)
-
+		goreq.SetConnectTimeout(5 * time.Second)
 		req := goreq.Request{
-			Uri:         webhook.Url,
+			Uri:         cfg.Webhook,
 			Accept:      "application/json",
 			ContentType: "application/json",
 			UserAgent:   "Lovebeat",
 			Timeout:     10 * time.Second,
-			Body:        webhook.Data,
+			Body: struct {
+				Name        string `json:"name"`
+				FromState   string `json:"from_state"`
+				ToState     string `json:"to_state"`
+				IncidentNbr int    `json:"incident_number"`
+			}{
+				Name:        ev.View.Name,
+				FromState:   strings.ToUpper(ev.Previous),
+				ToState:     strings.ToUpper(ev.Current),
+				IncidentNbr: ev.View.IncidentNbr},
 		}
 
 		req.AddHeader("X-Lovebeat", "1")
@@ -57,10 +41,6 @@ func (m webhooksAlerter) Worker(q <-chan webhook) {
 	}
 }
 
-func NewWebhooksAlerter(cfg config.Config) Alerter {
-	goreq.SetConnectTimeout(5 * time.Second)
-	var q = make(chan webhook, 100)
-	var w = webhooksAlerter{cmds: q}
-	go w.Worker(q)
-	return &w
+func NewWebhooksAlerter(cfg config.Config) AlerterBackend {
+	return &webhooksAlerter{}
 }

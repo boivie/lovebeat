@@ -2,7 +2,6 @@ package alert
 
 import (
 	"github.com/boivie/lovebeat/config"
-	"github.com/boivie/lovebeat/service"
 	"os"
 	"os/exec"
 	"strconv"
@@ -13,7 +12,7 @@ import (
 type scriptAlerter struct {
 }
 
-func (m scriptAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
+func (m scriptAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 	if cfg.Script != "" {
 		log.Info("Running alert script %s", cfg.Script)
 		cmd := exec.Command(cfg.Script)
@@ -42,6 +41,6 @@ func (m scriptAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChange
 	}
 }
 
-func NewScriptAlerter(cfg config.Config) Alerter {
+func NewScriptAlerter(cfg config.Config) AlerterBackend {
 	return &scriptAlerter{}
 }

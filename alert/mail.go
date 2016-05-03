@@ -3,7 +3,6 @@ package alert
 import (
 	"bytes"
 	"github.com/boivie/lovebeat/config"
-	"github.com/boivie/lovebeat/service"
 	"net/smtp"
 	"strings"
 	"text/template"
@@ -16,7 +15,7 @@ type mail struct {
 }
 
 type mailAlerter struct {
-	cmds chan mail
+	cfg *config.ConfigMail
 }
 
 const (
@@ -51,7 +50,7 @@ func renderTemplate(tmpl string, context map[string]interface{}) string {
 	return doc.String()
 }
 
-func createMail(address string, ev service.ViewStateChangedEvent) mail {
+func createMail(address string, ev AlertInfo) mail {
 	var context = make(map[string]interface{})
 	context["View"] = ev.View
 	context["Previous"] = ev.Previous
@@ -66,35 +65,31 @@ func createMail(address string, ev service.ViewStateChangedEvent) mail {
 	}
 }
 
-func (m mailAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
+func (m mailAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 	if cfg.Mail != "" {
-		m.cmds <- createMail(cfg.Mail, ev)
+		mail := createMail(cfg.Mail, ev)
+		sendMail(m.cfg, mail)
 	}
 }
 
-func (m mailAlerter) Worker(q <-chan mail, cfg *config.ConfigMail) {
-	for mail := range q {
-		log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
-		var context = make(map[string]interface{})
-		context["From"] = cfg.From
-		context["To"] = mail.To
-		context["Subject"] = mail.Subject
-		context["Message"] = mail.Body
+func sendMail(cfg *config.ConfigMail, mail mail) {
+	log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
+	var context = make(map[string]interface{})
+	context["From"] = cfg.From
+	context["To"] = mail.To
+	context["Subject"] = mail.Subject
+	context["Message"] = mail.Body
 
-		contents := renderTemplate(TMPL_EMAIL, context)
-		var to = strings.Split(mail.To, ",")
-		var err = smtp.SendMail(cfg.Server, nil, cfg.From, to,
-			[]byte(contents))
-		if err != nil {
-			log.Error("Failed to send e-mail: %s", err)
-		}
+	contents := renderTemplate(TMPL_EMAIL, context)
+	var to = strings.Split(mail.To, ",")
+	var err = smtp.SendMail(cfg.Server, nil, cfg.From, to,
+		[]byte(contents))
+	if err != nil {
+		log.Error("Failed to send e-mail: %s", err)
 	}
 }
 
-func NewMailAlerter(cfg config.Config) Alerter {
+func NewMailAlerter(cfg config.Config) AlerterBackend {
 	log.Debug("Sending mail via %s, from %s", cfg.Mail.Server, cfg.Mail.From)
-	var q = make(chan mail, 100)
-	var ma = mailAlerter{cmds: q}
-	go ma.Worker(q, &cfg.Mail)
-	return &ma
+	return &mailAlerter{&cfg.Mail}
 }

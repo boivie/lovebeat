@@ -4,29 +4,17 @@ import (
 	"fmt"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/model"
-	"github.com/boivie/lovebeat/service"
 	"github.com/franela/goreq"
 	"strings"
 	"time"
 )
 
-type slackAlert struct {
-	Channel string
-	Data    service.ViewStateChangedEvent
-}
-
 type slackAlerter struct {
-	cmds chan slackAlert
+	cfg *config.ConfigSlack
 }
 
-func (m slackAlerter) Notify(cfg config.ConfigAlert, ev service.ViewStateChangedEvent) {
+func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 	if cfg.SlackChannel != "" {
-		m.cmds <- slackAlert{Channel: cfg.SlackChannel, Data: ev}
-	}
-}
-
-func (m slackAlerter) Worker(q <-chan slackAlert, cfg *config.ConfigSlack) {
-	for slackAlert := range q {
 		type SlackField struct {
 			Title string `json:"title"`
 			Value string `json:"value"`
@@ -41,15 +29,15 @@ func (m slackAlerter) Worker(q <-chan slackAlert, cfg *config.ConfigSlack) {
 		}
 
 		var color string
-		if slackAlert.Data.Current == model.StateError {
+		if ev.Current == model.StateError {
 			color = "danger"
 		} else {
 			color = "good"
 		}
 
-		prevUpper := strings.ToUpper(slackAlert.Data.Previous)
-		currentUpper := strings.ToUpper(slackAlert.Data.Current)
-		view := slackAlert.Data.View
+		prevUpper := strings.ToUpper(ev.Previous)
+		currentUpper := strings.ToUpper(ev.Current)
+		view := ev.View
 
 		payload := struct {
 			Username    string            `json:"username"`
@@ -59,7 +47,7 @@ func (m slackAlerter) Worker(q <-chan slackAlert, cfg *config.ConfigSlack) {
 		}{
 			Username:  "Lovebeat",
 			IconEmoji: ":loud_sound:",
-			Channel:   slackAlert.Channel,
+			Channel:   cfg.SlackChannel,
 			Attachments: []SlackAttachment{
 				SlackAttachment{
 					Fallback: fmt.Sprintf("lovebeat: %s changed from %s to %s", view.Name, prevUpper, currentUpper),
@@ -69,17 +57,18 @@ func (m slackAlerter) Worker(q <-chan slackAlert, cfg *config.ConfigSlack) {
 						SlackField{Title: "View Name", Value: view.Name, Short: true},
 						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true},
 						SlackField{Title: "From State", Value: prevUpper, Short: true},
-						SlackField{Title: "Failed Service(s)", Value: strings.Join(formatFailedServices(slackAlert.Data)[:], ","), Short: true},
+						SlackField{Title: "Failed Service(s)", Value: strings.Join(formatFailedServices(ev.FailedServices), ","), Short: true},
 						SlackField{Title: "To State", Value: currentUpper, Short: true},
 					},
 				},
 			},
 		}
 
-		log.Debug("Performing slack request at %v", cfg.WebhookUrl)
+		log.Debug("Performing slack request at %v", m.cfg.WebhookUrl)
+		goreq.SetConnectTimeout(5 * time.Second)
 		req := goreq.Request{
 			Method:      "POST",
-			Uri:         cfg.WebhookUrl,
+			Uri:         m.cfg.WebhookUrl,
 			Accept:      "application/json",
 			ContentType: "application/json",
 			UserAgent:   "Lovebeat",
@@ -94,19 +83,14 @@ func (m slackAlerter) Worker(q <-chan slackAlert, cfg *config.ConfigSlack) {
 	}
 }
 
-func formatFailedServices(event service.ViewStateChangedEvent) []string {
-	var services = make([]string, 0)
-	for _, service := range event.FailedServices {
-		services = append(services, fmt.Sprintf("%s (%s)", service.Name, service.State))
+func formatFailedServices(services []model.Service) []string {
+	var names = make([]string, 0)
+	for _, service := range services {
+		names = append(names, service.Name)
 	}
-	return services
+	return names
 }
 
-func NewSlackAlerter(cfg config.Config) Alerter {
-	goreq.SetConnectTimeout(5 * time.Second)
-
-	var q = make(chan slackAlert, 100)
-	var w = slackAlerter{cmds: q}
-	go w.Worker(q, &cfg.Slack)
-	return &w
+func NewSlackAlerter(cfg config.Config) AlerterBackend {
+	return &slackAlerter{&cfg.Slack}
 }
