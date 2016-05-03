@@ -19,6 +19,14 @@ func parseTimeout(tmo string) int64 {
 	}
 }
 
+func replyJson(c http.ResponseWriter, js interface{}) {
+	var encoded, _ = json.MarshalIndent(js, "", "  ")
+	c.Header().Add("Content-Type", "application/json")
+	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
+	c.Write(encoded)
+	io.WriteString(c, "\n")
+}
+
 func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
@@ -77,9 +85,8 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 type JsonView struct {
-	Name   string `json:"name"`
-	State  string `json:"state"`
-	Regexp string `json:"regexp,omitempty"`
+	Name  string `json:"name"`
+	State string `json:"state"`
 }
 
 func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
@@ -91,12 +98,7 @@ func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
 		}
 		ret = append(ret, js)
 	}
-	var encoded, _ = json.MarshalIndent(ret, "", "  ")
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
-	c.Write(encoded)
-	io.WriteString(c, "\n")
+	replyJson(c, ret)
 }
 
 func GetViewHandler(c http.ResponseWriter, r *http.Request) {
@@ -112,12 +114,7 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 		State: v.State,
 	}
 
-	var encoded, _ = json.MarshalIndent(js, "", "  ")
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
-	c.Write(encoded)
-	io.WriteString(c, "\n")
+	replyJson(c, js)
 }
 
 type JsonViewRef struct {
@@ -152,12 +149,7 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 		}
 		ret = append(ret, js)
 	}
-	var encoded, _ = json.MarshalIndent(ret, "", "  ")
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
-	c.Write(encoded)
-	io.WriteString(c, "\n")
+	replyJson(c, ret)
 }
 
 func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
@@ -179,26 +171,14 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 		State:         s.State,
 		History:       s.BeatHistory,
 	}
-
-	var encoded, _ = json.MarshalIndent(js, "", "  ")
-
-	c.Header().Add("Content-Type", "application/json")
-	c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
-	c.Write(encoded)
-	io.WriteString(c, "\n")
+	replyJson(c, js)
 }
 
 func AddEndpoints(rtr *mux.Router) {
-	rtr.HandleFunc("/api/services/",
-		GetServicesHandler).Methods("GET")
-	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}",
-		ServiceHandler).Methods("POST")
-	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}",
-		GetServiceHandler).Methods("GET")
-	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}",
-		DeleteServiceHandler).Methods("DELETE")
-	rtr.HandleFunc("/api/views/",
-		GetViewsHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}",
-		GetViewHandler).Methods("GET")
+	rtr.HandleFunc("/api/services/", GetServicesHandler).Methods("GET")
+	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", ServiceHandler).Methods("POST")
+	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", GetServiceHandler).Methods("GET")
+	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", DeleteServiceHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/views/", GetViewsHandler).Methods("GET")
+	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", GetViewHandler).Methods("GET")
 }
