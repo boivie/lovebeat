@@ -3,7 +3,7 @@ package eventlog
 import (
 	"encoding/json"
 	"github.com/boivie/lovebeat/eventbus"
-	"github.com/boivie/lovebeat/service"
+	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
 	"io"
 	"reflect"
@@ -23,10 +23,10 @@ func New(writer io.Writer) *EventLog {
 func (el *EventLog) Register(bus *eventbus.EventBus) {
 	bus.RegisterHandler(
 		el.eventHandler,
-		service.ServiceStateChangedEvent{},
-		service.ViewStateChangedEvent{},
-		service.ServiceAddedEvent{},
-		service.ServiceRemovedEvent{})
+		model.ServiceStateChangedEvent{},
+		model.ViewStateChangedEvent{},
+		model.ServiceAddedEvent{},
+		model.ServiceRemovedEvent{})
 }
 
 func (el *EventLog) eventHandler(ev interface{}) {

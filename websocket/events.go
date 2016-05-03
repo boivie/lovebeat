@@ -2,7 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
-	"github.com/boivie/lovebeat/service"
+	"github.com/boivie/lovebeat/model"
 )
 
 type serviceChangedArgs struct {
@@ -15,7 +15,7 @@ type serviceChangedMsg struct {
 	Args    serviceChangedArgs `json:"args"`
 }
 
-func serviceStateChanged(ev service.ServiceStateChangedEvent) {
+func serviceStateChanged(ev model.ServiceStateChangedEvent) {
 	msg := serviceChangedMsg{
 		Message: "service_changed",
 		Args: serviceChangedArgs{
@@ -38,7 +38,7 @@ type viewChangedMsg struct {
 	Args    viewChangedArgs `json:"args"`
 }
 
-func viewStateChanged(ev service.ViewStateChangedEvent) {
+func viewStateChanged(ev model.ViewStateChangedEvent) {
 	msg := viewChangedMsg{
 		Message: "view_changed",
 		Args: viewChangedArgs{

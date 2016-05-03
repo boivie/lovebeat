@@ -15,12 +15,12 @@ var (
 	}
 )
 
-func ServiceStateChanged(ev ServiceStateChangedEvent) {
+func ServiceStateChanged(ev model.ServiceStateChangedEvent) {
 	service := ev.Service
 	counters.SetGauge("service.state."+service.Name, int(StateMap[service.State]))
 }
 
-func ViewStateChanged(ev ViewStateChangedEvent) {
+func ViewStateChanged(ev model.ViewStateChangedEvent) {
 	view := ev.View
 	counters.SetGauge("view.state."+view.Name, int(StateMap[view.State]))
 }
