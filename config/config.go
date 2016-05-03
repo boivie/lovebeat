@@ -20,6 +20,7 @@ type Config struct {
 	Alerts   map[string]ConfigAlert
 	Views    []ConfigView
 	Eventlog ConfigEventlog
+	Notify   []ConfigNotify
 }
 
 type ConfigMail struct {
@@ -61,6 +62,10 @@ type ConfigView struct {
 type ConfigEventlog struct {
 	Path string
 	Mode os.FileMode
+}
+
+type ConfigNotify struct {
+	Lovebeat string
 }
 
 var log = logging.MustGetLogger("lovebeat")

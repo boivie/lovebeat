@@ -8,6 +8,7 @@ import (
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/model"
+	"github.com/boivie/lovebeat/notify"
 	"github.com/op/go-logging"
 	"os"
 	"time"
@@ -153,13 +154,14 @@ type update struct {
 	deleteView    string
 }
 
-func (f FileBackend) fileSaver(counters metrics.Metrics) {
+func (f FileBackend) fileSaver(counters metrics.Metrics, notifier notify.Notifier) {
 	period := time.Duration(f.cfg.Interval) * time.Second
 	ticker := time.NewTicker(period)
 	for {
 		select {
 		case <-ticker.C:
 			f.saveAll(counters)
+			notifier.Notify("save")
 		case reply := <-f.sync:
 			f.saveAll(counters)
 			reply <- true
@@ -180,7 +182,7 @@ func (f FileBackend) fileSaver(counters metrics.Metrics) {
 	}
 }
 
-func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics) Backend {
+func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics, notifier notify.Notifier) Backend {
 	var q = make(chan update, MAX_PENDING_WRITES)
 	be := FileBackend{
 		cfg:      cfg,
@@ -190,6 +192,6 @@ func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics) Backend {
 		views:    make(map[string]*model.View),
 	}
 	be.readAll()
-	go be.fileSaver(m)
+	go be.fileSaver(m, notifier)
 	return be
 }

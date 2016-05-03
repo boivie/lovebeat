@@ -7,6 +7,7 @@ import (
 	"github.com/boivie/lovebeat/model"
 	"github.com/op/go-logging"
 
+	"github.com/boivie/lovebeat/notify"
 	"regexp"
 	"time"
 )
@@ -31,7 +32,6 @@ type Services struct {
 
 const (
 	MAX_UNPROCESSED_PACKETS = 1000
-	EXPIRY_INTERVAL         = 1
 )
 
 var log = logging.MustGetLogger("lovebeat")
@@ -65,13 +65,14 @@ func (svcs *Services) updateView(view *View, ts int64) {
 	}
 }
 
-func (svcs *Services) Monitor(cfg config.Config) {
-	ticker := time.NewTicker(time.Duration(EXPIRY_INTERVAL) * time.Second)
+func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
+	updateServicesTimer := time.NewTicker(time.Duration(1) * time.Second)
+	notifyTimer := time.NewTicker(time.Duration(60) * time.Second)
 	svcs.reload(cfg)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-updateServicesTimer.C:
 			var ts = now()
 			for _, s := range svcs.services {
 				if s.data.State == model.StatePaused || s.data.State == s.stateAt(ts) {
@@ -83,6 +84,8 @@ func (svcs *Services) Monitor(cfg config.Config) {
 					svcs.updateView(view, ts)
 				}
 			}
+		case <-notifyTimer.C:
+			notifier.Notify("monitor")
 		case c := <-svcs.getServicesChan:
 			var ret []model.Service
 			if view, ok := svcs.views[c.View]; ok {

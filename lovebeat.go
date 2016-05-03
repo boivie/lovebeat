@@ -12,6 +12,7 @@ import (
 	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/eventlog"
 	"github.com/boivie/lovebeat/metrics"
+	"github.com/boivie/lovebeat/notify"
 	"github.com/boivie/lovebeat/service"
 	"github.com/boivie/lovebeat/websocket"
 	"github.com/gorilla/mux"
@@ -120,17 +121,19 @@ func main() {
 	}
 
 	wd, _ := os.Getwd()
-	log.Info("Lovebeat v%s started on %s, PID %d, running from %s", VERSION, getHostname(), os.Getpid(), wd)
+	myName := getHostname()
+	log.Info("Lovebeat v%s started on %s, PID %d, running from %s", VERSION, myName, os.Getpid(), wd)
 
 	cfg := config.ReadConfig(*cfgFile, *cfgDir)
 	bus := eventbus.New()
 
 	setUpEventlog(cfg, bus)
 
+	notifier := notify.Init(myName, cfg.Notify)
 	m := metrics.New(&cfg.Metrics)
 	service.RegisterMetrics(bus, m)
 
-	be := backend.NewFileBackend(&cfg.Database, m)
+	be := backend.NewFileBackend(&cfg.Database, m, notifier)
 	svcs := service.NewServices(be, bus)
 
 	alert.RegisterAlerters(bus, cfg, svcs.GetClient())
@@ -141,7 +144,7 @@ func main() {
 
 	api.Init(svcs.GetClient())
 
-	go svcs.Monitor(cfg)
+	go svcs.Monitor(cfg, notifier)
 	go httpServer(&cfg.Http, svcs, bus)
 	go api.UdpListener(&cfg.Udp)
 	go api.TcpListener(&cfg.Tcp)

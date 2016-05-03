@@ -18,8 +18,16 @@ the bundled Jupyter_ Notebook.
 Monitoring
 ----------
 
-If it recommended to have an external monitoring system check the status of
-lovebeat. There is an API endpoint, ``/status`` for that purpose.
+Lovebeat is designed to be resistant to environmental disturbances but it can
+still fail if e.g. the machine it's running on is degraded or if the network is
+experiencing problems. It's a very good idea to monitor Lovebeat so that you
+are confident that it's monitoring your services correctly.
+
+External Monitoring
+~~~~~~~~~~~~~~~~~~~
+
+It is easy to have an external monitoring system find out if lovebeat if
+healthy. There is an API endpoint, ``/status`` for that purpose.
 
 Calling it will result in the following response:
 
@@ -51,6 +59,19 @@ of the provided view will be used.
 
 You can let e.g. nagios_ monitor it. There is a
 provided nagios plugin in the contrib/ directory.
+
+Lovebeat Monitoring
+~~~~~~~~~~~~~~~~~~~
+
+For more detailed monitoring, you can have two (or more) instances of Lovebeat
+monitor each other. By having one or several ``notify`` sections in the
+configuration file, you can specify a URL to which Lovebeat will post its
+heartbeats.
+
+.. code-block:: ini
+
+    [[notify]]
+    lovebeat = "http://some-other-host:8080"
 
 Logging
 -------
