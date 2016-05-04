@@ -154,9 +154,8 @@ type update struct {
 	deleteView    string
 }
 
-func (f FileBackend) fileSaver(counters metrics.Metrics, notifier notify.Notifier) {
-	period := time.Duration(f.cfg.Interval) * time.Second
-	ticker := time.NewTicker(period)
+func (f FileBackend) monitor(counters metrics.Metrics, notifier notify.Notifier) {
+	ticker := time.NewTicker(time.Duration(f.cfg.Interval) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
@@ -183,15 +182,14 @@ func (f FileBackend) fileSaver(counters metrics.Metrics, notifier notify.Notifie
 }
 
 func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics, notifier notify.Notifier) Backend {
-	var q = make(chan update, MAX_PENDING_WRITES)
 	be := FileBackend{
 		cfg:      cfg,
-		q:        q,
+		q:        make(chan update, MAX_PENDING_WRITES),
 		sync:     make(chan chan bool),
 		services: make(map[string]*model.Service),
 		views:    make(map[string]*model.View),
 	}
 	be.readAll()
-	go be.fileSaver(m, notifier)
+	go be.monitor(m, notifier)
 	return be
 }
