@@ -50,6 +50,10 @@ func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
 	if service.data.Timeout != ref.data.Timeout {
 		log.Info("SERVICE '%s', tmo %d -> %d", service.name(), ref.data.Timeout, service.data.Timeout)
 	}
+
+	for _, view := range service.inViews {
+		svcs.updateView(view, ts)
+	}
 }
 
 func (svcs *Services) updateView(view *View, ts int64) {
@@ -83,9 +87,6 @@ func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
 				}
 				var ref = *s
 				svcs.updateService(ref, s, ts)
-				for _, view := range s.inViews {
-					svcs.updateView(view, ts)
-				}
 			}
 		case <-notifyTimer.C:
 			notifier.Notify("monitor")
@@ -155,9 +156,6 @@ func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
 
 			s.updateExpiry(ts)
 			svcs.updateService(ref, s, ts)
-			for _, view := range s.inViews {
-				svcs.updateView(view, ts)
-			}
 		case c := <-svcs.muteServiceCmdChan:
 			var ts = now()
 			if s, exist := svcs.services[c.Service]; exist {
@@ -170,9 +168,6 @@ func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
 				}
 
 				svcs.updateService(ref, s, ts)
-				for _, view := range s.inViews {
-					svcs.updateView(view, ts)
-				}
 			}
 		}
 	}
