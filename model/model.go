@@ -9,6 +9,9 @@ const StateOk = "ok"
 // The service is in an error state
 const StateError = "error"
 
+// The service is muted
+const StateMuted = "muted"
+
 // The number of beats that we save
 const BeatHistoryCount = 100
 
@@ -23,6 +26,7 @@ type Service struct {
 	BeatHistory []int64 `json:"beat_history"` // The last X duration (in milliseconds) between heartbeats
 	Timeout     int64   `json:"timeout"`      // The timeout, in milliseconds
 	State       string  `json:"state"`        // One of the StateXX constants
+	MutedSince  int64   `json:"muted_since"`  // Since when this service has been muted (if >0)
 }
 
 // View is a collection of services

@@ -35,11 +35,34 @@ lovebeatControllers.controller('ServiceListCtrl', ['$scope', '$routeParams',
           service = service.$get();
         })
       },
+
+    $scope.lbMute = function(service) {
+        $http({
+          method: 'POST',
+          url: 'api/services/' + service.name + "/mute",
+          data: ''
+        }).success(function(data, status, headers, config) {
+          service = service.$get();
+        })
+      },
+
+
+  $scope.lbUnmute = function(service) {
+      $http({
+        method: 'POST',
+        url: 'api/services/' + service.name + "/unmute",
+        data: ''
+      }).success(function(data, status, headers, config) {
+        service = service.$get();
+      })
+    },
+    
       $scope.updater = $interval(function() {
         $scope.services = Service.query({
           viewId: $routeParams.viewId
         });
       }, 60000);
+
   }
 ]);
 

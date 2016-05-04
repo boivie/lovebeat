@@ -78,8 +78,9 @@
 		  <tr ng-repeat="service in services | orderBy:'name'">
 		    <td ng-if="service.state == 'ok'"><span class="text-success ng-scope"><i class="fa fa-check"></i></span></td>
 		    <td ng-if="service.state == 'error'"><span class="text-danger ng-scope"><i class="fa fa-times"></i></span></td>
+            <td ng-if="service.state == 'muted'"><span class="text-info ng-scope"><i class="fa fa-wrench"></i></span></td>
 		    <td>{{service.name}}</td>
-		    <td><span ng-if="service.timeout >= 0"><i class="fa fa-times"> {{service.timeout | delta}}</span></td>
+		    <td><span ng-if="service.timeout >= 0"><i class="fa fa-times"/> {{service.timeout | delta}}</span></td>
 		    <td>{{service.last_beat_delta | delta_ago}}</td>
 		    <td>
 		      <a class="btn btn-sm btn-info pull-right" href="#/services/{{service.name}}">Edit</a>
@@ -87,6 +88,10 @@
 		    <td>
 		      <button class="btn btn-sm btn-info pull-right" ng-click="lbTrigger(service)">Trigger</button>
 		    </td>
+            <td>
+              <button ng-if="service.state == 'muted'" class="btn btn-sm btn-success pull-right" ng-click="lbUnmute(service)">Unmute</button>
+              <button ng-if="service.state != 'muted'" class="btn btn-sm btn-info pull-right" ng-click="lbMute(service)">Mute</button>
+            </td>
 		  </tr>
 		</tbody>
 	      </table>

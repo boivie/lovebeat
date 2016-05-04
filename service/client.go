@@ -11,6 +11,7 @@ type ServiceIf interface {
 
 	// Updates the service. The timeouts are in milliseconds.
 	UpdateService(name string, registerBeat bool, changeTimeout bool, timeout int64)
+	MuteService(name string, muted bool)
 
 	GetServices(view string) []model.Service
 	GetService(name string) *model.Service
@@ -23,6 +24,11 @@ type upsertServiceCmd struct {
 	Service      string
 	HasTimeout   bool
 	Timeout      int64
+}
+
+type muteServiceCmd struct {
+	Service string
+	Muted   bool
 }
 
 type upsertViewCmd struct {
@@ -66,6 +72,10 @@ func (c *client) UpdateService(name string, registerBeat bool, changeTimeout boo
 		HasTimeout:   changeTimeout,
 		Timeout:      timeout,
 	}
+}
+
+func (c *client) MuteService(name string, muted bool) {
+	c.svcs.muteServiceCmdChan <- &muteServiceCmd{name, muted}
 }
 
 func (c *client) GetServices(view string) []model.Service {

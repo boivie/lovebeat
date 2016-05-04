@@ -91,6 +91,17 @@ Returns information about a specific service.
 * By setting the ``?details=1`` query parameter, additional information may
   be returned.
 
+POST /api/services/<service_id>/mute
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Mutes the service and puts it into **MUTED** state.
+
+POST /api/services/<service_id>/unmute
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Unmutes the service and puts it into **OK** or **ERROR** depending on when it
+received its last heartbeat.
+
 DELETE /api/services/<service_name>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

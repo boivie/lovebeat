@@ -27,6 +27,9 @@ A service can be in different states. **OK** is the state you want to keep
 your services in. You can set a timeout so that the service will change state
 into **ERROR** if the service hasn't issued a beat within that period of time.
 
+A service can also be muted. This will move it into the **MUTED** state, and then
+it will not trigger any alerts or cause views to be in **ERROR**.
+
 Views
 -----
 

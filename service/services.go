@@ -24,6 +24,7 @@ type Services struct {
 	viewStates    []*model.View
 
 	upsertServiceCmdChan chan *upsertServiceCmd
+	muteServiceCmdChan   chan *muteServiceCmd
 	deleteServiceCmdChan chan string
 	getServicesChan      chan *getServicesCmd
 	getServiceChan       chan *getServiceCmd
@@ -157,6 +158,22 @@ func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
 			for _, view := range s.inViews {
 				svcs.updateView(view, ts)
 			}
+		case c := <-svcs.muteServiceCmdChan:
+			var ts = now()
+			if s, exist := svcs.services[c.Service]; exist {
+				var ref = *s
+
+				if c.Muted && s.data.MutedSince == 0 {
+					s.data.MutedSince = ts
+				} else if !c.Muted {
+					s.data.MutedSince = 0
+				}
+
+				svcs.updateService(ref, s, ts)
+				for _, view := range s.inViews {
+					svcs.updateView(view, ts)
+				}
+			}
 		}
 	}
 }
@@ -225,6 +242,7 @@ func NewServices(beiface backend.Backend, bus *eventbus.EventBus, alerter alert.
 	svcs.be = beiface
 	svcs.deleteServiceCmdChan = make(chan string, 5)
 	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
+	svcs.muteServiceCmdChan = make(chan *muteServiceCmd, 5)
 	svcs.getServicesChan = make(chan *getServicesCmd, 5)
 	svcs.getServiceChan = make(chan *getServiceCmd, 5)
 	svcs.getViewsChan = make(chan *getViewsCmd, 5)
