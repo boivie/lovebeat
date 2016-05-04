@@ -41,7 +41,7 @@ func sendLovebeat(url, name, metric string) {
 	}
 
 	if _, err := req.Do(); err != nil {
-		log.Error("Failed to post webhook: %s", err)
+		log.Errorf("Failed to post webhook: %v", err)
 	}
 }
 

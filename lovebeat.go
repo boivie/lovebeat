@@ -46,7 +46,7 @@ func signalHandler(be backend.Backend) {
 	for {
 		select {
 		case sig := <-signalchan:
-			fmt.Printf("!! Caught signal %d... shutting down\n", sig)
+			fmt.Printf("!! Caught signal %v... shutting down\n", sig)
 			be.Sync()
 			return
 		case <-sigQuitChan:
@@ -81,7 +81,7 @@ func setUpEventlog(cfg config.Config, bus *eventbus.EventBus) {
 	}
 	eventwriter, err := rfw.Open(cfg.Eventlog.Path, cfg.Eventlog.Mode)
 	if err != nil {
-		log.Error("Error opening event log for writing: %s", err)
+		log.Errorf("Error opening event log for writing: %s", err)
 	} else {
 		log.Info("Logging events to %s", cfg.Eventlog.Path)
 		evtlog := eventlog.New(eventwriter)

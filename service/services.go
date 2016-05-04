@@ -38,14 +38,20 @@ const (
 
 var log = logging.MustGetLogger("lovebeat")
 
-func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
+func now() int64 {
+	return int64(time.Now().UnixNano() / 1e6)
+}
 
 func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
 	service.data.State = service.stateAt(ts)
 	svcs.be.SaveService(&service.data)
 	if service.data.State != ref.data.State {
 		log.Info("SERVICE '%s', state %s -> %s", service.name(), ref.data.State, service.data.State)
-		svcs.bus.Publish(model.ServiceStateChangedEvent{service.data, ref.data.State, service.data.State})
+		svcs.bus.Publish(model.ServiceStateChangedEvent{
+			Service:  service.data,
+			Previous: ref.data.State,
+			Current:  service.data.State,
+		})
 	}
 	if service.data.Timeout != ref.data.Timeout {
 		log.Info("SERVICE '%s', tmo %d -> %d", service.name(), ref.data.Timeout, service.data.Timeout)
@@ -67,8 +73,19 @@ func (svcs *Services) updateView(view *View, ts int64) {
 		svcs.views[view.data.Name] = view
 
 		log.Info("VIEW '%s', %d: state %s -> %s", view.name(), view.data.IncidentNbr, oldState, view.data.State)
-		svcs.bus.Publish(model.ViewStateChangedEvent{view.data, oldState, view.data.State, view.failingServices()})
-		svcs.alerter.Notify(alert.AlertInfo{view.data, oldState, view.data.State, view.failingServices(), view.tmpl.config})
+		svcs.bus.Publish(model.ViewStateChangedEvent{
+			View:           view.data,
+			Previous:       oldState,
+			Current:        view.data.State,
+			FailedServices: view.failingServices(),
+		})
+		svcs.alerter.Notify(alert.AlertInfo{
+			View:           view.data,
+			Previous:       oldState,
+			Current:        view.data.State,
+			FailedServices: view.failingServices(),
+			ViewConfig:     view.tmpl.config,
+		})
 	}
 }
 
@@ -124,7 +141,7 @@ func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
 				delete(svcs.services, s.name())
 				svcs.be.DeleteService(s.name())
 
-				svcs.bus.Publish(model.ServiceRemovedEvent{s.data})
+				svcs.bus.Publish(model.ServiceRemovedEvent{Service: s.data})
 
 				for _, view := range s.inViews {
 					view.removeService(s)
@@ -151,7 +168,7 @@ func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
 			}
 
 			if !exist {
-				svcs.bus.Publish(model.ServiceAddedEvent{s.data})
+				svcs.bus.Publish(model.ServiceAddedEvent{Service: s.data})
 			}
 
 			s.updateExpiry(ts)
@@ -215,7 +232,11 @@ func (svcs *Services) addViewsToService(svc *Service) {
 			name := expandName(tmpl.ree, svc.data.Name, tmpl.config.Name)
 			v, exists := svcs.views[name]
 			if !exists {
-				v = &View{tmpl: &tmpl, data: model.View{name, model.StatePaused, 0}}
+				v = &View{tmpl: &tmpl, data: model.View{
+					Name:        name,
+					State:       model.StatePaused,
+					IncidentNbr: 0,
+				}}
 				for _, sv := range svcs.viewStates {
 					if sv.Name == name {
 						v.data = *sv

@@ -31,7 +31,7 @@ func Parse(data []byte) []LineCommand {
 
 		var vali, err = strconv.ParseInt(string(item[3]), 10, 64)
 		if err != nil {
-			log.Error("failed to ParseInt %s - %s", item[3], err)
+			log.Errorf("failed to ParseInt %s - %s", item[3], err)
 			continue
 		}
 

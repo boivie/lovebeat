@@ -78,7 +78,7 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 		_, err := req.Do()
 
 		if err != nil {
-			log.Error("Failed to post slack alert: %v", err)
+			log.Errorf("Failed to post slack alert: %v", err)
 		}
 	}
 }

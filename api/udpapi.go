@@ -11,7 +11,7 @@ const (
 
 func UdpListener(cfg *config.ConfigBind) {
 	address, _ := net.ResolveUDPAddr("udp", cfg.Listen)
-	log.Info("UDP listening on %s", address)
+	log.Infof("UDP listening on %s", address)
 	listener, err := net.ListenUDP("udp", address)
 	if err != nil {
 		log.Fatalf("ListenUDP - %s", err)
@@ -22,7 +22,7 @@ func UdpListener(cfg *config.ConfigBind) {
 	for {
 		n, remaddr, err := listener.ReadFromUDP(message)
 		if err != nil {
-			log.Error("reading UDP packet from %+v - %s", remaddr, err)
+			log.Errorf("reading UDP packet from %+v - %s", remaddr, err)
 			continue
 		}
 

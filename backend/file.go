@@ -85,12 +85,12 @@ func (f FileBackend) readAll() {
 	s := f.cfg.Filename
 	fi, err := os.Open(s)
 	if err != nil {
-		log.Error("Couldn't open '%s'\n", s)
+		log.Errorf("Couldn't open '%s'\n", s)
 		return
 	}
 	gz, err := gzip.NewReader(fi)
 	if err != nil {
-		log.Error("Couldn't read from '%s'\n", s)
+		log.Errorf("Couldn't read from '%s'\n", s)
 		return
 	}
 
@@ -109,10 +109,10 @@ func (f FileBackend) readAll() {
 			json.Unmarshal(line[5:], &view)
 			f.views[view.Name] = view
 		} else {
-			log.Info("Found unexpected line in database - skipping")
+			log.Infof("Found unexpected line in database - skipping")
 		}
 	}
-	log.Info("Loaded %d services and %d views from '%s'",
+	log.Infof("Loaded %d services and %d views from '%s'",
 		len(f.services), len(f.views), s)
 }
 
@@ -165,10 +165,10 @@ type update struct {
 
 func (f FileBackend) downloadFromRemote() {
 	if f.cfg.RemoteS3Url != "" && f.cfg.RemoteS3Region != "" {
-		log.Info("Fetching database from '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
+		log.Infof("Fetching database from '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
 		parsed, err := url.Parse(f.cfg.RemoteS3Url)
 		if err != nil {
-			log.Panic("Failed to parse S3 url: %v", err)
+			log.Panicf("Failed to parse S3 url: %v", err)
 		}
 		svc := s3.New(session.New(), &aws.Config{Region: aws.String(f.cfg.RemoteS3Region)})
 		resp, err := svc.GetObject(&s3.GetObjectInput{
@@ -178,31 +178,31 @@ func (f FileBackend) downloadFromRemote() {
 		if err != nil {
 			awse, ok := err.(awserr.Error)
 			if !ok {
-				log.Panic("Unknown error getting database from S3", err)
+				log.Panicf("Unknown error getting database from S3: %v", err)
 			}
 			if awse.Code() == "NoSuchKey" {
 				// This is expected. Just start from an empty database
 				log.Warning("Couldn't find an initial database on S3 - starting with an empty one")
 				return
 			}
-			log.Panic("Unknown AWS error: %v", awse)
+			log.Panicf("Unknown AWS error: %v", awse)
 		}
 		defer resp.Body.Close()
 
 		s := f.cfg.Filename + ".new"
 		fi, err := os.OpenFile(s, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 		if err != nil {
-			log.Panic("Failed to create database from S3: %v", err)
+			log.Panicf("Failed to create database from S3: %v", err)
 		}
 		_, err = io.Copy(fi, resp.Body)
 		if err != nil {
-			log.Panic("Failed to read from S3: %v", err)
+			log.Panicf("Failed to read from S3: %v", err)
 		}
 		fi.Close()
 		if err = os.Rename(s, f.cfg.Filename); err != nil {
 			log.Panic("Failed to overwrite database")
 		}
-		log.Info("Done fetching database from '%s'", f.cfg.RemoteS3Url)
+		log.Infof("Done fetching database from '%s'", f.cfg.RemoteS3Url)
 	}
 }
 
@@ -211,14 +211,14 @@ func (f FileBackend) uploadToRemote() {
 		log.Debug("Uploading database to '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
 		parsed, err := url.Parse(f.cfg.RemoteS3Url)
 		if err != nil {
-			log.Error("Failed to parse S3 url: %v", err)
+			log.Errorf("Failed to parse S3 url: %v", err)
 			return
 		}
 		svc := s3.New(session.New(), &aws.Config{Region: aws.String(f.cfg.RemoteS3Region)})
 
 		fi, err := os.Open(f.cfg.Filename)
 		if err != nil {
-			log.Error("Failed to open  S3: %v", err)
+			log.Errorf("Failed to open  S3: %v", err)
 			return
 		}
 		defer fi.Close()
@@ -231,7 +231,7 @@ func (f FileBackend) uploadToRemote() {
 		if err != nil {
 			log.Error("Unknown error uploading data to S3", err)
 		}
-		log.Info("Uploaded database to '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
+		log.Infof("Uploaded database to '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
 	}
 }
 

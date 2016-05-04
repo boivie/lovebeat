@@ -11,7 +11,7 @@ type webhooksAlerter struct{}
 
 func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 	if cfg.Webhook != "" {
-		log.Info("Sending webhook alert to %s", cfg.Webhook)
+		log.Infof("Sending webhook alert to %s", cfg.Webhook)
 
 		goreq.SetConnectTimeout(5 * time.Second)
 		req := goreq.Request{
@@ -36,7 +36,7 @@ func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 
 		_, err := req.Do()
 		if err != nil {
-			log.Error("Failed to post webhook: %s", err)
+			log.Errorf("Failed to post webhook: %s", err)
 		}
 	}
 }

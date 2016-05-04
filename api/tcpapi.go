@@ -18,7 +18,7 @@ func tcpHandle(c *net.TCPConn) {
 
 func TcpListener(cfg *config.ConfigBind) {
 	address, _ := net.ResolveTCPAddr("tcp", cfg.Listen)
-	log.Info("TCP listening on %s", address)
+	log.Infof("TCP listening on %s", address)
 	listener, err := net.ListenTCP("tcp", address)
 	if err != nil {
 		log.Fatalf("ListenTCP - %s", err)
@@ -26,7 +26,7 @@ func TcpListener(cfg *config.ConfigBind) {
 	for {
 		c, err := listener.AcceptTCP()
 		if nil != err {
-			log.Error("Error: %s", err)
+			log.Errorf("Error: %s", err)
 			break
 		}
 		go tcpHandle(c)

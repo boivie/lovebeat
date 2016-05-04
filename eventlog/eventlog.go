@@ -38,12 +38,12 @@ func (el *EventLog) eventHandler(ev interface{}) {
 	}
 	buf, err := json.Marshal(jev)
 	if err != nil {
-		log.Error("Could not marshal event %+v: %s", jev, err)
+		log.Errorf("Could not marshal event %+v: %s", jev, err)
 		return
 	}
 	_, err = el.writer.Write([]byte(string(buf) + "\n"))
 	if err != nil {
-		log.Error("Error writing event: %s", err)
+		log.Errorf("Error writing event: %s", err)
 		return
 	}
 }
