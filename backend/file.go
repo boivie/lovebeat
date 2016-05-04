@@ -12,6 +12,13 @@ import (
 	"github.com/op/go-logging"
 	"os"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"io"
+	"net/url"
 )
 
 const MAX_PENDING_WRITES = 1000
@@ -141,6 +148,8 @@ func (f FileBackend) saveAll(counters metrics.Metrics) {
 	log.Debug("Saved %d items in %d ms", len(f.services)+len(f.views),
 		duration.Nanoseconds()/1000000)
 
+	f.uploadToRemote()
+
 	counters.IncCounter("db.save.count")
 	counters.SetGauge("db.save.duration", int(duration.Nanoseconds()/1000000))
 	counters.SetGauge("service.count", len(f.services))
@@ -152,6 +161,78 @@ type update struct {
 	setView       *model.View
 	deleteService string
 	deleteView    string
+}
+
+func (f FileBackend) downloadFromRemote() {
+	if f.cfg.RemoteS3Url != "" && f.cfg.RemoteS3Region != "" {
+		log.Info("Fetching database from '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
+		parsed, err := url.Parse(f.cfg.RemoteS3Url)
+		if err != nil {
+			log.Panic("Failed to parse S3 url: %v", err)
+		}
+		svc := s3.New(session.New(), &aws.Config{Region: aws.String(f.cfg.RemoteS3Region)})
+		resp, err := svc.GetObject(&s3.GetObjectInput{
+			Bucket: aws.String(parsed.Host),
+			Key:    aws.String(parsed.Path[1:]),
+		})
+		if err != nil {
+			awse, ok := err.(awserr.Error)
+			if !ok {
+				log.Panic("Unknown error getting database from S3", err)
+			}
+			if awse.Code() == "NoSuchKey" {
+				// This is expected. Just start from an empty database
+				log.Warning("Couldn't find an initial database on S3 - starting with an empty one")
+				return
+			}
+			log.Panic("Unknown AWS error: %v", awse)
+		}
+		defer resp.Body.Close()
+
+		s := f.cfg.Filename + ".new"
+		fi, err := os.OpenFile(s, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+		if err != nil {
+			log.Panic("Failed to create database from S3: %v", err)
+		}
+		_, err = io.Copy(fi, resp.Body)
+		if err != nil {
+			log.Panic("Failed to read from S3: %v", err)
+		}
+		fi.Close()
+		if err = os.Rename(s, f.cfg.Filename); err != nil {
+			log.Panic("Failed to overwrite database")
+		}
+		log.Info("Done fetching database from '%s'", f.cfg.RemoteS3Url)
+	}
+}
+
+func (f FileBackend) uploadToRemote() {
+	if f.cfg.RemoteS3Url != "" && f.cfg.RemoteS3Region != "" {
+		log.Debug("Uploading database to '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
+		parsed, err := url.Parse(f.cfg.RemoteS3Url)
+		if err != nil {
+			log.Error("Failed to parse S3 url: %v", err)
+			return
+		}
+		svc := s3.New(session.New(), &aws.Config{Region: aws.String(f.cfg.RemoteS3Region)})
+
+		fi, err := os.Open(f.cfg.Filename)
+		if err != nil {
+			log.Error("Failed to open  S3: %v", err)
+			return
+		}
+		defer fi.Close()
+
+		_, err = svc.PutObject(&s3.PutObjectInput{
+			Bucket: aws.String(parsed.Host),
+			Key:    aws.String(parsed.Path[1:]),
+			Body:   fi,
+		})
+		if err != nil {
+			log.Error("Unknown error uploading data to S3", err)
+		}
+		log.Info("Uploaded database to '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
+	}
 }
 
 func (f FileBackend) monitor(counters metrics.Metrics, notifier notify.Notifier) {
@@ -189,6 +270,7 @@ func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics, notifier noti
 		services: make(map[string]*model.Service),
 		views:    make(map[string]*model.View),
 	}
+	be.downloadFromRemote()
 	be.readAll()
 	go be.monitor(m, notifier)
 	return be

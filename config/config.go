@@ -39,6 +39,9 @@ type ConfigBind struct {
 type ConfigDatabase struct {
 	Filename string
 	Interval int
+
+	RemoteS3Url    string `toml:"remote_s3_url"`
+	RemoteS3Region string `toml:"remote_s3_region"`
 }
 
 type ConfigMetrics struct {

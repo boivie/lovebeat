@@ -22,10 +22,15 @@ documented as well.
     ## in one single file and it's safely rewritten on save, which it does
     ## when exiting the program as well as every minute while running. This
     ## can be changed by the 'interval' setting.
+    ##
+    ## You can specify an Amazon S3 URL as 'remote_s3_url' from where it
+    ## should download the database on start, and upload when it's saved.
     #
     #[database]
     #filename = "lovebeat.db"
     #interval = 60
+    #remote_s3_url = ""
+    #remote_s3_region = ""
 
 
     ##

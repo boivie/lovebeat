@@ -119,6 +119,37 @@ In nginx_, this would be a working configuration:
         proxy_pass http://localhost:8080/;
     }
 
+Database on S3
+--------------
+
+When designing Lovebeat, a key decision was to build a solution with as few
+dependencies to other systems as possible since those systems can fail as well.
+Having the database on a separate SQL server is then something we have opted out
+from, but instead having a local file based database.
+
+That works well as long as the host Lovebeat is running on is healthy and the
+disk where the database is located on isn't corrupted or disappears. When
+deploying Lovebeat on a transient host, such as on an auto-scaling instance on
+Amazon Web Services, this will cause problems as the disk isn't persistent if
+the service is restarted.
+
+To support this common use-case, Lovebeat supports downloading and uploading its
+database to an Amazon S3 bucket. On startup, Lovebeat will download the file
+from the S3 storage, and every time the database is saved (defaults to once
+per minute and when Lovebeat exits), the database will be uploaded to the same
+S3 bucket.
+
+To enable this, configure the database as follows:
+
+.. code-block:: ini
+
+    [database]
+    filename = "lovebeat.db"
+    interval = 60
+    remote_s3_url = "s3://bucket-name/path/to/lovebeat.db"
+    remote_s3_region = "eu-west-1"
+
+
 .. _nagios: https://www.nagios.org/
 .. _jupyter: http://jupyter.org/
 .. _statsd: https://github.com/etsy/statsd
