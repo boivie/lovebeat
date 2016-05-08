@@ -57,11 +57,11 @@ func signalHandler(be backend.Backend) {
 	}
 }
 
-func httpServer(cfg *config.ConfigBind, svcs *service.Services, bus *eventbus.EventBus) {
+func httpServer(cfg *config.ConfigBind, svcs service.Services, bus *eventbus.EventBus) {
 	rtr := mux.NewRouter()
 	api.AddEndpoints(rtr)
 	websocket.Register(rtr, bus)
-	dashboard.Register(rtr, svcs.GetClient())
+	dashboard.Register(rtr, svcs)
 	http.Handle("/", rtr)
 	log.Info("HTTP listening on %s\n", cfg.Listen)
 	http.ListenAndServe(cfg.Listen, nil)
@@ -136,15 +136,14 @@ func main() {
 	service.RegisterMetrics(bus, m)
 
 	be := backend.NewFileBackend(&cfg.Database, m, notifier)
-	svcs := service.NewServices(be, bus, alerter)
+	svcs := service.NewServices(be, bus, alerter, cfg, notifier)
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
 	signal.Notify(sigQuitChan, syscall.SIGQUIT)
 
-	api.Init(svcs.GetClient())
+	api.Init(svcs)
 
-	go svcs.Monitor(cfg, notifier)
 	go httpServer(&cfg.Http, svcs, bus)
 	go api.UdpListener(&cfg.Udp)
 	go api.TcpListener(&cfg.Tcp)

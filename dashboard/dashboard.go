@@ -13,7 +13,7 @@ import (
 	"strconv"
 )
 
-var client service.ServiceIf
+var client service.Services
 var rootDir = "./dashboard/assets"
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
@@ -67,7 +67,7 @@ func DashboardHandler(c http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func Register(rtr *mux.Router, client_ service.ServiceIf) {
+func Register(rtr *mux.Router, client_ service.Services) {
 	client = client_
 	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")

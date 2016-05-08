@@ -30,13 +30,12 @@ func replyJson(c http.ResponseWriter, js interface{}) {
 func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
-	hasTimeout := false
-	var timeout int64
+
+	update := &service.Update{Ts: now(), Service: name, Beat: &service.Beat{}}
 
 	// Timeout as query parameter
 	if val, ok := r.URL.Query()["timeout"]; ok {
-		hasTimeout = true
-		timeout = parseTimeout(val[0])
+		update.SetTimeout = &service.SetTimeout{Timeout: parseTimeout(val[0])}
 	}
 
 	if r.Header.Get("Content-Type") == "application/json" {
@@ -46,11 +45,10 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		}
 		err := decoder.Decode(&t)
 		if err == nil && t.Timeout != nil {
-			hasTimeout = true
 			if *t.Timeout > 0 {
-				timeout = *t.Timeout * 1000
+				update.SetTimeout = &service.SetTimeout{Timeout: *t.Timeout * 1000}
 			} else {
-				timeout = *t.Timeout
+				update.SetTimeout = &service.SetTimeout{Timeout: *t.Timeout}
 			}
 		}
 	} else {
@@ -61,12 +59,11 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		}
 
 		if r.FormValue("timeout") != "" {
-			hasTimeout = true
-			timeout = parseTimeout(r.FormValue("timeout"))
+			update.SetTimeout = &service.SetTimeout{Timeout: parseTimeout(r.FormValue("timeout"))}
 		}
 	}
 
-	client.UpdateService(name, true, hasTimeout, timeout)
+	client.Update(update)
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -77,7 +74,7 @@ func MuteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
-	client.MuteService(name, true)
+	client.Update(&service.Update{Ts: now(), Service: name, MuteService: &service.MuteService{Muted: true}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -88,7 +85,7 @@ func UnmuteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
-	client.MuteService(name, false)
+	client.Update(&service.Update{Ts: now(), Service: name, MuteService: &service.MuteService{Muted: false}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -99,7 +96,7 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
-	client.DeleteService(name)
+	client.Update(&service.Update{Ts: now(), Service: name, DeleteService: &service.DeleteService{}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")

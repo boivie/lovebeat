@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
 	"regexp"
 	"strconv"
@@ -48,15 +49,25 @@ func Parse(data []byte) []LineCommand {
 	return commands
 }
 
-func Execute(commands []LineCommand, iface service.ServiceIf) {
+func Execute(commands []LineCommand, iface service.Services) {
 	for _, cmd := range commands {
 		switch cmd.Action {
 		case "timeout":
-			iface.UpdateService(cmd.Name, false, true, cmd.Value)
+			client.Update(&service.Update{
+				Ts:         now(),
+				Service:    cmd.Name,
+				SetTimeout: &service.SetTimeout{Timeout: cmd.Value}})
 		case "beat":
-			iface.UpdateService(cmd.Name, true, false, 0)
+			client.Update(&service.Update{
+				Ts:      now(),
+				Service: cmd.Name,
+				Beat:    &service.Beat{}})
 		case "autobeat":
-			iface.UpdateService(cmd.Name, true, false, 0)
+			client.Update(&service.Update{
+				Ts:         now(),
+				Service:    cmd.Name,
+				SetTimeout: &service.SetTimeout{Timeout: model.TIMEOUT_AUTO},
+				Beat:       &service.Beat{}})
 		}
 	}
 }

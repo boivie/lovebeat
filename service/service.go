@@ -23,7 +23,7 @@ func newService(name string) *Service {
 	}
 }
 
-func (s *Service) updateExpiry(ts int64) {
+func (s *Service) updateExpiry() {
 	s.expiry = 0
 
 	if s.data.Timeout > 0 {
@@ -36,7 +36,7 @@ func (s *Service) updateExpiry(ts int64) {
 	}
 
 	if s.expiry > 0 {
-		log.Debug("Expiry for %s = %d (%d ms)", s.name(), s.expiry, s.expiry-ts)
+		log.Debug("Expiry for %s = %d", s.name(), s.expiry)
 	}
 }
 

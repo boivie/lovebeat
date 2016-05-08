@@ -9,27 +9,15 @@ import (
 
 	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/notify"
-	"regexp"
 	"time"
 )
 
-type Services struct {
-	be       backend.Backend
-	bus      *eventbus.EventBus
-	alerter  alert.Alerter
-	services map[string]*Service
-
-	views         map[string]*View
-	viewTemplates []ViewTemplate
-	viewStates    []*model.View
-
-	upsertServiceCmdChan chan *upsertServiceCmd
-	muteServiceCmdChan   chan *muteServiceCmd
-	deleteServiceCmdChan chan string
-	getServicesChan      chan *getServicesCmd
-	getServiceChan       chan *getServiceCmd
-	getViewsChan         chan *getViewsCmd
-	getViewChan          chan *getViewCmd
+type ServicesImpl struct {
+	updateChan      chan *Update
+	getServicesChan chan *getServicesCmd
+	getServiceChan  chan *getServiceCmd
+	getViewsChan    chan *getViewsCmd
+	getViewChan     chan *getViewCmd
 }
 
 const (
@@ -38,231 +26,117 @@ const (
 
 var log = logging.MustGetLogger("lovebeat")
 
-func now() int64 {
-	return int64(time.Now().UnixNano() / 1e6)
+type servicesState struct {
+	viewTemplates []ViewTemplate
+	viewStates    []*model.View
+	services      map[string]*Service
+	views         map[string]*View
 }
 
-func (svcs *Services) updateService(ref Service, service *Service, ts int64) {
-	service.data.State = service.stateAt(ts)
-	svcs.be.SaveService(&service.data)
-	if service.data.State != ref.data.State {
-		log.Info("SERVICE '%s', state %s -> %s", service.name(), ref.data.State, service.data.State)
-		svcs.bus.Publish(model.ServiceStateChangedEvent{
-			Service:  service.data,
-			Previous: ref.data.State,
-			Current:  service.data.State,
-		})
-	}
-	if service.data.Timeout != ref.data.Timeout {
-		log.Info("SERVICE '%s', tmo %d -> %d", service.name(), ref.data.Timeout, service.data.Timeout)
-	}
-
-	for _, view := range service.inViews {
-		svcs.updateView(view, ts)
-	}
+type stateUpdate struct {
+	oldService *Service
+	newService *Service
+	oldView    *View
+	newView    *View
 }
 
-func (svcs *Services) updateView(view *View, ts int64) {
-	oldState := view.data.State
-	view.data.State = view.calculateState()
-	if view.data.State != oldState {
-		if oldState == model.StateOk {
-			view.data.IncidentNbr += 1
-		}
-		svcs.be.SaveView(&view.data)
-		svcs.views[view.data.Name] = view
+func newState() *servicesState {
+	return &servicesState{
 
-		log.Info("VIEW '%s', %d: state %s -> %s", view.name(), view.data.IncidentNbr, oldState, view.data.State)
-		svcs.bus.Publish(model.ViewStateChangedEvent{
-			View:           view.data,
-			Previous:       oldState,
-			Current:        view.data.State,
-			FailedServices: view.failingServices(),
-		})
-		svcs.alerter.Notify(alert.AlertInfo{
-			View:           view.data,
-			Previous:       oldState,
-			Current:        view.data.State,
-			FailedServices: view.failingServices(),
-			ViewConfig:     view.tmpl.config,
-		})
+		services: make(map[string]*Service),
+		views:    make(map[string]*View),
 	}
 }
 
-func (svcs *Services) Monitor(cfg config.Config, notifier notify.Notifier) {
-	updateServicesTimer := time.NewTicker(time.Duration(1) * time.Second)
-	notifyTimer := time.NewTicker(time.Duration(60) * time.Second)
-	svcs.reload(cfg)
-
-	for {
-		select {
-		case <-updateServicesTimer.C:
-			var ts = now()
-			for _, s := range svcs.services {
-				if s.data.State == model.StatePaused || s.data.State == s.stateAt(ts) {
-					continue
-				}
-				var ref = *s
-				svcs.updateService(ref, s, ts)
-			}
-		case <-notifyTimer.C:
-			notifier.Notify("monitor")
-		case c := <-svcs.getServicesChan:
-			var ret []model.Service
-			if view, ok := svcs.views[c.View]; ok {
-				for _, s := range view.servicesInView {
-					ret = append(ret, s.data)
-				}
-			}
-			c.Reply <- ret
-		case c := <-svcs.getServiceChan:
-			var ret = svcs.services[c.Name]
-			if ret == nil {
-				c.Reply <- nil
-			} else {
-				c.Reply <- &ret.data
-			}
-		case c := <-svcs.getViewsChan:
-			var ret []model.View
-			for _, v := range svcs.views {
-				ret = append(ret, v.data)
-			}
-			c.Reply <- ret
-		case c := <-svcs.getViewChan:
-			if ret, ok := svcs.views[c.Name]; ok {
-				c.Reply <- &ret.data
-			} else {
-				c.Reply <- nil
-			}
-		case c := <-svcs.deleteServiceCmdChan:
-			log.Info("SERVICE '%s', deleted", c)
-			if s, ok := svcs.services[c]; ok {
-				ts := now()
-				delete(svcs.services, s.name())
-				svcs.be.DeleteService(s.name())
-
-				svcs.bus.Publish(model.ServiceRemovedEvent{Service: s.data})
-
-				for _, view := range s.inViews {
-					view.removeService(s)
-					svcs.updateView(view, ts)
-				}
-			}
-		case c := <-svcs.upsertServiceCmdChan:
-			var ts = now()
-			var s, exist = svcs.services[c.Service]
-			if !exist {
-				log.Debug("Asked for unknown service %s", c.Service)
-				s = newService(c.Service)
-				svcs.services[c.Service] = s
-				svcs.addViewsToService(s)
-			}
-			var ref = *s
-
-			if c.RegisterBeat {
-				s.registerBeat(ts)
-			}
-
-			if c.HasTimeout {
-				s.data.Timeout = c.Timeout
-			}
-
-			if !exist {
-				svcs.bus.Publish(model.ServiceAddedEvent{Service: s.data})
-			}
-
-			s.updateExpiry(ts)
-			svcs.updateService(ref, s, ts)
-		case c := <-svcs.muteServiceCmdChan:
-			var ts = now()
-			if s, exist := svcs.services[c.Service]; exist {
-				var ref = *s
-
-				if c.Muted && s.data.MutedSince == 0 {
-					s.data.MutedSince = ts
-				} else if !c.Muted {
-					s.data.MutedSince = 0
-				}
-
-				svcs.updateService(ref, s, ts)
-			}
+func persist(be backend.Backend, updates []stateUpdate) {
+	for _, u := range updates {
+		if u.newService != nil {
+			be.SaveService(&u.newService.data)
+		} else if u.oldService != nil {
+			be.DeleteService(u.oldService.data.Name)
+		} else if u.newView != nil {
+			be.SaveView(&u.newView.data)
 		}
 	}
 }
 
-func (svcs *Services) loadViewTemplates(cfg config.Config) []ViewTemplate {
-	views := make([]ViewTemplate, 0)
-
-	views = append(views, ViewTemplate{config.ConfigView{Name: "all"}, regexp.MustCompile("")})
-
-	for _, v := range cfg.Views {
-		ree, _ := regexp.Compile(makePattern(v.Pattern))
-		views = append(views, ViewTemplate{v, ree})
-	}
-	return views
-}
-
-func (svcs *Services) reload(cfg config.Config) {
-	ts := now()
-
-	svcs.views = make(map[string]*View)
-
-	svcs.viewTemplates = svcs.loadViewTemplates(cfg)
-	svcs.viewStates = svcs.be.LoadViews()
-
-	svcs.services = make(map[string]*Service)
-
-	for _, s := range svcs.be.LoadServices() {
-		var svc = &Service{data: *s}
-		svc.updateExpiry(ts)
-		svcs.services[s.Name] = svc
-
-		svcs.addViewsToService(svc)
-	}
-
-	// Set initial state for views
-	for _, v := range svcs.views {
-		svcs.updateView(v, ts)
-	}
-}
-
-func (svcs *Services) addViewsToService(svc *Service) {
-	for _, tmpl := range svcs.viewTemplates {
-		if tmpl.ree.Match([]byte(svc.data.Name)) {
-			name := expandName(tmpl.ree, svc.data.Name, tmpl.config.Name)
-			v, exists := svcs.views[name]
-			if !exists {
-				v = &View{tmpl: &tmpl, data: model.View{
-					Name:        name,
-					State:       model.StatePaused,
-					IncidentNbr: 0,
-				}}
-				for _, sv := range svcs.viewStates {
-					if sv.Name == name {
-						v.data = *sv
-					}
-				}
-				svcs.views[name] = v
-				log.Info("Created view %s from %s", v.data.Name, tmpl.config.Name)
+func printUpdates(updates []stateUpdate) {
+	for _, update := range updates {
+		if update.newService != nil && update.oldService == nil {
+			log.Info("SERVICE '%s', created -> %s", update.newService.data.Name, update.newService.data.State)
+		} else if update.newService == nil && update.oldService != nil {
+			log.Info("SERVICE '%s', %s -> deleted", update.oldService.data.Name, update.oldService.data.State)
+		} else if update.newService != nil && update.oldService != nil {
+			if update.newService.data.State != update.oldService.data.State {
+				log.Info("SERVICE '%s', state %s -> %s", update.oldService.data.Name, update.oldService.data.State, update.newService.data.State)
 			}
-			v.servicesInView = append(v.servicesInView, svc)
-			svc.inViews = append(svc.inViews, v)
+			if update.newService.data.Timeout != update.oldService.data.Timeout {
+				log.Info("SERVICE '%s', tmo %d -> %d", update.oldService.data.Name, update.oldService.data.Timeout, update.newService.data.Timeout)
+			}
+		} else if update.newView != nil && update.oldView == nil {
+			log.Info("VIEW '%s', created -> %s", update.newView.data.Name, update.newView.data.State)
+		} else if update.newView != nil && update.oldView != nil {
+			log.Info("VIEW '%s', state %s -> %s", update.oldView.data.Name, update.oldView.data.State, update.newView.data.State)
 		}
 	}
 }
 
-func NewServices(beiface backend.Backend, bus *eventbus.EventBus, alerter alert.Alerter) *Services {
-	svcs := new(Services)
-	svcs.bus = bus
-	svcs.alerter = alerter
-	svcs.be = beiface
-	svcs.deleteServiceCmdChan = make(chan string, 5)
-	svcs.upsertServiceCmdChan = make(chan *upsertServiceCmd, MAX_UNPROCESSED_PACKETS)
-	svcs.muteServiceCmdChan = make(chan *muteServiceCmd, 5)
-	svcs.getServicesChan = make(chan *getServicesCmd, 5)
-	svcs.getServiceChan = make(chan *getServiceCmd, 5)
-	svcs.getViewsChan = make(chan *getViewsCmd, 5)
-	svcs.getViewChan = make(chan *getViewCmd, 5)
+func sendBusEvents(bus *eventbus.EventBus, updates []stateUpdate) {
+	for _, update := range updates {
+		if update.newService != nil && update.oldService == nil {
+			bus.Publish(model.ServiceAddedEvent{Service: update.newService.data})
+		} else if update.newService == nil && update.oldService != nil {
+			bus.Publish(model.ServiceRemovedEvent{Service: update.oldService.data})
+		} else if update.newService != nil && update.oldService != nil {
+			bus.Publish(model.ServiceStateChangedEvent{
+				Service:  update.newService.data,
+				Previous: update.oldService.data.State,
+				Current:  update.newService.data.State,
+			})
+		} else if update.newView != nil && update.oldView == nil {
+			// TODO: svcs.bus.Publish(model.ViewAddedEvent{u.newView.data})
+		} else if update.newView != nil && update.oldView != nil {
+			bus.Publish(model.ViewStateChangedEvent{
+				View:           update.newView.data,
+				Previous:       update.oldView.data.State,
+				Current:        update.newView.data.State,
+				FailedServices: update.newView.failingServices(),
+			})
+		}
+	}
+}
 
-	return svcs
+func triggerAlerters(alerter alert.Alerter, updates []stateUpdate) {
+	for _, update := range updates {
+		if update.newView != nil {
+			alerter.Notify(alert.AlertInfo{
+				View:           update.newView.data,
+				Previous:       update.oldView.data.State,
+				Current:        update.newView.data.State,
+				FailedServices: update.newView.failingServices(),
+				ViewConfig:     update.newView.tmpl.config,
+			})
+		}
+	}
+}
+
+func NewServices(beiface backend.Backend, bus *eventbus.EventBus, alerter alert.Alerter, cfg config.Config, notifier notify.Notifier) Services {
+	svcs := ServicesImpl{
+		updateChan:      make(chan *Update, MAX_UNPROCESSED_PACKETS),
+		getServicesChan: make(chan *getServicesCmd, 5),
+		getServiceChan:  make(chan *getServiceCmd, 5),
+		getViewsChan:    make(chan *getViewsCmd, 5),
+		getViewChan:     make(chan *getViewCmd, 5),
+	}
+
+	go svcs.Monitor(cfg, notifier, beiface, bus, alerter)
+
+	go func() {
+		ticker := time.NewTicker(time.Duration(1) * time.Second)
+		for _ = range ticker.C {
+			svcs.updateChan <- &Update{Ts: tsnow(), Tick: &Tick{}}
+		}
+	}()
+
+	return &svcs
 }

@@ -8,10 +8,10 @@ import (
 
 var log = logging.MustGetLogger("lovebeat")
 
-var client service.ServiceIf
+var client service.Services
 
 func now() int64 { return int64(time.Now().UnixNano() / 1e6) }
 
-func Init(client_ service.ServiceIf) {
+func Init(client_ service.Services) {
 	client = client_
 }
