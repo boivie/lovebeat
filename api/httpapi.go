@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
 	"github.com/gorilla/mux"
@@ -193,6 +195,49 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 	replyJson(c, js)
 }
 
+func StatusHandler(c http.ResponseWriter, req *http.Request) {
+	viewName := "all"
+
+	if val, ok := req.URL.Query()["view"]; ok {
+		viewName = val[0]
+	}
+
+	var buffer bytes.Buffer
+	var services = client.GetServices(viewName)
+	var errors, ok = 0, 0
+	for _, s := range services {
+		if s.State == model.StateError {
+			errors++
+		} else {
+			ok++
+		}
+	}
+	if req.Header.Get("Accept") == "application/json" {
+		ret := struct {
+			NumOk    int  `json:"num_ok"`
+			NumError int  `json:"num_error"`
+			HasError bool `json:"has_error"`
+			Good     bool `json:"good"`
+		}{
+			ok, errors,
+			errors > 0, errors == 0,
+		}
+		var encoded, _ = json.MarshalIndent(ret, "", "  ")
+
+		c.Header().Add("Content-Type", "application/json")
+		c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
+		c.Write(encoded)
+		io.WriteString(c, "\n")
+	} else {
+		buffer.WriteString(fmt.Sprintf("num_ok %d\nnum_error %d\n", ok, errors))
+		buffer.WriteString(fmt.Sprintf("has_error %t\ngood %t\n", errors > 0, errors == 0))
+		body := buffer.String()
+		c.Header().Add("Content-Type", "text/plain")
+		c.Header().Add("Content-Length", strconv.Itoa(len(body)))
+		io.WriteString(c, body)
+	}
+}
+
 func AddEndpoints(rtr *mux.Router) {
 	rtr.HandleFunc("/api/services/", GetServicesHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", ServiceHandler).Methods("POST")
@@ -202,4 +247,6 @@ func AddEndpoints(rtr *mux.Router) {
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/", GetViewsHandler).Methods("GET")
 	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", GetViewHandler).Methods("GET")
+	rtr.HandleFunc("/api/status", StatusHandler).Methods("GET")
+	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 }
