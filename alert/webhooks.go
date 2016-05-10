@@ -13,7 +13,6 @@ func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 	if cfg.Webhook != "" {
 		log.Infof("Sending webhook alert to %s", cfg.Webhook)
 
-		goreq.SetConnectTimeout(5 * time.Second)
 		req := goreq.Request{
 			Uri:         cfg.Webhook,
 			Accept:      "application/json",
@@ -29,7 +28,8 @@ func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 				Name:        ev.View.Name,
 				FromState:   strings.ToUpper(ev.Previous),
 				ToState:     strings.ToUpper(ev.Current),
-				IncidentNbr: ev.View.IncidentNbr},
+				IncidentNbr: ev.View.IncidentNbr,
+			},
 		}
 
 		req.AddHeader("X-Lovebeat", "1")
