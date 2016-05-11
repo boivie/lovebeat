@@ -109,9 +109,13 @@ func sendBusEvents(bus *eventbus.EventBus, updates []stateUpdate) {
 func triggerAlerters(alerter alert.Alerter, updates []stateUpdate) {
 	for _, update := range updates {
 		if update.newView != nil {
+			oldState := model.StatePaused
+			if update.oldView != nil {
+				oldState = update.oldView.data.State
+			}
 			alerter.Notify(alert.AlertInfo{
 				View:           update.newView.data,
-				Previous:       update.oldView.data.State,
+				Previous:       oldState,
 				Current:        update.newView.data.State,
 				FailedServices: update.newView.failingServices(),
 				ViewConfig:     update.newView.tmpl.config,
