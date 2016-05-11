@@ -15,8 +15,9 @@ type View struct {
 }
 
 type ViewTemplate struct {
-	config config.ConfigView
-	ree    *regexp.Regexp
+	config   config.ConfigView
+	includes []*regexp.Regexp
+	excludes []*regexp.Regexp
 }
 
 var VAR_RE = regexp.MustCompile("\\\\\\$([a-z]+)")
@@ -29,6 +30,32 @@ func makePattern(p string) string {
 }
 
 var NAME_RE = regexp.MustCompile("\\$([a-z]+)")
+
+func (v *ViewTemplate) makeName(serviceName string) string {
+	var matchingRegexp *regexp.Regexp
+
+	for _, r := range v.includes {
+		if r.Match([]byte(serviceName)) {
+			matchingRegexp = r
+			break
+		}
+	}
+
+	if matchingRegexp != nil {
+		for _, r := range v.excludes {
+			if r.Match([]byte(serviceName)) {
+				matchingRegexp = nil
+				break
+			}
+		}
+	}
+
+	if matchingRegexp == nil {
+		return ""
+	}
+
+	return expandName(matchingRegexp, serviceName, v.config.Name)
+}
 
 func expandName(p *regexp.Regexp, serviceName, namePattern string) string {
 	groups := make(map[string]string)
@@ -47,7 +74,9 @@ func expandName(p *regexp.Regexp, serviceName, namePattern string) string {
 	})
 }
 
-func (v *View) name() string { return v.data.Name }
+func (v *View) name() string {
+	return v.data.Name
+}
 
 func (v *View) calculateState() string {
 	state := model.StateOk

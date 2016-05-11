@@ -7,8 +7,8 @@ import (
 func addViewsToService(state *servicesState, svc *Service, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
 	for _, tmpl := range state.viewTemplates {
-		if tmpl.ree.Match([]byte(svc.data.Name)) {
-			name := expandName(tmpl.ree, svc.data.Name, tmpl.config.Name)
+		name := tmpl.makeName(svc.data.Name)
+		if name != "" {
 			view, exists := state.views[name]
 			if !exists {
 				view = &View{tmpl: &tmpl, data: model.View{

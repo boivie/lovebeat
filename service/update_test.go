@@ -93,8 +93,8 @@ func TestSimpleFromTemplate(t *testing.T) {
 	state := newState()
 	state.viewStates = []*model.View{&model.View{Name: "testview", IncidentNbr: 4}}
 	state.viewTemplates = []ViewTemplate{ViewTemplate{
-		config: config.ConfigView{Name: "testview"},
-		ree:    regexp.MustCompile(makePattern("test.*")),
+		config:   config.ConfigView{Name: "testview"},
+		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
 	updates1 := updateServices(state, &Update{Ts: 0, Service: "test.service", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})

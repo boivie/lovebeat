@@ -7,13 +7,27 @@ import (
 )
 
 func loadViewTemplates(cfg config.Config) []ViewTemplate {
-	views := make([]ViewTemplate, 0)
-
-	views = append(views, ViewTemplate{config.ConfigView{Name: "all"}, regexp.MustCompile("")})
+	views := []ViewTemplate{
+		ViewTemplate{
+			config:   config.ConfigView{Name: "all"},
+			includes: []*regexp.Regexp{regexp.MustCompile("")}},
+	}
 
 	for _, view := range cfg.Views {
-		ree, _ := regexp.Compile(makePattern(view.Pattern))
-		views = append(views, ViewTemplate{view, ree})
+		var includesRee []*regexp.Regexp
+		var excludesRee []*regexp.Regexp
+		if view.Pattern != "" {
+			view.Includes = append(view.Includes, view.Pattern)
+		}
+		for _, pattern := range view.Includes {
+			ree, _ := regexp.Compile(makePattern(pattern))
+			includesRee = append(includesRee, ree)
+		}
+		for _, pattern := range view.Excludes {
+			ree, _ := regexp.Compile(makePattern(pattern))
+			excludesRee = append(excludesRee, ree)
+		}
+		views = append(views, ViewTemplate{view, includesRee, excludesRee})
 	}
 	return views
 }

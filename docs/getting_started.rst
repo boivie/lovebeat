@@ -76,6 +76,18 @@ You will then end up with three views, "server-alpha" including the services
 "application-name.alpha.healthcheck" and "application-name.alpha.background-job-1"
 and similar for "server-beta" and "server-delta".
 
+For more advanced pattern matching, use ``includes`` and ``excludes`` to specify a list
+of patterns. If any pattern in ``includes`` match, and no pattern in ``excludes`` match,
+the service will be part of the view. Example as below:
+
+.. code-block:: ini
+
+    [[views]]
+    name = "source-$name"
+    includes = ["source.$name.*", "old-source.$name.*"]
+    excludes = ["source.deprecated.*"]
+
+
 Web UI
 ------
 

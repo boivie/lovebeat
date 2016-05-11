@@ -57,9 +57,11 @@ type ConfigAlert struct {
 }
 
 type ConfigView struct {
-	Name    string
-	Pattern string
-	Alerts  []string
+	Name     string
+	Pattern  string
+	Includes []string
+	Excludes []string
+	Alerts   []string
 }
 
 type ConfigEventlog struct {
