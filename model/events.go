@@ -1,5 +1,10 @@
 package model
 
+// ViewAddedEvent will be sent when a view has been added
+type ViewAddedEvent struct {
+	View View `json:"view"`
+}
+
 // ViewStateChangedEvent will be sent when a view has changed state
 type ViewStateChangedEvent struct {
 	View           View      `json:"view"`

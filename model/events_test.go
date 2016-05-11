@@ -15,6 +15,7 @@ func TestEventMembersHaveCorrectJSONCase(t *testing.T) {
 	events := []interface{}{
 		ServiceStateChangedEvent{},
 		ViewStateChangedEvent{},
+		ViewAddedEvent{},
 	}
 
 	for i, e := range events {

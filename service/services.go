@@ -94,7 +94,7 @@ func sendBusEvents(bus *eventbus.EventBus, updates []stateUpdate) {
 				Current:  update.newService.data.State,
 			})
 		} else if update.newView != nil && update.oldView == nil {
-			// TODO: svcs.bus.Publish(model.ViewAddedEvent{u.newView.data})
+			bus.Publish(model.ViewAddedEvent{update.newView.data})
 		} else if update.newView != nil && update.oldView != nil {
 			bus.Publish(model.ViewStateChangedEvent{
 				View:           update.newView.data,
