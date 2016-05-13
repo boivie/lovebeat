@@ -7,10 +7,9 @@ type ViewAddedEvent struct {
 
 // ViewStateChangedEvent will be sent when a view has changed state
 type ViewStateChangedEvent struct {
-	View           View      `json:"view"`
-	Previous       string    `json:"previous"`
-	Current        string    `json:"current"`
-	FailedServices []Service `json:"failed"`
+	View     View   `json:"view"`
+	Previous string `json:"previous"`
+	Current  string `json:"current"`
 }
 
 // ServiceStateChangedEvent will be sent when a service has changed state

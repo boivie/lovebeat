@@ -94,13 +94,12 @@ func sendBusEvents(bus *eventbus.EventBus, updates []stateUpdate) {
 				Current:  update.newService.data.State,
 			})
 		} else if update.newView != nil && update.oldView == nil {
-			bus.Publish(model.ViewAddedEvent{update.newView.data})
+			bus.Publish(model.ViewAddedEvent{update.newView.getExternalModel()})
 		} else if update.newView != nil && update.oldView != nil {
 			bus.Publish(model.ViewStateChangedEvent{
-				View:           update.newView.data,
-				Previous:       update.oldView.data.State,
-				Current:        update.newView.data.State,
-				FailedServices: update.newView.failingServices(),
+				View:     update.newView.getExternalModel(),
+				Previous: update.oldView.data.State,
+				Current:  update.newView.data.State,
 			})
 		}
 	}
@@ -114,11 +113,10 @@ func triggerAlerters(alerter alert.Alerter, updates []stateUpdate) {
 				oldState = update.oldView.data.State
 			}
 			alerter.Notify(alert.AlertInfo{
-				View:           update.newView.data,
-				Previous:       oldState,
-				Current:        update.newView.data.State,
-				FailedServices: update.newView.failingServices(),
-				ViewConfig:     update.newView.tmpl.config,
+				View:       update.newView.getExternalModel(),
+				Previous:   oldState,
+				Current:    update.newView.data.State,
+				ViewConfig: update.newView.tmpl.config,
 			})
 		}
 	}

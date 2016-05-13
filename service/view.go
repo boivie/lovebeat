@@ -88,14 +88,14 @@ func (v *View) calculateState() string {
 	return state
 }
 
-func (v *View) failingServices() []model.Service {
-	var failedServices = make([]model.Service, 0)
+func (v *View) getExternalModel() model.View {
+	r := v.data
 	for _, s := range v.servicesInView {
 		if s.data.State == model.StateError {
-			failedServices = append(failedServices, s.data)
+			r.FailedServices = append(r.FailedServices, s.data.Name)
 		}
 	}
-	return failedServices
+	return r
 }
 
 func (v *View) removeService(service *Service) {

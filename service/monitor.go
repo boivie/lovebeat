@@ -40,12 +40,13 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 		case c := <-svcs.getViewsChan:
 			var ret []model.View
 			for _, v := range servicesState.views {
-				ret = append(ret, v.data)
+				ret = append(ret, v.getExternalModel())
 			}
 			c.Reply <- ret
 		case c := <-svcs.getViewChan:
 			if ret, ok := servicesState.views[c.Name]; ok {
-				c.Reply <- &ret.data
+				r := ret.getExternalModel()
+				c.Reply <- &r
 			} else {
 				c.Reply <- nil
 			}

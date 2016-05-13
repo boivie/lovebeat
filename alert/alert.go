@@ -11,11 +11,10 @@ import (
 var log = logging.MustGetLogger("lovebeat")
 
 type AlertInfo struct {
-	View           model.View
-	Previous       string
-	Current        string
-	FailedServices []model.Service
-	ViewConfig     config.ConfigView
+	View       model.View
+	Previous   string
+	Current    string
+	ViewConfig config.ConfigView
 }
 
 type AlerterBackend interface {

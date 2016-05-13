@@ -57,7 +57,7 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 						SlackField{Title: "View Name", Value: view.Name, Short: true},
 						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true},
 						SlackField{Title: "From State", Value: prevUpper, Short: true},
-						SlackField{Title: "Failed Service(s)", Value: strings.Join(formatFailedServices(ev.FailedServices), ","), Short: true},
+						SlackField{Title: "Failed Service(s)", Value: strings.Join(ev.View.FailedServices, ","), Short: true},
 						SlackField{Title: "To State", Value: currentUpper, Short: true},
 					},
 				},
@@ -80,14 +80,6 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 			log.Errorf("Failed to post slack alert: %v", err)
 		}
 	}
-}
-
-func formatFailedServices(services []model.Service) []string {
-	var names = make([]string, 0)
-	for _, service := range services {
-		names = append(names, service.Name)
-	}
-	return names
 }
 
 func NewSlackAlerter(cfg config.Config) AlerterBackend {
