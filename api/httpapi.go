@@ -109,22 +109,13 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "{}\n")
 }
 
-type JsonView struct {
-	Name  string `json:"name"`
-	State string `json:"state"`
-}
-
 func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
 	log.Debug("%s %s", r.Method, r.RequestURI)
-	var ret = make([]JsonView, 0)
-	for _, v := range client.GetViews() {
-		js := JsonView{
-			Name:  v.Name,
-			State: v.State,
-		}
-		ret = append(ret, js)
-	}
-	replyJson(c, ret)
+	views := client.GetViews()
+	replyJson(c, struct {
+		Views []model.View `json:"views"`
+		Now   int64        `json:"now"`
+	}{views, now()})
 }
 
 func GetViewHandler(c http.ResponseWriter, r *http.Request) {
@@ -136,26 +127,14 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 		http.NotFound(c, r)
 		return
 	}
-	js := JsonView{
-		Name:  v.Name,
-		State: v.State,
-	}
-
-	replyJson(c, js)
+	replyJson(c, struct {
+		Service *model.View `json:"view"`
+		Now     int64       `json:"now"`
+	}{v, now()})
 }
 
 type JsonViewRef struct {
 	Name string `json:"name"`
-}
-
-type JsonService struct {
-	Name          string        `json:"name"`
-	LastBeat      int64         `json:"last_beat"`
-	LastBeatDelta int64         `json:"last_beat_delta"`
-	Timeout       int64         `json:"timeout"`
-	State         string        `json:"state"`
-	Views         []JsonViewRef `json:"views,omitempty"`
-	History       []int64       `json:"history,omitempty"`
 }
 
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
@@ -166,18 +145,11 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 		viewName = val[0]
 	}
 	var now = now()
-	var ret = make([]JsonService, 0)
-	for _, s := range client.GetServices(viewName) {
-		js := JsonService{
-			Name:          s.Name,
-			LastBeat:      s.LastBeat,
-			LastBeatDelta: now - s.LastBeat,
-			Timeout:       s.Timeout,
-			State:         s.State,
-		}
-		ret = append(ret, js)
-	}
-	replyJson(c, ret)
+	services := client.GetServices(viewName)
+	replyJson(c, struct {
+		Services []model.Service `json:"services"`
+		Now      int64           `json:"now"`
+	}{services, now})
 }
 
 func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
@@ -192,15 +164,10 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	js := JsonService{
-		Name:          s.Name,
-		LastBeat:      s.LastBeat,
-		LastBeatDelta: now - s.LastBeat,
-		Timeout:       s.Timeout,
-		State:         s.State,
-		History:       s.BeatHistory,
-	}
-	replyJson(c, js)
+	replyJson(c, struct {
+		Service *model.Service `json:"service"`
+		Now     int64          `json:"now"`
+	}{s, now})
 }
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
