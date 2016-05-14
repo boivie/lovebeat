@@ -37,6 +37,7 @@ func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 			if service.data.State != model.StatePaused && service.data.State != service.stateAt(cmd.Ts) {
 				var ref = *service
 				service.data.State = service.stateAt(cmd.Ts)
+				service.data.LastStateChange = cmd.Ts
 				updates = append(updates, stateUpdate{oldService: &ref, newService: service})
 			}
 		}
@@ -79,7 +80,11 @@ func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 
 		if service != nil {
 			service.updateExpiry()
-			service.data.State = service.stateAt(cmd.Ts)
+			state := service.stateAt(cmd.Ts)
+			if state != service.data.State {
+				service.data.State = state
+				service.data.LastStateChange = cmd.Ts
+			}
 		}
 
 		if updated {
@@ -89,7 +94,7 @@ func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 	return
 }
 
-func updateViews(state *servicesState, prevUpdates []stateUpdate) (updates []stateUpdate) {
+func updateViews(state *servicesState, ts int64, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
 	for _, update := range updates {
 		service := update.newService
@@ -102,6 +107,7 @@ func updateViews(state *servicesState, prevUpdates []stateUpdate) (updates []sta
 				if view.data.State != newState {
 					ref := *view
 					view.data.State = newState
+					view.data.LastStateChange = ts
 					if ref.data.State == model.StateOk {
 						view.data.IncidentNbr += 1
 					}

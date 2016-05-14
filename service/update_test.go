@@ -98,7 +98,7 @@ func TestSimpleFromTemplate(t *testing.T) {
 	}}
 
 	updates1 := updateServices(state, &Update{Ts: 0, Service: "test.service", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
-	updates1 = updateViews(state, updates1)
+	updates1 = updateViews(state, 0, updates1)
 
 	if state.views["testview"].data.State != model.StateOk {
 		t.Errorf("Expected view OK")
@@ -109,7 +109,7 @@ func TestSimpleFromTemplate(t *testing.T) {
 	}
 
 	updates2 := updateServices(state, &Update{Ts: 1000, Tick: &Tick{}})
-	updates2 = updateViews(state, updates2)
+	updates2 = updateViews(state, 0, updates2)
 
 	if updates2[0].oldService.name() != "test.service" {
 		t.Errorf("Expected service in update")
