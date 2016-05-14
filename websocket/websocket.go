@@ -104,7 +104,10 @@ func upgradeHandler(w http.ResponseWriter, r *http.Request) {
 
 func Register(rtr *mux.Router, bus *eventbus.EventBus) {
 	rtr.HandleFunc("/ws", upgradeHandler).Methods("GET")
+	bus.RegisterHandler(serviceAdded)
 	bus.RegisterHandler(serviceStateChanged)
+	bus.RegisterHandler(serviceRemoved)
+	bus.RegisterHandler(viewAdded)
 	bus.RegisterHandler(viewStateChanged)
 
 	go h.run()
