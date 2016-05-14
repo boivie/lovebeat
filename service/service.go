@@ -70,3 +70,11 @@ func (s *Service) registerBeat(ts int64) {
 	s.data.LastBeat = ts
 	s.lastBeat = ts
 }
+
+func (s *Service) getExternalModel() model.Service {
+	r := s.data
+	for _, v := range s.inViews {
+		r.InViews = append(r.InViews, v.data.Name)
+	}
+	return r
+}

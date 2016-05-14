@@ -84,12 +84,12 @@ func printUpdates(updates []stateUpdate) {
 func sendBusEvents(bus *eventbus.EventBus, updates []stateUpdate) {
 	for _, update := range updates {
 		if update.newService != nil && update.oldService == nil {
-			bus.Publish(model.ServiceAddedEvent{Service: update.newService.data})
+			bus.Publish(model.ServiceAddedEvent{Service: update.newService.getExternalModel()})
 		} else if update.newService == nil && update.oldService != nil {
-			bus.Publish(model.ServiceRemovedEvent{Service: update.oldService.data})
+			bus.Publish(model.ServiceRemovedEvent{Service: update.oldService.getExternalModel()})
 		} else if update.newService != nil && update.oldService != nil {
 			bus.Publish(model.ServiceStateChangedEvent{
-				Service:  update.newService.data,
+				Service:  update.newService.getExternalModel(),
 				Previous: update.oldService.data.State,
 				Current:  update.newService.data.State,
 			})
