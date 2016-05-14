@@ -31,6 +31,20 @@ func addViewsToService(state *servicesState, svc *Service, prevUpdates []stateUp
 	return
 }
 
+func removeViewsFromService(state *servicesState, svc *Service, prevUpdates []stateUpdate) (updates []stateUpdate) {
+	updates = prevUpdates
+	for _, view := range svc.inViews {
+		var remainingServices []*Service
+		for _, s := range view.servicesInView {
+			if s != svc {
+				remainingServices = append(remainingServices, s)
+			}
+		}
+		view.servicesInView = remainingServices
+	}
+	return
+}
+
 func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 	if cmd.Tick != nil {
 		for _, service := range state.services {
@@ -73,6 +87,7 @@ func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 			}
 		}
 		if cmd.DeleteService != nil {
+			updates = removeViewsFromService(state, service, updates)
 			delete(state.services, service.name())
 			service = nil
 			updated = old != nil
