@@ -23,7 +23,7 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 		case <-notifyTimer.C:
 			notifier.Notify("monitor")
 		case c := <-svcs.getServicesChan:
-			var ret []model.Service
+			ret := make([]model.Service, 0)
 			if view, ok := servicesState.views[c.View]; ok {
 				for _, s := range view.servicesInView {
 					ret = append(ret, s.getExternalModel())
@@ -39,7 +39,7 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 				c.Reply <- &r
 			}
 		case c := <-svcs.getViewsChan:
-			var ret []model.View
+			ret := make([]model.View, 0)
 			for _, v := range servicesState.views {
 				ret = append(ret, v.getExternalModel())
 			}
