@@ -14,11 +14,10 @@ import (
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/notify"
 	"github.com/boivie/lovebeat/service"
+	slog "github.com/boivie/lovebeat/syslog"
 	"github.com/boivie/lovebeat/websocket"
 	"github.com/gorilla/mux"
-	"github.com/mipearson/rfw"
 	"github.com/op/go-logging"
-	"log/syslog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -75,20 +74,6 @@ func getHostname() string {
 	return strings.Split(hostname, ".")[0]
 }
 
-func setUpEventlog(cfg config.Config, bus *eventbus.EventBus) {
-	if len(cfg.Eventlog.Path) == 0 {
-		return
-	}
-	eventwriter, err := rfw.Open(cfg.Eventlog.Path, cfg.Eventlog.Mode)
-	if err != nil {
-		log.Errorf("Error opening event log for writing: %s", err)
-	} else {
-		log.Info("Logging events to %s", cfg.Eventlog.Path)
-		evtlog := eventlog.New(eventwriter)
-		evtlog.Register(bus)
-	}
-}
-
 func main() {
 	flag.Parse()
 
@@ -98,11 +83,7 @@ func main() {
 		logging.SetLevel(logging.INFO, "lovebeat")
 	}
 	if *useSyslog {
-		backend, err := logging.NewSyslogBackendPriority("lovebeat", syslog.LOG_DAEMON)
-		if err != nil {
-			panic(err)
-		}
-		logging.SetBackend(logging.AddModuleLevel(backend))
+		slog.Init()
 	} else {
 		format := logging.MustStringFormatter("%{level} %{message}")
 		logging.SetFormatter(format)
@@ -127,7 +108,7 @@ func main() {
 	cfg := config.ReadConfig(*cfgFile, *cfgDir)
 	bus := eventbus.New()
 
-	setUpEventlog(cfg, bus)
+	eventlog.Init(cfg, bus)
 
 	notifier := notify.Init(myName, cfg.Notify)
 	alerter := alert.Init(cfg, notifier)
