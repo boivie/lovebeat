@@ -54,7 +54,7 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 		case c := <-svcs.updateChan:
 			if log.IsEnabledFor(logging.DEBUG) {
 				j, _ := json.Marshal(c)
-				log.Debug("UPDATE: %s", string(j))
+				log.Debugf("UPDATE: %s", string(j))
 			}
 			updates := updateServices(servicesState, c)
 			updates = updateViews(servicesState, c.Ts, updates)

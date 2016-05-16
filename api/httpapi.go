@@ -30,7 +30,7 @@ func replyJson(c http.ResponseWriter, js interface{}) {
 }
 
 func ServiceHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 	name := params["name"]
 
@@ -80,7 +80,7 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func MuteServiceHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 	name := params["name"]
 
@@ -92,7 +92,7 @@ func MuteServiceHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func UnmuteServiceHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 	name := params["name"]
 
@@ -104,7 +104,7 @@ func UnmuteServiceHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 	name := params["name"]
 
@@ -116,7 +116,7 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	views := client.GetViews()
 	replyJson(c, struct {
 		Views []model.View `json:"views"`
@@ -125,7 +125,7 @@ func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func GetViewHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 	name := params["name"]
 	v := client.GetView(name)
@@ -144,7 +144,7 @@ type JsonViewRef struct {
 }
 
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	viewName := "all"
 
 	if val, ok := r.URL.Query()["view"]; ok {
@@ -159,7 +159,7 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
-	log.Debug("%s %s", r.Method, r.RequestURI)
+	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 	name := params["name"]
 
@@ -177,7 +177,7 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 }
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
-	log.Debug("%s %s", req.Method, req.RequestURI)
+	log.Debugf("%s %s", req.Method, req.RequestURI)
 	viewName := "all"
 
 	if val, ok := req.URL.Query()["view"]; ok {

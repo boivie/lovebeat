@@ -145,7 +145,7 @@ func (f FileBackend) saveAll(counters metrics.Metrics) {
 		return
 	}
 	duration := time.Since(start)
-	log.Debug("Saved %d items in %d ms", len(f.services)+len(f.views),
+	log.Debugf("Saved %d items in %d ms", len(f.services)+len(f.views),
 		duration.Nanoseconds()/1000000)
 
 	f.uploadToRemote()
@@ -208,7 +208,7 @@ func (f FileBackend) downloadFromRemote() {
 
 func (f FileBackend) uploadToRemote() {
 	if f.cfg.RemoteS3Url != "" && f.cfg.RemoteS3Region != "" {
-		log.Debug("Uploading database to '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
+		log.Debugf("Uploading database to '%s' (region '%s')", f.cfg.RemoteS3Url, f.cfg.RemoteS3Region)
 		parsed, err := url.Parse(f.cfg.RemoteS3Url)
 		if err != nil {
 			log.Errorf("Failed to parse S3 url: %v", err)

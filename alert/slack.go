@@ -64,7 +64,7 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 			},
 		}
 
-		log.Debug("Performing slack request at %v", m.cfg.WebhookUrl)
+		log.Debugf("Performing slack request at %v", m.cfg.WebhookUrl)
 		req := goreq.Request{
 			Method:      "POST",
 			Uri:         m.cfg.WebhookUrl,

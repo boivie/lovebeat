@@ -73,7 +73,7 @@ func (m mailAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 }
 
 func sendMail(cfg *config.ConfigMail, mail mail) {
-	log.Info("Sending from %s on host %s", cfg.From, cfg.Server)
+	log.Infof("Sending from %s on host %s", cfg.From, cfg.Server)
 	var context = make(map[string]interface{})
 	context["From"] = cfg.From
 	context["To"] = mail.To
@@ -90,6 +90,6 @@ func sendMail(cfg *config.ConfigMail, mail mail) {
 }
 
 func NewMailAlerter(cfg config.Config) AlerterBackend {
-	log.Debug("Sending mail via %s, from %s", cfg.Mail.Server, cfg.Mail.From)
+	log.Debugf("Sending mail via %s, from %s", cfg.Mail.Server, cfg.Mail.From)
 	return &mailAlerter{&cfg.Mail}
 }

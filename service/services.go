@@ -63,20 +63,20 @@ func persist(be backend.Backend, updates []stateUpdate) {
 func printUpdates(updates []stateUpdate) {
 	for _, update := range updates {
 		if update.newService != nil && update.oldService == nil {
-			log.Info("SERVICE '%s', created -> %s", update.newService.data.Name, update.newService.data.State)
+			log.Infof("SERVICE '%s', created -> %s", update.newService.data.Name, update.newService.data.State)
 		} else if update.newService == nil && update.oldService != nil {
-			log.Info("SERVICE '%s', %s -> deleted", update.oldService.data.Name, update.oldService.data.State)
+			log.Infof("SERVICE '%s', %s -> deleted", update.oldService.data.Name, update.oldService.data.State)
 		} else if update.newService != nil && update.oldService != nil {
 			if update.newService.data.State != update.oldService.data.State {
-				log.Info("SERVICE '%s', state %s -> %s", update.oldService.data.Name, update.oldService.data.State, update.newService.data.State)
+				log.Infof("SERVICE '%s', state %s -> %s", update.oldService.data.Name, update.oldService.data.State, update.newService.data.State)
 			}
 			if update.newService.data.Timeout != update.oldService.data.Timeout {
-				log.Info("SERVICE '%s', tmo %d -> %d", update.oldService.data.Name, update.oldService.data.Timeout, update.newService.data.Timeout)
+				log.Infof("SERVICE '%s', tmo %d -> %d", update.oldService.data.Name, update.oldService.data.Timeout, update.newService.data.Timeout)
 			}
 		} else if update.newView != nil && update.oldView == nil {
-			log.Info("VIEW '%s', created -> %s", update.newView.data.Name, update.newView.data.State)
+			log.Infof("VIEW '%s', created -> %s", update.newView.data.Name, update.newView.data.State)
 		} else if update.newView != nil && update.oldView != nil {
-			log.Info("VIEW '%s', state %s -> %s", update.oldView.data.Name, update.oldView.data.State, update.newView.data.State)
+			log.Infof("VIEW '%s', state %s -> %s", update.oldView.data.Name, update.oldView.data.State, update.newView.data.State)
 		}
 	}
 }

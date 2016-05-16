@@ -36,7 +36,7 @@ func (s *Service) updateExpiry() {
 	}
 
 	if s.expiry > 0 {
-		log.Debug("Expiry for %s = %d", s.name(), s.expiry)
+		log.Debugf("Expiry for %s = %d", s.name(), s.expiry)
 	}
 }
 
@@ -56,9 +56,9 @@ func (s *Service) stateAt(ts int64) string {
 
 func (s *Service) registerBeat(ts int64) {
 	if s.data.LastBeat > 0 {
-		log.Debug("Beat from %s (prev %d ms ago)", s.name(), ts-s.data.LastBeat)
+		log.Debugf("Beat from %s (prev %d ms ago)", s.name(), ts-s.data.LastBeat)
 	} else {
-		log.Debug("Beat from %s (first!)", s.name())
+		log.Debugf("Beat from %s (first!)", s.name())
 	}
 	if s.lastBeat > 0 {
 		s.data.BeatHistory = append(s.data.BeatHistory, ts-s.lastBeat)

@@ -62,7 +62,7 @@ func httpServer(cfg *config.ConfigBind, bus *eventbus.EventBus) {
 	websocket.Register(rtr, bus)
 	dashboard.Register(rtr)
 	http.Handle("/", rtr)
-	log.Info("HTTP listening on %s\n", cfg.Listen)
+	log.Infof("HTTP listening on %s\n", cfg.Listen)
 	http.ListenAndServe(cfg.Listen, nil)
 }
 
@@ -103,7 +103,7 @@ func main() {
 
 	wd, _ := os.Getwd()
 	myName := getHostname()
-	log.Info("Lovebeat v%s started on %s, PID %d, running from %s", VERSION, myName, os.Getpid(), wd)
+	log.Infof("Lovebeat v%s started on %s, PID %d, running from %s", VERSION, myName, os.Getpid(), wd)
 
 	cfg := config.ReadConfig(*cfgFile, *cfgDir)
 	bus := eventbus.New()

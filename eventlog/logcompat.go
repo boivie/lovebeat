@@ -17,7 +17,7 @@ func Init(cfg config.Config, bus *eventbus.EventBus) {
 	if err != nil {
 		log.Errorf("Error opening event log for writing: %s", err)
 	} else {
-		log.Info("Logging events to %s", cfg.Eventlog.Path)
+		log.Infof("Logging events to %s", cfg.Eventlog.Path)
 		evtlog := New(eventwriter)
 		evtlog.Register(bus)
 	}

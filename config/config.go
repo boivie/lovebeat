@@ -88,7 +88,7 @@ func exists(path string) (bool, error) {
 
 func readFile(conf *Config, fname string) {
 	if e, _ := exists(fname); e {
-		log.Info("Reading configuration file %s", fname)
+		log.Infof("Reading configuration file %s", fname)
 		if _, err := toml.DecodeFile(fname, conf); err != nil {
 			log.Errorf("Failed to parse configuration file '%s': %v", fname, err)
 		}

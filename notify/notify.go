@@ -27,7 +27,7 @@ func (f lovebeatNotifier) Notify(metric string) {
 }
 
 func sendLovebeat(url, name, metric string) {
-	log.Debug("Sending outgoing lovebeat '%s' to %s", metric, url)
+	log.Debugf("Sending outgoing lovebeat '%s' to %s", metric, url)
 	req := goreq.Request{
 		Method:      "POST",
 		Uri:         url + "/api/services/lovebeat." + name + "." + metric,
