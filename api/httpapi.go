@@ -248,12 +248,14 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 }
 
 func AddEndpoints(rtr *mux.Router) {
+	rtr.HandleFunc("/api/services", GetServicesHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/", GetServicesHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", ServiceHandler).Methods("POST")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}/mute", MuteServiceHandler).Methods("POST")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}/unmute", UnmuteServiceHandler).Methods("POST")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", GetServiceHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", DeleteServiceHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/views", GetViewsHandler).Methods("GET")
 	rtr.HandleFunc("/api/views/", GetViewsHandler).Methods("GET")
 	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", GetViewHandler).Methods("GET")
 	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", DeleteViewHandler).Methods("DELETE")
