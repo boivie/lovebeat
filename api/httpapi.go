@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/boivie/lovebeat/algorithms"
 	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/service"
 	"github.com/gorilla/mux"
@@ -143,6 +144,17 @@ type JsonViewRef struct {
 	Name string `json:"name"`
 }
 
+type HttpApiService struct {
+	model.Service
+	Analysis *algorithms.BeatAnalysis `json:"analysis,omitempty"`
+}
+
+func ToHttpService(s model.Service) *HttpApiService {
+	analysis := algorithms.AnalyzeBeats(s.BeatHistory)
+	s.BeatHistory = nil
+	return &HttpApiService{s, analysis}
+}
+
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	log.Debugf("%s %s", r.Method, r.RequestURI)
 	viewName := "all"
@@ -152,10 +164,14 @@ func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	}
 	var now = now()
 	services := client.GetServices(viewName)
+	retServices := make([]*HttpApiService, len(services))
+	for i, s := range services {
+		retServices[i] = ToHttpService(s)
+	}
 	replyJson(c, struct {
-		Services []model.Service `json:"services"`
-		Now      int64           `json:"now"`
-	}{services, now})
+		Services []*HttpApiService `json:"services"`
+		Now      int64             `json:"now"`
+	}{retServices, now})
 }
 
 func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
@@ -171,9 +187,9 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 	}
 
 	replyJson(c, struct {
-		Service *model.Service `json:"service"`
-		Now     int64          `json:"now"`
-	}{s, now})
+		Service *HttpApiService `json:"service"`
+		Now     int64           `json:"now"`
+	}{ToHttpService(*s), now})
 }
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
