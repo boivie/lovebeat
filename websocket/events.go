@@ -36,3 +36,8 @@ func viewStateChanged(ev model.ViewStateChangedEvent) {
 	var encoded, _ = json.Marshal(webSocketEvent{Type: "UPDATE_VIEW", View: &ev.View})
 	h.broadcast <- encoded
 }
+
+func viewRemoved(ev model.ViewRemovedEvent) {
+	var encoded, _ = json.Marshal(webSocketEvent{Type: "REMOVE_VIEW", View: &ev.View})
+	h.broadcast <- encoded
+}

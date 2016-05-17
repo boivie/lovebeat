@@ -120,13 +120,13 @@ export default class Service extends Component {
             {timeoutComponent}
           </div>
           <div className="section section2">
-            <div className="section-row">
+            <div className="section-row" title="Last beat">
               <svg className="icon icon-calendar"><use xlinkHref='#icon-calendar'/></svg>
               <ReactCSSTransitionGroup transitionName="lastbeat" transitionEnterTimeout={500} transitionLeave={false}>
                 <span key={service.last_beat} className="label-align beat-analysis">{humanDateTime(service.last_beat)}</span>
               </ReactCSSTransitionGroup>
             </div>
-            <div className="section-row">
+            <div className="section-row" title="Measured beat interval">
               <svg className="icon icon-stopwatch"><use xlinkHref='#icon-stopwatch'/></svg>
               <span className="label-align beat-analysis">{beatAnalysis}</span>
             </div>

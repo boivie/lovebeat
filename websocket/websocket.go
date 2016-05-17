@@ -109,6 +109,7 @@ func Register(rtr *mux.Router, bus *eventbus.EventBus) {
 	bus.RegisterHandler(serviceRemoved)
 	bus.RegisterHandler(viewAdded)
 	bus.RegisterHandler(viewStateChanged)
+	bus.RegisterHandler(viewRemoved)
 
 	go h.run()
 }

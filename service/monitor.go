@@ -57,6 +57,7 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 				log.Debugf("UPDATE: %s", string(j))
 			}
 			updates := updateServices(servicesState, c)
+			updates = removeViews(servicesState, c, updates)
 			updates = updateViews(servicesState, c.Ts, updates)
 			printUpdates(updates)
 			persist(be, updates)

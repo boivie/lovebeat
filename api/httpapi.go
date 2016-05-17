@@ -140,6 +140,17 @@ func GetViewHandler(c http.ResponseWriter, r *http.Request) {
 	}{v, now()})
 }
 
+func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
+	log.Debugf("%s %s", r.Method, r.RequestURI)
+	params := mux.Vars(r)
+
+	client.Update(&service.Update{Ts: now(), View: params["name"], DeleteView: &service.DeleteView{}})
+
+	c.Header().Add("Content-Type", "application/json")
+	c.Header().Add("Content-Length", "3")
+	io.WriteString(c, "{}\n")
+}
+
 type JsonViewRef struct {
 	Name string `json:"name"`
 }
@@ -245,6 +256,7 @@ func AddEndpoints(rtr *mux.Router) {
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", DeleteServiceHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/views/", GetViewsHandler).Methods("GET")
 	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", GetViewHandler).Methods("GET")
+	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", DeleteViewHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 }

@@ -101,6 +101,8 @@ func sendBusEvents(bus *eventbus.EventBus, updates []stateUpdate) {
 				Previous: update.oldView.data.State,
 				Current:  update.newView.data.State,
 			})
+		} else if update.newView == nil && update.oldView != nil {
+			bus.Publish(model.ViewRemovedEvent{update.oldView.getExternalModel()})
 		}
 	}
 }

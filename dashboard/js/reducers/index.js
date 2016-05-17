@@ -2,7 +2,7 @@ import { combineReducers } from 'redux'
 import {
   REQUEST_SERVICES, RECEIVE_SERVICES, REQUEST_VIEWS, RECEIVE_VIEWS,
   ADD_SERVICE, UPDATE_SERVICE, REMOVE_SERVICE, ADD_VIEW, UPDATE_VIEW,
-  TOGGLE_SERVICE_CHECKED
+  TOGGLE_SERVICE_CHECKED, REMOVE_VIEW
 } from '../actions'
 
 function services(state = {
@@ -92,6 +92,10 @@ function listOfViews(state = { isFetching: false, didInvalidate: false, items: [
     case UPDATE_VIEW:
       return Object.assign({}, state, {
         items: state.items.map(v => v.name == action.view.name ? action.view : v)
+      })
+    case REMOVE_VIEW:
+      return Object.assign({}, state, {
+        items: state.items.filter(v => v.name != action.view.name)
       })
     default:
       return state

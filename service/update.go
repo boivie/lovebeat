@@ -55,7 +55,7 @@ func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 				updates = append(updates, stateUpdate{oldService: &ref, newService: service})
 			}
 		}
-	} else {
+	} else if cmd.Service != "" {
 		updated := false
 		var old *Service
 		service := state.services[cmd.Service]
@@ -109,9 +109,21 @@ func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 	return
 }
 
+func removeViews(state *servicesState, c *Update, prevUpdates []stateUpdate) (updates []stateUpdate) {
+	updates = prevUpdates
+	if c.DeleteView != nil {
+		view, exist := state.views[c.View]
+		if exist && len(view.servicesInView) == 0 {
+			delete(state.views, c.View)
+			updates = append(updates, stateUpdate{oldView: view, newView: nil})
+		}
+	}
+	return
+}
+
 func updateViews(state *servicesState, ts int64, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
-	for _, update := range updates {
+	for _, update := range prevUpdates {
 		service := update.newService
 		if service == nil {
 			service = update.oldService

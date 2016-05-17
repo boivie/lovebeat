@@ -12,6 +12,12 @@ type ViewStateChangedEvent struct {
 	Current  string `json:"current"`
 }
 
+// ViewRemovedEvent will be sent when a view has been manually removed. It will not be sent
+// if a view has been removed by the configuration as loaded on startup
+type ViewRemovedEvent struct {
+	View View `json:"view"`
+}
+
 // ServiceStateChangedEvent will be sent when a service has changed state
 type ServiceStateChangedEvent struct {
 	Service  Service `json:"service"`

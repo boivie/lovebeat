@@ -19,14 +19,22 @@ type DeleteService struct {
 type Tick struct {
 }
 
+type DeleteView struct {
+}
+
 type Update struct {
-	Ts            int64          `json:"ts"`
+	Ts int64 `json:"ts"`
+
+	Tick *Tick `json:"tick,omitempty"`
+
 	Service       string         `json:"service,omitempty"`
 	Beat          *Beat          `json:"beat,omitempty"`
 	SetTimeout    *SetTimeout    `json:"set_timeout,omitempty"`
 	MuteService   *MuteService   `json:"mute_service,omitempty"`
 	DeleteService *DeleteService `json:"delete_service,omitempty"`
-	Tick          *Tick          `json:"tick,omitempty"`
+
+	View       string      `json:"view,omitempty"`
+	DeleteView *DeleteView `json:"delete_view,omitempty"`
 }
 
 type Services interface {

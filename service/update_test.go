@@ -196,3 +196,37 @@ func TestDeleteServiceInView(t *testing.T) {
 		t.Errorf("Expected service removed from view")
 	}
 }
+
+func TestDeleteView(t *testing.T) {
+	state := newState()
+	state.viewStates = []*model.View{&model.View{Name: "testview", IncidentNbr: 4}}
+	state.viewTemplates = []ViewTemplate{ViewTemplate{
+		config:   config.ConfigView{Name: "testview"},
+		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
+	}}
+
+	updates1 := updateServices(state, &Update{Ts: 0, Service: "test.service", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
+	updates1 = updateViews(state, 0, updates1)
+
+	u := &Update{Ts: 1, View: "testview", DeleteView: &DeleteView{}}
+	updates2 := updateServices(state, u)
+	updates2 = removeViews(state, u, updates2)
+	updates2 = updateViews(state, 0, updates2)
+
+	if state.views["testview"].data.State != model.StateOk {
+		t.Errorf("Expected view still in state")
+	}
+
+	updates3 := updateServices(state, &Update{Ts: 0, Service: "test.service", DeleteService: &DeleteService{}})
+	updateViews(state, 0, updates3)
+
+	u2 := &Update{Ts: 1, View: "testview", DeleteView: &DeleteView{}}
+	updates4 := updateServices(state, u2)
+	updates4 = removeViews(state, u2, updates4)
+	updates4 = updateViews(state, 0, updates4)
+
+	_, exists := state.views["testview"]
+	if exists {
+		t.Errorf("Expected view removed from state")
+	}
+}

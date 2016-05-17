@@ -117,4 +117,10 @@ GET /api/views/<view_name>
 
 Returns details of a specific view.
 
+DELETE /api/views/<view_name>
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removes the view. The view must be empty and it will appear again when a
+service is created that match this view config's patterns.
+
 .. _graphite: http://graphite.wikidot.com/
