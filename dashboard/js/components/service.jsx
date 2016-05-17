@@ -62,7 +62,7 @@ export default class Service extends Component {
     } else {
       subtitle = "Unknown state!"
     }
-    const subtitleComponent = subtitle == null ? null : (<div className="subtitle">{subtitle}</div>)
+    const subtitleComponent = subtitle == null ? "" : subtitle
     let timeout
     if (service.timeout == 0) {
       timeout = "always error"
@@ -104,18 +104,26 @@ export default class Service extends Component {
     return (<li className="service-li">
         <div className={tileClasses}>
           <div className="section section1">
-            <h2 className="title">
-              <div className="checkbox" onClick={this.props.toggleChecked}>{checked}</div>
-              {icon}
-              <span className="label-align">{service.name}</span>
-            </h2>
-            {subtitleComponent}
+            <div className="section-row">
+              <h2 className="title">
+                <div className="checkbox" onClick={this.props.toggleChecked}>{checked}</div>
+                {icon}
+                <span className="label-align">{service.name}</span>
+              </h2>
+            </div>
+            <div className="section-row">
+              <div className="subtitle">{subtitleComponent}</div>
+            </div>
           </div>
           <div className="section section2">
             {timeoutComponent}
           </div>
           <div className="section section2">
-            <div>
+            <div className="section-row">
+              <svg className="icon icon-calendar"><use xlinkHref='#icon-calendar'/></svg>
+              <span className="label-align beat-analysis">{humanDateTime(service.last_beat)}</span>
+            </div>
+            <div className="section-row">
               <svg className="icon icon-stopwatch"><use xlinkHref='#icon-stopwatch'/></svg>
               <span className="label-align beat-analysis">{beatAnalysis}</span>
             </div>

@@ -90,14 +90,14 @@ a:visited, a:link
     }
 
     &.ok {
-      background: linear-gradient(to right,#39aa56 0,#39aa56 8px,#EEF7F0 10px,#EEF7F0 100%) no-repeat;
+      background: linear-gradient(to right,#39aa56 0,#39aa56 8px,#fff 8px,#fff 100%) no-repeat;
       a {
         color: #39aa56;
       }
     }
 
     &.error {
-      background: linear-gradient(to right,#db4545 0,#db4545 8px,#FDF6F6 10px,#FDF6F6 100%) no-repeat;
+      background: linear-gradient(to right,#db4545 0,#db4545 8px,#fff 8px,#fff 100%) no-repeat;
       a {
         color: #db4545;
       }
@@ -119,21 +119,21 @@ a:visited, a:link
     }
 
     &.ok {
-      background: linear-gradient(to right,#39aa56 0,#39aa56 10px,#EEF7F0 10px,#EEF7F0 40%) no-repeat;
+      background: linear-gradient(to right,#39aa56 0,#39aa56 10px,#fff 10px,#fff 100%) no-repeat;
       a, h2 {
         color: #39aa56;
       }
     }
 
     &.error {
-      background: linear-gradient(to right,#db4545 0,#db4545 10px,#FDF6F6 10px,#FDF6F6 40%) no-repeat;
+      background: linear-gradient(to right,#db4545 0,#db4545 10px,#fff 10px,#fff 100%) no-repeat;
       a, h2 {
         color: #db4545;
       }
     }
 
     &.muted {
-      background: linear-gradient(to right,#ddd 0,#ddd 10px,#F7F7F7 10px,#F7F7F7 40%) no-repeat;
+      background: linear-gradient(to right,#ddd 0,#ddd 10px,#fff 10px,#fff 100%) no-repeat;
       a, h2 {
         color: #888;
       }
@@ -142,6 +142,7 @@ a:visited, a:link
     .subtitle {
       margin-top: 0.4em;
       padding-left: 51px;
+      height: 23px;
     }
 }
 
@@ -257,8 +258,8 @@ a:visited, a:link
   margin-right: 0.4em;
 }
 .icon-calendar {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   color: #888;
   margin-right: 0.4em;
 }
@@ -335,4 +336,17 @@ a:visited, a:link
   .unstable, .learning {
     font-style: italic;
   }
+}
+
+.section-row {
+  font-size: 16px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  padding-left: 1em;
+  display: block;
+}
+
+.section-row+.section-row {
+  margin-top: 6px;
 }
