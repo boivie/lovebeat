@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import juration from 'juration';
 import moment from 'moment';
 import EditTimeout from './edit-timeout'
+import ReactCSSTransitionGroup from 'react-addons-css-transition-group'
 
 function humanDateTime(d) {
   const m = moment(d)
@@ -98,7 +99,7 @@ export default class Service extends Component {
         beatAnalysis = (<span>{tohuman(service.analysis.lower)} &ndash; {tohuman(service.analysis.upper)}</span>)
       }
     } else {
-      beatAnalysis = (<span className="learning">learning</span>)
+      beatAnalysis = (<span>-</span>)
     }
 
     return (<li className="service-li">
@@ -121,7 +122,9 @@ export default class Service extends Component {
           <div className="section section2">
             <div className="section-row">
               <svg className="icon icon-calendar"><use xlinkHref='#icon-calendar'/></svg>
-              <span className="label-align beat-analysis">{humanDateTime(service.last_beat)}</span>
+              <ReactCSSTransitionGroup transitionName="lastbeat" transitionEnterTimeout={500} transitionLeave={false}>
+                <span key={service.last_beat} className="label-align beat-analysis">{humanDateTime(service.last_beat)}</span>
+              </ReactCSSTransitionGroup>
             </div>
             <div className="section-row">
               <svg className="icon icon-stopwatch"><use xlinkHref='#icon-stopwatch'/></svg>

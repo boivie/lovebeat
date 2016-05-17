@@ -350,3 +350,29 @@ a:visited, a:link
 .section-row+.section-row {
   margin-top: 6px;
 }
+.services-enter {
+  opacity: 0.01;
+}
+
+.services-enter.services-enter-active {
+  opacity: 1;
+  transition: opacity 500ms ease-in;
+}
+
+.services-leave {
+  opacity: 1;
+}
+
+.services-leave.services-leave-active {
+  opacity: 0.01;
+  transition: opacity 400ms ease-in;
+}
+
+.lastbeat-enter {
+  opacity: 0.5;
+}
+
+.lastbeat-enter.lastbeat-enter-active {
+  opacity: 1;
+  transition: opacity 200ms ease-in;
+}

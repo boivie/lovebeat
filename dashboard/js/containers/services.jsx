@@ -2,6 +2,7 @@ import React, { PropTypes, Component } from 'react'
 import { connect } from 'react-redux'
 import Service from '../components/service'
 import { setServiceTimeout, toggleServiceChecked } from '../actions/'
+import ReactCSSTransitionGroup from 'react-addons-css-transition-group'
 
 function compare(a,b) {
   if (a.name < b.name)
@@ -19,9 +20,11 @@ class Services extends Component {
     const services = this.props.services
     services.sort(compare)
     return (<ul className="services">
-      {services.map(service => <Service key={service.name} service={service} checked={this.props.checked[service.name] || false}
-        toggleChecked={() => this.props.toggleServiceChecked(this.props.viewId, service.name)}
-        setServiceTimeout={this.props.setServiceTimeout}/>)}
+      <ReactCSSTransitionGroup transitionName="services" transitionEnterTimeout={500} transitionLeaveTimeout={400}>
+        {services.map(service => <Service key={service.name} service={service} checked={this.props.checked[service.name] || false}
+          toggleChecked={() => this.props.toggleServiceChecked(this.props.viewId, service.name)}
+          setServiceTimeout={this.props.setServiceTimeout}/>)}
+      </ReactCSSTransitionGroup>
     </ul>)
   }
 }
