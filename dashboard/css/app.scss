@@ -160,6 +160,7 @@ a:visited, a:link
 .section2 {
   width: 20%;
   margin-left: 1em;
+  font-size: 15px;
 }
 
 .row-item {
@@ -242,6 +243,19 @@ a:visited, a:link
   margin-right: 0.4em;
 }
 
+.icon-stopwatch {
+  width: 16px;
+  height: 16px;
+  color: #888;
+  margin-right: 0.4em;
+}
+
+.icon-rainy {
+  width: 16px;
+  height: 16px;
+  color: #888;
+  margin-right: 0.4em;
+}
 .icon-calendar {
   width: 15px;
   height: 15px;
@@ -314,4 +328,11 @@ a:visited, a:link
   vertical-align: middle;
   width: 16px;
   height: 16px;
+}
+
+.beat-analysis {
+  font-size: 15px;
+  .unstable, .learning {
+    font-style: italic;
+  }
 }

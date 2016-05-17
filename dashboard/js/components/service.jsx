@@ -14,6 +14,10 @@ function humanDateTime(d) {
   }
 }
 
+function tohuman(d) {
+  return juration.stringify(d, { format: 'short' })
+}
+
 export default class Service extends Component {
   constructor(props, context) {
     super(props, context)
@@ -83,8 +87,19 @@ export default class Service extends Component {
         <span className="label-align">{timeout}</span>
       </div>)
     }
-
     const checked = this.props.checked ? "✔" : ""
+    let beatAnalysis
+    if (service.analysis) {
+      if (service.analysis.unstable) {
+        beatAnalysis = (<span className="unstable">unstable ({tohuman(service.analysis.lower)} &ndash; {tohuman(service.analysis.upper)})</span>)
+      } else if (service.analysis.upper - service.analysis.lower <= 10) {
+        beatAnalysis = (<span>{tohuman(service.analysis.upper)}</span>)
+      } else {
+        beatAnalysis = (<span>{tohuman(service.analysis.lower)} &ndash; {tohuman(service.analysis.upper)}</span>)
+      }
+    } else {
+      beatAnalysis = (<span className="learning">learning</span>)
+    }
 
     return (<li className="service-li">
         <div className={tileClasses}>
@@ -98,6 +113,12 @@ export default class Service extends Component {
           </div>
           <div className="section section2">
             {timeoutComponent}
+          </div>
+          <div className="section section2">
+            <div>
+              <svg className="icon icon-stopwatch"><use xlinkHref='#icon-stopwatch'/></svg>
+              <span className="label-align beat-analysis">{beatAnalysis}</span>
+            </div>
           </div>
         </div>
       </li>)
