@@ -58,7 +58,7 @@ class ViewDetails extends Component {
       {isEmpty
         ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
         : <div>
-            <Services viewId={this.props.viewId} services={services} checked={checked}/>
+            <Services key={this.props.viewId} viewId={this.props.viewId} services={services} checked={checked}/>
           </div>
       }
       </div>
