@@ -12,6 +12,7 @@ var (
 		model.StatePaused: 0,
 		model.StateOk:     1,
 		model.StateError:  2,
+		model.StateMuted:  3,
 	}
 )
 
