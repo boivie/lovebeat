@@ -101,6 +101,12 @@ export default class Service extends Component {
     } else {
       beatAnalysis = (<span>-</span>)
     }
+    let lastBeat
+    if (service.last_beat > 0) {
+      lastBeat = humanDateTime(service.last_beat)
+    } else {
+      lastBeat = "-"
+    }
 
     return (<li className="service-li">
         <div className={tileClasses}>
@@ -123,7 +129,7 @@ export default class Service extends Component {
             <div className="section-row" title="Last beat">
               <svg className="icon icon-calendar"><use xlinkHref='#icon-calendar'/></svg>
               <ReactCSSTransitionGroup transitionName="lastbeat" transitionEnterTimeout={500} transitionLeave={false}>
-                <span key={service.last_beat} className="label-align beat-analysis">{humanDateTime(service.last_beat)}</span>
+                <span key={service.last_beat} className="label-align beat-analysis">{lastBeat}</span>
               </ReactCSSTransitionGroup>
             </div>
             <div className="section-row" title="Measured beat interval">
