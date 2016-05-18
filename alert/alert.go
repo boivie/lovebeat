@@ -30,9 +30,7 @@ type alerter struct {
 }
 
 func (f alerter) Notify(ev AlertInfo) {
-	if ev.Current != model.StatePaused && ev.Previous != model.StatePaused {
-		f.q <- ev
-	}
+	f.q <- ev
 }
 
 func runner(cfg config.Config, q <-chan AlertInfo, notifier notify.Notifier) {

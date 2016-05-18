@@ -11,7 +11,7 @@ import (
 type View struct {
 	servicesInView []*Service
 	data           model.View
-	tmpl           *ViewTemplate
+	tmpl           ViewTemplate
 }
 
 type ViewTemplate struct {

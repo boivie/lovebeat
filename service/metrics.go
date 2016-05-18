@@ -9,10 +9,10 @@ import (
 var (
 	counters metrics.Metrics
 	StateMap = map[string]int{
-		model.StatePaused: 0,
-		model.StateOk:     1,
-		model.StateError:  2,
-		model.StateMuted:  3,
+		model.StateNew:   0,
+		model.StateOk:    1,
+		model.StateError: 2,
+		model.StateMuted: 3,
 	}
 )
 

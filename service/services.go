@@ -110,7 +110,7 @@ func sendBusEvents(bus *eventbus.EventBus, updates []stateUpdate) {
 func triggerAlerters(alerter alert.Alerter, updates []stateUpdate) {
 	for _, update := range updates {
 		if update.newView != nil {
-			oldState := model.StatePaused
+			oldState := model.StateNew
 			if update.oldView != nil {
 				oldState = update.oldView.data.State
 			}

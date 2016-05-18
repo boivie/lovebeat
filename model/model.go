@@ -1,7 +1,7 @@
 package model
 
-// The service is paused and will not trigger any alarms
-const StatePaused = "paused"
+// The service is new (this is an initial state from where it will transition quickly)
+const StateNew = "new"
 
 // The service is perfectly fine
 const StateOk = "ok"

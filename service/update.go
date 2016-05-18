@@ -11,9 +11,9 @@ func addViewsToService(state *servicesState, svc *Service, prevUpdates []stateUp
 		if name != "" {
 			view, exists := state.views[name]
 			if !exists {
-				view = &View{tmpl: &tmpl, data: model.View{
+				view = &View{tmpl: tmpl, data: model.View{
 					Name:        name,
-					State:       model.StatePaused,
+					State:       model.StateNew,
 					IncidentNbr: 0,
 				}}
 				for _, existingView := range state.viewStates {
@@ -48,7 +48,7 @@ func removeViewsFromService(state *servicesState, svc *Service, prevUpdates []st
 func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 	if cmd.Tick != nil {
 		for _, service := range state.services {
-			if service.data.State != model.StatePaused && service.data.State != service.stateAt(cmd.Ts) {
+			if service.data.State != service.stateAt(cmd.Ts) {
 				var ref = *service
 				service.data.State = service.stateAt(cmd.Ts)
 				service.data.LastStateChange = cmd.Ts

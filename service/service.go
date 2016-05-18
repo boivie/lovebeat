@@ -18,7 +18,7 @@ func newService(name string) *Service {
 			Name:     name,
 			LastBeat: -1,
 			Timeout:  -1,
-			State:    model.StatePaused,
+			State:    model.StateNew,
 		},
 	}
 }
