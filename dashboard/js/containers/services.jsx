@@ -16,7 +16,6 @@ function compare(a,b) {
 class Services extends Component {
 
   render() {
-    console.log("RENDERRENDER", this.props)
     const services = this.props.services
     services.sort(compare)
     return (<ul className="services">

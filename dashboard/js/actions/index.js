@@ -24,7 +24,6 @@ function requestServices(view) {
 
 export function toggleServiceChecked(view, serviceName) {
   return dispatch => {
-      console.log("TOOGLE", view, serviceName)
       dispatch({
       type: TOGGLE_SERVICE_CHECKED,
       view,
