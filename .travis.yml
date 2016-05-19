@@ -5,6 +5,10 @@ go:
 env:
 - PATH=/home/travis/gopath/bin:$PATH
 before_install:
+- npm --version
+- go version
+- git fetch --unshallow
+- git describe --tags --dirty --long
 - go get github.com/mitchellh/gox
 - go get github.com/tcnksm/ghr
 - go get github.com/axw/gocov/gocov
