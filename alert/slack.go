@@ -10,7 +10,8 @@ import (
 )
 
 type slackAlerter struct {
-	cfg *config.ConfigSlack
+	publicUrl string
+	cfg       *config.ConfigSlack
 }
 
 func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
@@ -25,43 +26,51 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 			Fallback string       `json:"fallback"`
 			Color    string       `json:"color"`
 			Title    string       `json:"title"`
+			Text     string       `json:"text"`
 			Fields   []SlackField `json:"fields"`
-		}
-
-		var color string
-		if ev.Current == model.StateError {
-			color = "danger"
-		} else {
-			color = "good"
 		}
 
 		prevUpper := strings.ToUpper(ev.Previous)
 		currentUpper := strings.ToUpper(ev.Current)
 		view := ev.View
 
+		var color string
+		var title string
+		link := m.publicUrl + "views/" + view.Name
+		if ev.Current == model.StateError {
+			color = "danger"
+			title = fmt.Sprintf("<%s|%s> is in ERROR", link, view.Name)
+		} else {
+			color = "good"
+			title = fmt.Sprintf("<%s|%s> has recovered", link, view.Name)
+		}
+
 		payload := struct {
 			Username    string            `json:"username"`
-			IconEmoji   string            `json:"icon_emoji"`
+			IconUrl     string            `json:"icon_url"`
 			Channel     string            `json:"channel"`
 			Attachments []SlackAttachment `json:"attachments"`
 		}{
-			Username:  "Lovebeat",
-			IconEmoji: ":loud_sound:",
-			Channel:   cfg.SlackChannel,
+			Username: "Lovebeat",
+			IconUrl:  "https://cdn.rawgit.com/boivie/lovebeat/a440f41aaf74be2e14b14a8f470456b71fc3e64e/docs/lovebeat-48.png",
+			Channel:  cfg.SlackChannel,
 			Attachments: []SlackAttachment{
 				SlackAttachment{
 					Fallback: fmt.Sprintf("lovebeat: %s changed from %s to %s", view.Name, prevUpper, currentUpper),
 					Color:    color,
-					Title:    fmt.Sprintf("\"%s\" has changed from %s to %s", view.Name, prevUpper, currentUpper),
+					Title:    title,
+					Text:     fmt.Sprintf("Changed from %s to %s.", prevUpper, currentUpper),
 					Fields: []SlackField{
 						SlackField{Title: "View Name", Value: view.Name, Short: true},
 						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true},
-						SlackField{Title: "From State", Value: prevUpper, Short: true},
-						SlackField{Title: "Failed Service(s)", Value: strings.Join(ev.View.FailedServices, ","), Short: true},
-						SlackField{Title: "To State", Value: currentUpper, Short: true},
 					},
 				},
 			},
+		}
+
+		if ev.Current == model.StateError {
+			payload.Attachments[0].Fields = append(payload.Attachments[0].Fields,
+				SlackField{Title: "Failed Service(s)", Value: strings.Join(ev.View.FailedServices, ", "), Short: false})
 		}
 
 		log.Debugf("Performing slack request at %v", m.cfg.WebhookUrl)
@@ -83,5 +92,5 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 }
 
 func NewSlackAlerter(cfg config.Config) AlerterBackend {
-	return &slackAlerter{&cfg.Slack}
+	return &slackAlerter{cfg.General.PublicUrl, &cfg.Slack}
 }

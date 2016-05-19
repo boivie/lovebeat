@@ -18,6 +18,15 @@ documented as well.
     ## provided here (commented out).
 
     ##
+    ## General settings
+    ##
+    ## By specifying a 'public_url', which should be the full URL to
+    ## reach lovebeat, we can insert full links in mail and slack alerts,
+    ## for example.
+    #
+    #public_url = "http://lovebeat.example.com/"
+
+    ##
     ## The database stores information about all services and views. It's
     ## in one single file and it's safely rewritten on save, which it does
     ## when exiting the program as well as every minute while running. This

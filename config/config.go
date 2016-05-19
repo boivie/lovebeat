@@ -10,6 +10,7 @@ import (
 )
 
 type Config struct {
+	General  ConfigGeneral
 	Mail     ConfigMail
 	Slack    ConfigSlack
 	Udp      ConfigBind
@@ -21,6 +22,10 @@ type Config struct {
 	Views    []ConfigView
 	Eventlog ConfigEventlog
 	Notify   []ConfigNotify
+}
+
+type ConfigGeneral struct {
+	PublicUrl string `toml:"public_url"`
 }
 
 type ConfigMail struct {
@@ -97,6 +102,9 @@ func readFile(conf *Config, fname string) {
 
 func ReadConfig(fname string, dirname string) Config {
 	var conf = Config{
+		General: ConfigGeneral{
+			PublicUrl: "http://lovebeat.example.com/",
+		},
 		Mail: ConfigMail{
 			From:   "lovebeat@example.com",
 			Server: "localhost:25",
