@@ -36,8 +36,8 @@ var (
 )
 
 var log = logging.MustGetLogger("lovebeat")
-var VERSION = "unknown"
-var BUILD_TIMESTAMP = "unknown"
+var VERSION string
+var BUILD_TIMESTAMP string
 var signalchan = make(chan os.Signal, 1)
 var sigQuitChan = make(chan os.Signal, 1)
 
@@ -90,20 +90,22 @@ func main() {
 	}
 	log.Debug("Debug logs enabled")
 
-	if *showVersion {
-		fmt.Printf("lovebeat v%s (built w/%s at %s)\n", VERSION, runtime.Version(), BUILD_TIMESTAMP)
-		return
-	}
-
 	if *validate {
 		fmt.Fprintf(os.Stderr, "Validating auto-algorithm from stdin\n")
 		algorithms.Validate()
 		return
 	}
 
+	versionStr := fmt.Sprintf("lovebeat v%s (built w/%s at %s)", VERSION, runtime.Version(), BUILD_TIMESTAMP)
+	if *showVersion {
+		fmt.Println(versionStr)
+		return
+	}
+
 	wd, _ := os.Getwd()
 	myName := getHostname()
-	log.Infof("Lovebeat v%s started on %s, PID %d, running from %s", VERSION, myName, os.Getpid(), wd)
+	log.Info(versionStr)
+	log.Infof("Started on %s, PID %d, running from %s", myName, os.Getpid(), wd)
 
 	cfg := config.ReadConfig(*cfgFile, *cfgDir)
 	bus := eventbus.New()
