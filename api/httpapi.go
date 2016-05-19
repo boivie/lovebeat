@@ -13,6 +13,8 @@ import (
 	"strconv"
 )
 
+var version string
+
 func parseTimeout(tmo string) int64 {
 	if tmo == "auto" {
 		return model.TIMEOUT_AUTO
@@ -247,7 +249,29 @@ func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func AddEndpoints(rtr *mux.Router) {
+func VersionHandler(c http.ResponseWriter, req *http.Request) {
+	log.Debugf("%s %s", req.Method, req.RequestURI)
+	if req.Header.Get("Accept") == "application/json" {
+		ret := struct {
+			Version string `json:"version"`
+		}{
+			version,
+		}
+		var encoded, _ = json.MarshalIndent(ret, "", "  ")
+
+		c.Header().Add("Content-Type", "application/json")
+		c.Header().Add("Content-Length", strconv.Itoa(len(encoded)+1))
+		c.Write(encoded)
+		io.WriteString(c, "\n")
+	} else {
+		c.Header().Add("Content-Type", "text/plain")
+		c.Header().Add("Content-Length", strconv.Itoa(len(version)+1))
+		io.WriteString(c, version+"\n")
+	}
+}
+
+func AddEndpoints(rtr *mux.Router, version_ string) {
+	version = version_
 	rtr.HandleFunc("/api/services", GetServicesHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/", GetServicesHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", ServiceHandler).Methods("POST")
@@ -261,4 +285,5 @@ func AddEndpoints(rtr *mux.Router) {
 	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", DeleteViewHandler).Methods("DELETE")
 	rtr.HandleFunc("/api/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
+	rtr.HandleFunc("/version", VersionHandler).Methods("GET")
 }

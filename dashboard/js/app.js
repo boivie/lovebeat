@@ -6,5 +6,7 @@ import Router from './router';
 
 require('../css/app.scss');
 
+console.log("Welcome to lovebeat, version %LOVEBEAT_VERSION%")
+
 // Now we can attach the router to the 'root' element like this:
 ReactDOM.render(Router, document.getElementById('root'));

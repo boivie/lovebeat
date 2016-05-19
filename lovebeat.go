@@ -57,9 +57,9 @@ func signalHandler(be backend.Backend) {
 
 func httpServer(cfg *config.ConfigBind, bus *eventbus.EventBus) {
 	rtr := mux.NewRouter()
-	api.AddEndpoints(rtr)
+	api.AddEndpoints(rtr, version)
 	websocket.Register(rtr, bus)
-	dashboard.Register(rtr)
+	dashboard.Register(rtr, version)
 	http.Handle("/", rtr)
 	log.Infof("HTTP listening on %s\n", cfg.Listen)
 	http.ListenAndServe(cfg.Listen, nil)
