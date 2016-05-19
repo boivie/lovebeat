@@ -20,7 +20,7 @@ script:
 - make && go test ./... && ./runcover.sh ./...
 - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && goveralls -coverprofile=profile.cov -service travis-ci -repotoken $COVERALLS_TOKEN'
 after_success:
-- gox -ldflags="-s -w -X main.version=${TRAVIS_TAG:-TRAVIS_COMMIT}" -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
+- gox -ldflags="-s -w -X main.version=${TRAVIS_TAG:-$TRAVIS_COMMIT}" -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
 - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && ghr --username boivie --token $GITHUB_TOKEN --replace --prerelease --debug pre-release dist/'
 notifications:
   email:
