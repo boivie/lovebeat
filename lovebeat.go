@@ -36,8 +36,7 @@ var (
 )
 
 var log = logging.MustGetLogger("lovebeat")
-var VERSION string
-var BUILD_TIMESTAMP string
+var version string
 var signalchan = make(chan os.Signal, 1)
 var sigQuitChan = make(chan os.Signal, 1)
 
@@ -96,7 +95,7 @@ func main() {
 		return
 	}
 
-	versionStr := fmt.Sprintf("lovebeat v%s (built w/%s at %s)", VERSION, runtime.Version(), BUILD_TIMESTAMP)
+	versionStr := fmt.Sprintf("lovebeat v%s (built w/%s)", version, runtime.Version())
 	if *showVersion {
 		fmt.Println(versionStr)
 		return

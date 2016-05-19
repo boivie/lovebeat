@@ -9,7 +9,7 @@ dependencies: dashboard-assets
 
 GO_FILES := $(shell find . -name "*.go" -print)
 lovebeat: $(GO_FILES) dependencies dashboard-assets
-	go build -ldflags "-X main.BUILD_TIMESTAMP=`date -u +'%Y-%m-%dT%H:%M:%SZ'` -X main.VERSION=`git describe --tags --always`"
+	go build -ldflags "-s -w -X main.version=`git describe --tags --dirty --always`-local"
 
 
 .PHONY: clean
