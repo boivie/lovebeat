@@ -1,7 +1,9 @@
 import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux'
+import { fetchViews } from '../actions'
 import {Link} from 'react-router';
 import ViewList from '../containers/view-list'
+import ReconnectingWebSocket from 'reconnectingwebsocket'
 
 
 class MainLayout extends Component {
@@ -16,10 +18,15 @@ class MainLayout extends Component {
         ws_uri = "ws:";
       }
       ws_uri += "//" + loc.host + path + "ws";
-      var ws = new WebSocket(ws_uri);
+      var ws = new ReconnectingWebSocket(ws_uri);
 
       ws.onopen = function() {
-        console.log("websocket open")
+        console.log("websocket OPEN")
+        dispatch(fetchViews())
+      }
+
+      ws.onclose = function() {
+        console.log("websocket CLOSED")
       }
 
       ws.onmessage = function (evt) {
