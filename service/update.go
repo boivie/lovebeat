@@ -22,7 +22,8 @@ func addViewsToService(state *servicesState, svc *Service, prevUpdates []stateUp
 					}
 				}
 				state.views[name] = view
-				updates = append(updates, stateUpdate{oldView: nil, newView: view})
+				viewCopy := *view
+				updates = append(updates, stateUpdate{oldView: nil, newView: &viewCopy})
 			}
 			view.servicesInView = append(view.servicesInView, svc)
 			svc.inViews = append(svc.inViews, view)
@@ -135,7 +136,7 @@ func updateViews(state *servicesState, ts int64, prevUpdates []stateUpdate) (upd
 					ref := *view
 					view.data.State = newState
 					view.data.LastStateChange = ts
-					if ref.data.State == model.StateOk {
+					if ref.data.State == model.StateOk || ref.data.State == model.StateNew {
 						view.data.IncidentNbr += 1
 					}
 					updates = append(updates, stateUpdate{oldView: &ref, newView: view})

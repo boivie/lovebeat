@@ -230,3 +230,29 @@ func TestDeleteView(t *testing.T) {
 		t.Errorf("Expected view removed from state")
 	}
 }
+
+func TestInitialInError(t *testing.T) {
+	state := newState()
+	state.viewStates = make([]*model.View, 0)
+	state.viewTemplates = []ViewTemplate{ViewTemplate{
+		config:   config.ConfigView{Name: "testview"},
+		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
+	}}
+
+	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 0}, Beat: &model.Beat{}})
+	updates1 = updateViews(state, 0, updates1)
+
+	if state.views["testview"].data.State != model.StateError {
+		t.Errorf("Expected view in error (was: %v)", state.views["testview"].data.State)
+	}
+	if state.views["testview"].data.IncidentNbr != 1 {
+		t.Errorf("Expected incident #1 (was: %v)", state.views["testview"].data.IncidentNbr)
+	}
+
+	if updates1[0].oldView != nil || updates1[0].newView.data.Name != "testview" || updates1[0].newView.data.State != model.StateNew {
+		t.Errorf("Expected new view as New")
+	}
+	if updates1[2].oldView.data.Name != "testview" || updates1[2].oldView.data.State != model.StateNew || updates1[2].newView.data.State != model.StateError {
+		t.Errorf("Expected updated view in error")
+	}
+}
