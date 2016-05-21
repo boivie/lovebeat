@@ -30,7 +30,11 @@ func tsnow() int64 {
 	return int64(time.Now().UnixNano() / 1e6)
 }
 
-func (c *ServicesImpl) Update(update *Update) {
+func (c *ServicesImpl) Subscribe(cb ServiceCallback) {
+	c.subscribeChan <- cb
+}
+
+func (c *ServicesImpl) Update(update *model.Update) {
 	c.updateChan <- update
 }
 

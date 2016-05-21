@@ -9,7 +9,6 @@ import (
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/dashboard"
-	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/eventlog"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/notify"
@@ -55,12 +54,7 @@ func signalHandler(be backend.Backend) {
 	}
 }
 
-func httpServer(cfg *config.ConfigBind, bus *eventbus.EventBus) {
-	rtr := mux.NewRouter()
-	api.AddEndpoints(rtr, version)
-	websocket.Register(rtr, bus)
-	dashboard.Register(rtr, version)
-	http.Handle("/", rtr)
+func httpServer(cfg *config.ConfigBind) {
 	log.Infof("HTTP listening on %s\n", cfg.Listen)
 	http.ListenAndServe(cfg.Listen, nil)
 }
@@ -107,18 +101,18 @@ func main() {
 	log.Infof("Started on %s, PID %d, running from %s", myName, os.Getpid(), wd)
 
 	cfg := config.ReadConfig(*cfgFile, *cfgDir)
-	bus := eventbus.New()
-
-	eventlog.Init(cfg, bus)
 
 	notifier := notify.Init(myName, cfg.Notify)
-	alerter := alert.Init(cfg, notifier)
 
 	m := metrics.New(&cfg.Metrics)
-	service.RegisterMetrics(bus, m)
 
 	be := backend.NewFileBackend(&cfg.Database, m, notifier)
-	svcs := service.NewServices(be, bus, alerter, cfg, notifier)
+	svcs := service.NewServices(be, cfg, notifier)
+	svcs.Subscribe(service.NewMetricsReporter(m))
+	svcs.Subscribe(service.NewDebugLogger())
+	svcs.Subscribe(alert.New(cfg, notifier))
+	svcs.Subscribe(eventlog.New(cfg))
+	svcs.Subscribe(websocket.New())
 
 	signal.Notify(signalchan, syscall.SIGTERM)
 	signal.Notify(signalchan, os.Interrupt)
@@ -126,7 +120,13 @@ func main() {
 
 	api.Init(svcs)
 
-	go httpServer(&cfg.Http, bus)
+	rtr := mux.NewRouter()
+	api.AddEndpoints(rtr, version)
+	websocket.Register(rtr)
+	dashboard.Register(rtr, version)
+	http.Handle("/", rtr)
+
+	go httpServer(&cfg.Http)
 	go api.UdpListener(&cfg.Udp)
 	go api.TcpListener(&cfg.Tcp)
 

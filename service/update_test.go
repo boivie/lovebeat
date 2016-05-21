@@ -9,7 +9,7 @@ import (
 
 func TestNewService(t *testing.T) {
 	state := newState()
-	updates := updateServices(state, &Update{Ts: 1, Service: "test", Beat: &Beat{}})
+	updates := updateServices(state, &model.Update{Ts: 1, Service: "test", Beat: &model.Beat{}})
 
 	if state.services["test"].lastBeat != 1 {
 		t.Errorf("Missing beat")
@@ -22,14 +22,14 @@ func TestNewService(t *testing.T) {
 
 func TestExpireService(t *testing.T) {
 	state := newState()
-	updateServices(state, &Update{Ts: 0, Service: "test", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
-	updates := updateServices(state, &Update{Ts: 1000, Tick: &Tick{}})
+	updateServices(state, &model.Update{Ts: 0, Service: "test", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
+	updates := updateServices(state, &model.Update{Ts: 1000, Tick: &model.Tick{}})
 
 	if updates[0].oldService.name() != "test" || updates[0].oldService.data.State != model.StateOk || updates[0].newService.data.State != model.StateError {
 		t.Errorf("Expected service in error")
 	}
 
-	updates2 := updateServices(state, &Update{Ts: 2000, Tick: &Tick{}})
+	updates2 := updateServices(state, &model.Update{Ts: 2000, Tick: &model.Tick{}})
 
 	if len(updates2) != 0 {
 		t.Errorf("Expected no more errors")
@@ -38,34 +38,34 @@ func TestExpireService(t *testing.T) {
 
 func TestMuteExpired(t *testing.T) {
 	state := newState()
-	updateServices(state, &Update{Ts: 0, Service: "test", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
-	updates1 := updateServices(state, &Update{Ts: 500, Service: "test", MuteService: &MuteService{Muted: true}})
+	updateServices(state, &model.Update{Ts: 0, Service: "test", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
+	updates1 := updateServices(state, &model.Update{Ts: 500, Service: "test", MuteService: &model.MuteService{Muted: true}})
 
 	if updates1[0].oldService.name() != "test" || updates1[0].oldService.data.State != model.StateOk || updates1[0].newService.data.State != model.StateMuted {
 		t.Errorf("Expected service muted")
 	}
 
 	// Idempotent muting
-	updates2 := updateServices(state, &Update{Ts: 500, Service: "test", MuteService: &MuteService{Muted: true}})
+	updates2 := updateServices(state, &model.Update{Ts: 500, Service: "test", MuteService: &model.MuteService{Muted: true}})
 
 	if len(updates2) != 0 {
 		t.Errorf("Expected no updates")
 	}
 
-	updates3 := updateServices(state, &Update{Ts: 1000, Tick: &Tick{}})
+	updates3 := updateServices(state, &model.Update{Ts: 1000, Tick: &model.Tick{}})
 
 	if len(updates3) != 0 {
 		t.Errorf("Expected no errors")
 	}
 
 	// un-mute
-	updates4 := updateServices(state, &Update{Ts: 1500, Service: "test", MuteService: &MuteService{Muted: false}})
+	updates4 := updateServices(state, &model.Update{Ts: 1500, Service: "test", MuteService: &model.MuteService{Muted: false}})
 	if updates4[0].oldService.name() != "test" || updates4[0].oldService.data.State != model.StateMuted || updates4[0].newService.data.State != model.StateError {
 		t.Errorf("Expected service in error")
 	}
 
 	// Idempotent un-muting
-	updates5 := updateServices(state, &Update{Ts: 500, Service: "test", MuteService: &MuteService{Muted: false}})
+	updates5 := updateServices(state, &model.Update{Ts: 500, Service: "test", MuteService: &model.MuteService{Muted: false}})
 	if len(updates5) != 0 {
 		t.Errorf("Expected no updates")
 	}
@@ -73,14 +73,14 @@ func TestMuteExpired(t *testing.T) {
 
 func TestDeleteService(t *testing.T) {
 	state := newState()
-	updateServices(state, &Update{Ts: 0, Service: "test", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
+	updateServices(state, &model.Update{Ts: 0, Service: "test", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
 
 	s, exists := state.services["test"]
 	if s == nil || !exists {
 		t.Errorf("Expected service to be present in state")
 	}
 
-	updates1 := updateServices(state, &Update{Ts: 1000, Service: "test", DeleteService: &DeleteService{}})
+	updates1 := updateServices(state, &model.Update{Ts: 1000, Service: "test", DeleteService: &model.DeleteService{}})
 
 	if updates1[0].oldService.name() != "test" || updates1[0].oldService.data.State != model.StateOk || updates1[0].newService != nil {
 		t.Errorf("Expected service to be deleted")
@@ -92,7 +92,7 @@ func TestDeleteService(t *testing.T) {
 	}
 
 	// Idempotent deletions
-	updates2 := updateServices(state, &Update{Ts: 1000, Service: "test", DeleteService: &DeleteService{}})
+	updates2 := updateServices(state, &model.Update{Ts: 1000, Service: "test", DeleteService: &model.DeleteService{}})
 
 	if len(updates2) != 0 {
 		t.Errorf("Expected no updates")
@@ -107,7 +107,7 @@ func TestSimpleFromTemplate(t *testing.T) {
 		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
-	updates1 := updateServices(state, &Update{Ts: 0, Service: "test.service", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
+	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
 	updates1 = updateViews(state, 0, updates1)
 
 	if state.views["testview"].data.State != model.StateOk {
@@ -118,7 +118,7 @@ func TestSimpleFromTemplate(t *testing.T) {
 		t.Errorf("Expected view update")
 	}
 
-	updates2 := updateServices(state, &Update{Ts: 1000, Tick: &Tick{}})
+	updates2 := updateServices(state, &model.Update{Ts: 1000, Tick: &model.Tick{}})
 	updates2 = updateViews(state, 0, updates2)
 
 	if updates2[0].oldService.name() != "test.service" {
@@ -147,7 +147,7 @@ func TestDeleteServiceInView(t *testing.T) {
 		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
-	updates1 := updateServices(state, &Update{Ts: 0, Service: "test.service", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
+	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
 	updates1 = updateViews(state, 0, updates1)
 
 	if state.views["testview"].data.State != model.StateOk {
@@ -162,7 +162,7 @@ func TestDeleteServiceInView(t *testing.T) {
 		t.Errorf("Expected service in view")
 	}
 
-	updates2 := updateServices(state, &Update{Ts: 1000, Tick: &Tick{}})
+	updates2 := updateServices(state, &model.Update{Ts: 1000, Tick: &model.Tick{}})
 	updates2 = updateViews(state, 0, updates2)
 
 	if updates2[0].oldService.name() != "test.service" {
@@ -177,7 +177,7 @@ func TestDeleteServiceInView(t *testing.T) {
 		t.Errorf("Expected view in error")
 	}
 
-	updates3 := updateServices(state, &Update{Ts: 0, Service: "test.service", DeleteService: &DeleteService{}})
+	updates3 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", DeleteService: &model.DeleteService{}})
 	updates3 = updateViews(state, 0, updates3)
 
 	if updates3[0].oldService.name() != "test.service" || updates3[0].newService != nil {
@@ -205,10 +205,10 @@ func TestDeleteView(t *testing.T) {
 		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
-	updates1 := updateServices(state, &Update{Ts: 0, Service: "test.service", SetTimeout: &SetTimeout{Timeout: 1000}, Beat: &Beat{}})
+	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
 	updates1 = updateViews(state, 0, updates1)
 
-	u := &Update{Ts: 1, View: "testview", DeleteView: &DeleteView{}}
+	u := &model.Update{Ts: 1, View: "testview", DeleteView: &model.DeleteView{}}
 	updates2 := updateServices(state, u)
 	updates2 = removeViews(state, u, updates2)
 	updates2 = updateViews(state, 0, updates2)
@@ -217,10 +217,10 @@ func TestDeleteView(t *testing.T) {
 		t.Errorf("Expected view still in state")
 	}
 
-	updates3 := updateServices(state, &Update{Ts: 0, Service: "test.service", DeleteService: &DeleteService{}})
+	updates3 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", DeleteService: &model.DeleteService{}})
 	updateViews(state, 0, updates3)
 
-	u2 := &Update{Ts: 1, View: "testview", DeleteView: &DeleteView{}}
+	u2 := &model.Update{Ts: 1, View: "testview", DeleteView: &model.DeleteView{}}
 	updates4 := updateServices(state, u2)
 	updates4 = removeViews(state, u2, updates4)
 	updates4 = updateViews(state, 0, updates4)

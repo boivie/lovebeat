@@ -45,7 +45,7 @@ func removeViewsFromService(state *servicesState, svc *Service, prevUpdates []st
 	return
 }
 
-func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
+func updateServices(state *servicesState, cmd *model.Update) (updates []stateUpdate) {
 	if cmd.Tick != nil {
 		for _, service := range state.services {
 			if service.data.State != service.stateAt(cmd.Ts) {
@@ -109,7 +109,7 @@ func updateServices(state *servicesState, cmd *Update) (updates []stateUpdate) {
 	return
 }
 
-func removeViews(state *servicesState, c *Update, prevUpdates []stateUpdate) (updates []stateUpdate) {
+func removeViews(state *servicesState, c *model.Update, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
 	if c.DeleteView != nil {
 		view, exist := state.views[c.View]

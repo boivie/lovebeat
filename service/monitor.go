@@ -2,17 +2,16 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/boivie/lovebeat/alert"
 	"github.com/boivie/lovebeat/backend"
 	"github.com/boivie/lovebeat/config"
-	"github.com/boivie/lovebeat/eventbus"
 	"github.com/boivie/lovebeat/model"
 	"github.com/boivie/lovebeat/notify"
 	"github.com/op/go-logging"
 	"time"
 )
 
-func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, be backend.Backend, bus *eventbus.EventBus, alerter alert.Alerter) {
+func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, be backend.Backend) {
+	var observers []ServiceCallback
 	servicesState := newState()
 	loadState(servicesState, be, cfg)
 
@@ -22,6 +21,8 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 		select {
 		case <-notifyTimer.C:
 			notifier.Notify("monitor")
+		case c := <-svcs.subscribeChan:
+			observers = append(observers, c)
 		case c := <-svcs.getServicesChan:
 			ret := make([]model.Service, 0)
 			if view, ok := servicesState.views[c.View]; ok {
@@ -59,10 +60,8 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 			updates := updateServices(servicesState, c)
 			updates = removeViews(servicesState, c, updates)
 			updates = updateViews(servicesState, c.Ts, updates)
-			printUpdates(updates)
 			persist(be, updates)
-			sendBusEvents(bus, updates)
-			triggerAlerters(alerter, updates)
+			sendCallbacks(observers, c, updates)
 		}
 	}
 }

@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"github.com/boivie/lovebeat/eventbus"
+	"github.com/boivie/lovebeat/service"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
@@ -50,7 +50,10 @@ func (c *connection) readPump() {
 	}()
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
-	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.ws.SetPongHandler(func(string) error {
+		c.ws.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
 	for {
 		_, _, err := c.ws.ReadMessage()
 		if err != nil {
@@ -102,14 +105,12 @@ func upgradeHandler(w http.ResponseWriter, r *http.Request) {
 	c.readPump()
 }
 
-func Register(rtr *mux.Router, bus *eventbus.EventBus) {
+func Register(rtr *mux.Router) {
 	rtr.HandleFunc("/ws", upgradeHandler).Methods("GET")
-	bus.RegisterHandler(serviceAdded)
-	bus.RegisterHandler(serviceStateChanged)
-	bus.RegisterHandler(serviceRemoved)
-	bus.RegisterHandler(viewAdded)
-	bus.RegisterHandler(viewStateChanged)
-	bus.RegisterHandler(viewRemoved)
 
 	go h.run()
+}
+
+func New() service.ServiceCallback {
+	return &wsObj{}
 }

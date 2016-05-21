@@ -53,21 +53,21 @@ func Execute(commands []LineCommand, iface service.Services) {
 	for _, cmd := range commands {
 		switch cmd.Action {
 		case "timeout":
-			client.Update(&service.Update{
+			client.Update(&model.Update{
 				Ts:         now(),
 				Service:    cmd.Name,
-				SetTimeout: &service.SetTimeout{Timeout: cmd.Value}})
+				SetTimeout: &model.SetTimeout{Timeout: cmd.Value}})
 		case "beat":
-			client.Update(&service.Update{
+			client.Update(&model.Update{
 				Ts:      now(),
 				Service: cmd.Name,
-				Beat:    &service.Beat{}})
+				Beat:    &model.Beat{}})
 		case "autobeat":
-			client.Update(&service.Update{
+			client.Update(&model.Update{
 				Ts:         now(),
 				Service:    cmd.Name,
-				SetTimeout: &service.SetTimeout{Timeout: model.TIMEOUT_AUTO},
-				Beat:       &service.Beat{}})
+				SetTimeout: &model.SetTimeout{Timeout: model.TIMEOUT_AUTO},
+				Beat:       &model.Beat{}})
 		}
 	}
 }

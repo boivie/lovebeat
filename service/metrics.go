@@ -1,13 +1,12 @@
 package service
 
 import (
-	"github.com/boivie/lovebeat/eventbus"
+	"github.com/boivie/lovebeat/config"
 	"github.com/boivie/lovebeat/metrics"
 	"github.com/boivie/lovebeat/model"
 )
 
 var (
-	counters metrics.Metrics
 	StateMap = map[string]int{
 		model.StateNew:   0,
 		model.StateOk:    1,
@@ -16,18 +15,24 @@ var (
 	}
 )
 
-func ServiceStateChanged(ev model.ServiceStateChangedEvent) {
-	service := ev.Service
-	counters.SetGauge("service.state."+service.Name, int(StateMap[service.State]))
+type metricsReporter struct {
+	metrics metrics.Metrics
 }
 
-func ViewStateChanged(ev model.ViewStateChangedEvent) {
-	view := ev.View
-	counters.SetGauge("view.state."+view.Name, int(StateMap[view.State]))
-}
+func (s *metricsReporter) OnUpdate(ts int64, update model.Update) {}
 
-func RegisterMetrics(bus *eventbus.EventBus, m metrics.Metrics) {
-	counters = m
-	bus.RegisterHandler(ServiceStateChanged)
-	bus.RegisterHandler(ViewStateChanged)
+func (s *metricsReporter) OnServiceAdded(ts int64, service model.Service) {}
+func (s *metricsReporter) OnServiceUpdated(ts int64, oldService, newService model.Service) {
+	s.metrics.SetGauge("service.state."+newService.Name, int(StateMap[newService.State]))
+}
+func (s *metricsReporter) OnServiceRemoved(ts int64, service model.Service) {}
+
+func (s *metricsReporter) OnViewAdded(ts int64, view model.View, config config.ConfigView) {}
+func (s *metricsReporter) OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView) {
+	s.metrics.SetGauge("view.state."+newView.Name, int(StateMap[newView.State]))
+}
+func (s *metricsReporter) OnViewRemoved(ts int64, view model.View, config config.ConfigView) {}
+
+func NewMetricsReporter(m metrics.Metrics) ServiceCallback {
+	return &metricsReporter{m}
 }

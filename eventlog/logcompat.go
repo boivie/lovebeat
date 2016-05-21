@@ -4,21 +4,12 @@ package eventlog
 
 import (
 	"github.com/boivie/lovebeat/config"
-	"github.com/boivie/lovebeat/eventbus"
+	"io"
 	"os"
 )
 
-func Init(cfg config.Config, bus *eventbus.EventBus) {
-	if len(cfg.Eventlog.Path) == 0 {
-		return
-	}
+func makeWriter(cfg config.Config) (io.Writer, error) {
 	log.Warning("Using compatibility mode for event logging")
-	eventwriter, err := os.OpenFile(cfg.Eventlog.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, cfg.Eventlog.Mode)
-	if err != nil {
-		log.Errorf("Error opening event log for writing: %s", err)
-	} else {
-		log.Infof("Logging events to %s", cfg.Eventlog.Path)
-		evtlog := New(eventwriter)
-		evtlog.Register(bus)
-	}
+	w, e := os.OpenFile(cfg.Eventlog.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, cfg.Eventlog.Mode)
+	return w, e
 }

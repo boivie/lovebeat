@@ -90,6 +90,7 @@ func (v *View) calculateState() string {
 
 func (v *View) getExternalModel() model.View {
 	r := v.data
+	r.FailedServices = make([]string, 0)
 	for _, s := range v.servicesInView {
 		if s.data.State == model.StateError {
 			r.FailedServices = append(r.FailedServices, s.data.Name)

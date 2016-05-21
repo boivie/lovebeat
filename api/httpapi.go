@@ -37,11 +37,11 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
-	update := &service.Update{Ts: now(), Service: name}
+	update := &model.Update{Ts: now(), Service: name}
 
 	// Timeout as query parameter
 	if val, ok := r.URL.Query()["timeout"]; ok {
-		update.SetTimeout = &service.SetTimeout{Timeout: parseTimeout(val[0])}
+		update.SetTimeout = &model.SetTimeout{Timeout: parseTimeout(val[0])}
 	}
 
 	if r.Header.Get("Content-Type") == "application/json" {
@@ -53,13 +53,13 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		err := decoder.Decode(&t)
 		if err == nil && t.Timeout != nil {
 			if *t.Timeout > 0 {
-				update.SetTimeout = &service.SetTimeout{Timeout: *t.Timeout * 1000}
+				update.SetTimeout = &model.SetTimeout{Timeout: *t.Timeout * 1000}
 			} else {
-				update.SetTimeout = &service.SetTimeout{Timeout: *t.Timeout}
+				update.SetTimeout = &model.SetTimeout{Timeout: *t.Timeout}
 			}
 		}
 		if err == nil && (t.Beat == nil || *t.Beat == true) {
-			update.Beat = &service.Beat{}
+			update.Beat = &model.Beat{}
 		}
 	} else {
 		var err = r.ParseForm()
@@ -69,10 +69,10 @@ func ServiceHandler(c http.ResponseWriter, r *http.Request) {
 		}
 
 		if r.FormValue("timeout") != "" {
-			update.SetTimeout = &service.SetTimeout{Timeout: parseTimeout(r.FormValue("timeout"))}
+			update.SetTimeout = &model.SetTimeout{Timeout: parseTimeout(r.FormValue("timeout"))}
 		}
 
-		update.Beat = &service.Beat{}
+		update.Beat = &model.Beat{}
 	}
 
 	client.Update(update)
@@ -87,7 +87,7 @@ func MuteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
-	client.Update(&service.Update{Ts: now(), Service: name, MuteService: &service.MuteService{Muted: true}})
+	client.Update(&model.Update{Ts: now(), Service: name, MuteService: &model.MuteService{Muted: true}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -99,7 +99,7 @@ func UnmuteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
-	client.Update(&service.Update{Ts: now(), Service: name, MuteService: &service.MuteService{Muted: false}})
+	client.Update(&model.Update{Ts: now(), Service: name, MuteService: &model.MuteService{Muted: false}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -111,7 +111,7 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	name := params["name"]
 
-	client.Update(&service.Update{Ts: now(), Service: name, DeleteService: &service.DeleteService{}})
+	client.Update(&model.Update{Ts: now(), Service: name, DeleteService: &model.DeleteService{}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
@@ -146,7 +146,7 @@ func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
 	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 
-	client.Update(&service.Update{Ts: now(), View: params["name"], DeleteView: &service.DeleteView{}})
+	client.Update(&model.Update{Ts: now(), View: params["name"], DeleteView: &model.DeleteView{}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
