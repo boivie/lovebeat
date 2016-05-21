@@ -21,14 +21,8 @@ func (s *alerter) OnServiceAdded(ts int64, service model.Service)               
 func (s *alerter) OnServiceUpdated(ts int64, oldService, newService model.Service) {}
 func (s *alerter) OnServiceRemoved(ts int64, service model.Service)                {}
 
-func (s *alerter) OnViewAdded(ts int64, view model.View, config config.ConfigView) {
-	s.q <- AlertInfo{
-		View:       view,
-		Previous:   model.StateNew,
-		Current:    view.State,
-		ViewConfig: config,
-	}
-}
+func (s *alerter) OnViewAdded(ts int64, view model.View, config config.ConfigView) {}
+
 func (s *alerter) OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView) {
 	if oldView.State != newView.State {
 		s.q <- AlertInfo{
@@ -39,6 +33,7 @@ func (s *alerter) OnViewUpdated(ts int64, oldView, newView model.View, config co
 		}
 	}
 }
+
 func (s *alerter) OnViewRemoved(ts int64, view model.View, config config.ConfigView) {
 	// TODO: Send alerts?
 }
