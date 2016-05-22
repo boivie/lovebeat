@@ -44,8 +44,17 @@ configuration. The JSON data that is sent follows:
       "incident_number": 4
     }
 
-The incident number is a monotonically incrementing counter that increases every
-time a view transitions between **OK** and **ERROR**.
+Example of the configuration file:
+
+.. code-block:: ini
+
+    [[views]]
+    name = "example"
+    pattern = "test.*"
+    alerts = ["to-requestbin"]
+
+    [alerts.to-requestbin]
+    webhook = "http://requestb.in/19lw85o1"
 
 Slack
 -----
