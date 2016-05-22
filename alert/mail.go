@@ -19,9 +19,9 @@ type mailAlerter struct {
 }
 
 const (
-	TMPL_BODY = `The status for view '{{.View.Name}}' has changed from '{{.Previous | ToUpper}}' to '{{.Current | ToUpper}}'
+	TMPL_BODY = `The status for alarm '{{.Alarm.Name}}' has changed from '{{.Previous | ToUpper}}' to '{{.Current | ToUpper}}'
 `
-	TMPL_SUBJECT = `[LOVEBEAT] {{.View.Name}}-{{.View.IncidentNbr}}`
+	TMPL_SUBJECT = `[LOVEBEAT] {{.Alarm.Name}}-{{.Alarm.IncidentNbr}}`
 	TMPL_EMAIL   = `From: {{.From}}
 To: {{.To}}
 Subject: {{.Subject}}
@@ -52,7 +52,7 @@ func renderTemplate(tmpl string, context map[string]interface{}) string {
 
 func createMail(address string, ev AlertInfo) mail {
 	var context = make(map[string]interface{})
-	context["View"] = ev.View
+	context["Alarm"] = ev.Alarm
 	context["Previous"] = ev.Previous
 	context["Current"] = ev.Current
 

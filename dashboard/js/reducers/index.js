@@ -1,8 +1,8 @@
 import { combineReducers } from 'redux'
 import {
-  REQUEST_SERVICES, RECEIVE_SERVICES, REQUEST_VIEWS, RECEIVE_VIEWS,
-  ADD_SERVICE, UPDATE_SERVICE, REMOVE_SERVICE, ADD_VIEW, UPDATE_VIEW,
-  TOGGLE_SERVICE_CHECKED, REMOVE_VIEW
+  REQUEST_ALARM, RECEIVE_ALARM, REQUEST_ALARMS, RECEIVE_ALARMS,
+  ADD_SERVICE, UPDATE_SERVICE, REMOVE_SERVICE, ADD_ALARM, UPDATE_ALARM,
+  TOGGLE_SERVICE_CHECKED, REMOVE_ALARM
 } from '../actions'
 
 function services(state = {
@@ -12,12 +12,12 @@ function services(state = {
   checked: {}
 }, action) {
   switch (action.type) {
-    case REQUEST_SERVICES:
+    case REQUEST_ALARM:
       return Object.assign({}, state, {
         isFetching: true,
         didInvalidate: false
       })
-    case RECEIVE_SERVICES:
+    case RECEIVE_ALARM:
       return Object.assign({}, state, {
         isFetching: false,
         didInvalidate: false,
@@ -49,21 +49,22 @@ function services(state = {
   }
 }
 
-function servicesByView(state = { }, action) {
+function servicesByAlarm(state = { }, action) {
   switch (action.type) {
-    case RECEIVE_SERVICES:
-    case REQUEST_SERVICES:
+    case RECEIVE_ALARM:
+    case REQUEST_ALARM:
     case TOGGLE_SERVICE_CHECKED:
       return Object.assign({}, state, {
-        [action.view]: services(state[action.view], action)
+        [action.alarmId]: services(state[action.alarmId], action)
       })
     case ADD_SERVICE:
     case UPDATE_SERVICE:
     case REMOVE_SERVICE:
       var upd = {}
-      for (var i = 0; i < action.service.in_views.length; i++) {
-        const view = action.service.in_views[i]
-        upd[view] = services(state[view], action)
+      const in_alarms = action.service.in_alarms || []
+      for (var i = 0; i < in_alarms.length; i++) {
+        const alarmId = in_alarms[i]
+        upd[alarmId] = services(state[alarmId], action)
       }
       return Object.assign({}, state, upd)
     default:
@@ -71,31 +72,31 @@ function servicesByView(state = { }, action) {
   }
 }
 
-function listOfViews(state = { isFetching: false, didInvalidate: false, items: []}, action) {
+function listOfAlarms(state = { isFetching: false, didInvalidate: false, items: []}, action) {
   switch (action.type) {
-    case REQUEST_VIEWS:
+    case REQUEST_ALARMS:
       return Object.assign({}, state, {
         isFetching: true,
         didInvalidate: false
       })
-    case RECEIVE_VIEWS:
+    case RECEIVE_ALARMS:
       return Object.assign({}, state, {
         isFetching: false,
         didInvalidate: false,
-        items: action.views,
+        items: action.alarms,
         lastUpdated: action.receivedAt
       })
-    case ADD_VIEW:
+    case ADD_ALARM:
       return Object.assign({}, state, {
-        items: [action.view, ...state.items]
+        items: [action.alarm, ...state.items]
       })
-    case UPDATE_VIEW:
+    case UPDATE_ALARM:
       return Object.assign({}, state, {
-        items: state.items.map(v => v.name == action.view.name ? action.view : v)
+        items: state.items.map(v => v.name == action.alarm.name ? action.alarm : v)
       })
-    case REMOVE_VIEW:
+    case REMOVE_ALARM:
       return Object.assign({}, state, {
-        items: state.items.filter(v => v.name != action.view.name)
+        items: state.items.filter(v => v.name != action.alarm.name)
       })
     default:
       return state
@@ -103,8 +104,8 @@ function listOfViews(state = { isFetching: false, didInvalidate: false, items: [
 }
 
 const rootReducer = combineReducers({
-  servicesByView,
-  listOfViews
+  servicesByAlarm,
+  listOfAlarms
 })
 
 export default rootReducer

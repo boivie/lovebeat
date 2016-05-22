@@ -1,13 +1,13 @@
-export const REQUEST_SERVICES = 'REQUEST_SERVICES'
-export const RECEIVE_SERVICES = 'RECEIVE_SERVICES'
-export const REQUEST_VIEWS = 'REQUEST_VIEWS'
-export const RECEIVE_VIEWS = 'RECEIVE_VIEWS'
+export const REQUEST_ALARM = 'REQUEST_ALARM'
+export const RECEIVE_ALARM = 'RECEIVE_ALARM'
+export const REQUEST_ALARMS = 'REQUEST_ALARMS'
+export const RECEIVE_ALARMS = 'RECEIVE_ALARMS'
 export const ADD_SERVICE = 'ADD_SERVICE'
 export const UPDATE_SERVICE = 'UPDATE_SERVICE'
 export const REMOVE_SERVICE = 'REMOVE_SERVICE'
-export const ADD_VIEW = 'ADD_VIEW'
-export const UPDATE_VIEW = 'UPDATE_VIEW'
-export const REMOVE_VIEW = 'REMOVE_VIEW'
+export const ADD_ALARM = 'ADD_ALARM'
+export const UPDATE_ALARM = 'UPDATE_ALARM'
+export const REMOVE_ALARM = 'REMOVE_ALARM'
 export const SET_TIMEOUT = 'SET_TIMEOUT'
 export const TOGGLE_SERVICE_CHECKED = 'TOGGLE_SERVICE_CHECKED'
 export const TRIGGER_BEAT = 'TRIGGER_BEAT'
@@ -15,63 +15,64 @@ export const MUTE_SERVICE = 'MUTE_SERVICE'
 export const UNMUTE_SERVICE = 'UNMUTE_SERVICE'
 export const DELETE_SERVICE = 'DELETE_SERVICE'
 
-function requestServices(view) {
+function requestAlarm(alarmId) {
   return {
-    type: REQUEST_SERVICES,
-    view
+    type: REQUEST_ALARM,
+    alarmId
   }
 }
 
-export function toggleServiceChecked(view, serviceName) {
+export function toggleServiceChecked(alarmId, serviceName) {
   return dispatch => {
       dispatch({
       type: TOGGLE_SERVICE_CHECKED,
-      view,
+      alarmId,
       serviceName
     })
   }
 }
 
-function receiveServices(view, json) {
+function receiveAlarm(alarmId, json) {
   return {
-    type: RECEIVE_SERVICES,
-    view,
+    type: RECEIVE_ALARM,
+    alarmId,
+    alarm: json.alarm,
     services: json.services,
     serverTs: json.now,
     receivedAt: Date.now()
   }
 }
 
-export function fetchServices(view) {
+export function fetchAlarm(alarmId) {
   return dispatch => {
-    dispatch(requestServices(view))
-    return fetch(`/api/services/?view=${view}`)
+    dispatch(requestAlarm(alarmId))
+    return fetch(`/api/alarms/${alarmId}`)
       .then(response => response.json())
-      .then(json => dispatch(receiveServices(view, json)))
+      .then(json => dispatch(receiveAlarm(alarmId, json)))
   }
 }
 
-function requestViews() {
+function requestAlarms() {
   return {
-    type: REQUEST_VIEWS
+    type: REQUEST_ALARMS
   }
 }
 
-function receiveViews(json) {
+function receiveAlarms(json) {
   return {
-    type: RECEIVE_VIEWS,
-    views: json.views,
+    type: RECEIVE_ALARMS,
+    alarms: json.alarms,
     serverTs: json.now,
     receivedAt: Date.now()
   }
 }
 
-export function fetchViews() {
+export function fetchAlarms() {
   return dispatch => {
-    dispatch(requestViews())
-    return fetch(`/api/views/`)
+    dispatch(requestAlarms())
+    return fetch(`/api/alarms/`)
       .then(response => response.json())
-      .then(json => dispatch(receiveViews(json)))
+      .then(json => dispatch(receiveAlarms(json)))
   }
 }
 

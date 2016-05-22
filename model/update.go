@@ -17,7 +17,7 @@ type DeleteService struct {
 type Tick struct {
 }
 
-type DeleteView struct {
+type DeleteAlarm struct {
 }
 
 type Update struct {
@@ -31,6 +31,6 @@ type Update struct {
 	MuteService   *MuteService   `json:"mute_service,omitempty"`
 	DeleteService *DeleteService `json:"delete_service,omitempty"`
 
-	View       string      `json:"view,omitempty"`
-	DeleteView *DeleteView `json:"delete_view,omitempty"`
+	Alarm       string       `json:"alarm,omitempty"`
+	DeleteAlarm *DeleteAlarm `json:"delete_alarm,omitempty"`
 }

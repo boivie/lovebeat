@@ -1,8 +1,8 @@
 import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux'
-import { fetchViews } from '../actions'
+import { fetchAlarms } from '../actions'
 import {Link} from 'react-router';
-import ViewList from '../containers/view-list'
+import AlarmList from '../containers/alarm-list'
 import ReconnectingWebSocket from 'reconnectingwebsocket'
 
 
@@ -22,7 +22,7 @@ class MainLayout extends Component {
 
       ws.onopen = function() {
         console.log("websocket OPEN")
-        dispatch(fetchViews())
+        dispatch(fetchAlarms())
       }
 
       ws.onclose = function() {
@@ -50,7 +50,7 @@ class MainLayout extends Component {
           </main>
         </div>
         <aside id="left">
-          <ViewList/>
+          <AlarmList/>
         </aside>
       </div>
     );

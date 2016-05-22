@@ -118,42 +118,49 @@ func DeleteServiceHandler(c http.ResponseWriter, r *http.Request) {
 	io.WriteString(c, "{}\n")
 }
 
-func GetViewsHandler(c http.ResponseWriter, r *http.Request) {
+func GetAlarmsHandler(c http.ResponseWriter, r *http.Request) {
 	log.Debugf("%s %s", r.Method, r.RequestURI)
-	views := client.GetViews()
+	alarms := client.GetAlarms()
 	replyJson(c, struct {
-		Views []model.View `json:"views"`
-		Now   int64        `json:"now"`
-	}{views, now()})
+		Alarms []model.Alarm `json:"alarms"`
+		Now    int64         `json:"now"`
+	}{alarms, now()})
 }
 
-func GetViewHandler(c http.ResponseWriter, r *http.Request) {
+func GetAlarmHandler(c http.ResponseWriter, r *http.Request) {
 	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 	name := params["name"]
-	v := client.GetView(name)
+	v := client.GetAlarm(name)
 	if v == nil {
 		http.NotFound(c, r)
 		return
 	}
+	services := client.GetServicesInAlarm(name)
+	retServices := make([]HttpApiService, len(services))
+	for i, s := range services {
+		retServices[i] = ToHttpService(s)
+	}
+
 	replyJson(c, struct {
-		Service *model.View `json:"view"`
-		Now     int64       `json:"now"`
-	}{v, now()})
+		Alarm    *model.Alarm     `json:"alarm"`
+		Services []HttpApiService `json:"services"`
+		Now      int64            `json:"now"`
+	}{v, retServices, now()})
 }
 
-func DeleteViewHandler(c http.ResponseWriter, r *http.Request) {
+func DeleteAlarmHandler(c http.ResponseWriter, r *http.Request) {
 	log.Debugf("%s %s", r.Method, r.RequestURI)
 	params := mux.Vars(r)
 
-	client.Update(&model.Update{Ts: now(), View: params["name"], DeleteView: &model.DeleteView{}})
+	client.Update(&model.Update{Ts: now(), Alarm: params["name"], DeleteAlarm: &model.DeleteAlarm{}})
 
 	c.Header().Add("Content-Type", "application/json")
 	c.Header().Add("Content-Length", "3")
 	io.WriteString(c, "{}\n")
 }
 
-type JsonViewRef struct {
+type JsonAlarmRef struct {
 	Name string `json:"name"`
 }
 
@@ -162,28 +169,24 @@ type HttpApiService struct {
 	Analysis *algorithms.BeatAnalysis `json:"analysis,omitempty"`
 }
 
-func ToHttpService(s model.Service) *HttpApiService {
+func ToHttpService(s model.Service) HttpApiService {
 	analysis := algorithms.AnalyzeBeats(s.BeatHistory)
 	s.BeatHistory = nil
-	return &HttpApiService{s, analysis}
+	return HttpApiService{s, analysis}
 }
 
 func GetServicesHandler(c http.ResponseWriter, r *http.Request) {
 	log.Debugf("%s %s", r.Method, r.RequestURI)
-	viewName := "all"
 
-	if val, ok := r.URL.Query()["view"]; ok {
-		viewName = val[0]
-	}
 	var now = now()
-	services := client.GetServices(viewName)
-	retServices := make([]*HttpApiService, len(services))
+	services := client.GetServices()
+	retServices := make([]HttpApiService, len(services))
 	for i, s := range services {
 		retServices[i] = ToHttpService(s)
 	}
 	replyJson(c, struct {
-		Services []*HttpApiService `json:"services"`
-		Now      int64             `json:"now"`
+		Services []HttpApiService `json:"services"`
+		Now      int64            `json:"now"`
 	}{retServices, now})
 }
 
@@ -200,21 +203,22 @@ func GetServiceHandler(c http.ResponseWriter, r *http.Request) {
 	}
 
 	replyJson(c, struct {
-		Service *HttpApiService `json:"service"`
-		Now     int64           `json:"now"`
+		Service HttpApiService `json:"service"`
+		Now     int64          `json:"now"`
 	}{ToHttpService(*s), now})
 }
 
 func StatusHandler(c http.ResponseWriter, req *http.Request) {
 	log.Debugf("%s %s", req.Method, req.RequestURI)
-	viewName := "all"
+	alarmName := ""
 
-	if val, ok := req.URL.Query()["view"]; ok {
-		viewName = val[0]
+	params := mux.Vars(req)
+	if val, ok := params["name"]; ok {
+		alarmName = val
 	}
 
 	var buffer bytes.Buffer
-	var services = client.GetServices(viewName)
+	var services = client.GetServicesInAlarm(alarmName)
 	var errors, ok = 0, 0
 	for _, s := range services {
 		if s.State == model.StateError {
@@ -279,11 +283,11 @@ func AddEndpoints(rtr *mux.Router, version_ string) {
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}/unmute", UnmuteServiceHandler).Methods("POST")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", GetServiceHandler).Methods("GET")
 	rtr.HandleFunc("/api/services/{name:"+service.ServiceNamePattern+"}", DeleteServiceHandler).Methods("DELETE")
-	rtr.HandleFunc("/api/views", GetViewsHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/", GetViewsHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", GetViewHandler).Methods("GET")
-	rtr.HandleFunc("/api/views/{name:"+service.ServiceNamePattern+"}", DeleteViewHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/alarms", GetAlarmsHandler).Methods("GET")
+	rtr.HandleFunc("/api/alarms/", GetAlarmsHandler).Methods("GET")
+	rtr.HandleFunc("/api/alarms/{name:"+service.ServiceNamePattern+"}", GetAlarmHandler).Methods("GET")
+	rtr.HandleFunc("/api/alarms/{name:"+service.ServiceNamePattern+"}", DeleteAlarmHandler).Methods("DELETE")
+	rtr.HandleFunc("/api/alarms/{name:"+service.ServiceNamePattern+"}/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/api/status", StatusHandler).Methods("GET")
-	rtr.HandleFunc("/status", StatusHandler).Methods("GET")
 	rtr.HandleFunc("/version", VersionHandler).Methods("GET")
 }

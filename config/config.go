@@ -18,8 +18,7 @@ type Config struct {
 	Http     ConfigBind
 	Database ConfigDatabase
 	Metrics  ConfigMetrics
-	Alerts   map[string]ConfigAlert
-	Views    []ConfigView
+	Alarms   []ConfigAlarm
 	Eventlog ConfigEventlog
 	Notify   []ConfigNotify
 }
@@ -61,12 +60,12 @@ type ConfigAlert struct {
 	Script       string
 }
 
-type ConfigView struct {
+type ConfigAlarm struct {
 	Name     string
 	Pattern  string
 	Includes []string
 	Excludes []string
-	Alerts   []string
+	Alerts   []ConfigAlert
 }
 
 type ConfigEventlog struct {

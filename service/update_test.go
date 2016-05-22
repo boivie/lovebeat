@@ -101,158 +101,158 @@ func TestDeleteService(t *testing.T) {
 
 func TestSimpleFromTemplate(t *testing.T) {
 	state := newState()
-	state.viewStates = []*model.View{&model.View{Name: "testview", IncidentNbr: 4}}
-	state.viewTemplates = []ViewTemplate{ViewTemplate{
-		config:   config.ConfigView{Name: "testview"},
+	state.alarmStates = []*model.Alarm{&model.Alarm{Name: "testalarm", IncidentNbr: 4}}
+	state.alarmTemplates = []alarmTemplate{alarmTemplate{
+		config:   config.ConfigAlarm{Name: "testalarm"},
 		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
 	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
-	updates1 = updateViews(state, 0, updates1)
+	updates1 = updateAlarms(state, 0, updates1)
 
-	if state.views["testview"].data.State != model.StateOk {
-		t.Errorf("Expected view OK")
+	if state.alarms["testalarm"].data.State != model.StateOk {
+		t.Errorf("Expected alarm OK")
 	}
 
-	if updates1[0].oldView != nil || updates1[0].newView.data.Name != "testview" {
-		t.Errorf("Expected view update")
+	if updates1[0].oldAlarm != nil || updates1[0].newAlarm.data.Name != "testalarm" {
+		t.Errorf("Expected alarm update")
 	}
 
 	updates2 := updateServices(state, &model.Update{Ts: 1000, Tick: &model.Tick{}})
-	updates2 = updateViews(state, 0, updates2)
+	updates2 = updateAlarms(state, 0, updates2)
 
 	if updates2[0].oldService.name() != "test.service" {
 		t.Errorf("Expected service in update")
 	}
 
-	if updates2[1].oldView.name() != "testview" || updates2[1].oldView.data.State != model.StateOk || updates2[1].newView.data.State != model.StateError {
-		t.Errorf("Expected view in update")
+	if updates2[1].oldAlarm.name() != "testalarm" || updates2[1].oldAlarm.data.State != model.StateOk || updates2[1].newAlarm.data.State != model.StateError {
+		t.Errorf("Expected alarm in update")
 	}
 
-	if updates2[1].newView.data.IncidentNbr != 5 {
+	if updates2[1].newAlarm.data.IncidentNbr != 5 {
 		t.Errorf("Expected increase of incident number")
 	}
 
-	if state.views["testview"].data.State != model.StateError {
-		t.Errorf("Expected view in error")
+	if state.alarms["testalarm"].data.State != model.StateError {
+		t.Errorf("Expected alarm in error")
 	}
 
 }
 
-func TestDeleteServiceInView(t *testing.T) {
+func TestDeleteServiceInAlarm(t *testing.T) {
 	state := newState()
-	state.viewStates = []*model.View{&model.View{Name: "testview", IncidentNbr: 4}}
-	state.viewTemplates = []ViewTemplate{ViewTemplate{
-		config:   config.ConfigView{Name: "testview"},
+	state.alarmStates = []*model.Alarm{&model.Alarm{Name: "testalarm", IncidentNbr: 4}}
+	state.alarmTemplates = []alarmTemplate{alarmTemplate{
+		config:   config.ConfigAlarm{Name: "testalarm"},
 		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
 	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
-	updates1 = updateViews(state, 0, updates1)
+	updates1 = updateAlarms(state, 0, updates1)
 
-	if state.views["testview"].data.State != model.StateOk {
-		t.Errorf("Expected view OK")
+	if state.alarms["testalarm"].data.State != model.StateOk {
+		t.Errorf("Expected alarm OK")
 	}
 
-	if updates1[0].oldView != nil || updates1[0].newView.data.Name != "testview" {
-		t.Errorf("Expected view update")
+	if updates1[0].oldAlarm != nil || updates1[0].newAlarm.data.Name != "testalarm" {
+		t.Errorf("Expected alarm update")
 	}
 
-	if state.views["testview"].servicesInView[0] != state.services["test.service"] {
-		t.Errorf("Expected service in view")
+	if state.alarms["testalarm"].servicesInAlarm[0] != state.services["test.service"] {
+		t.Errorf("Expected service in alarm")
 	}
 
 	updates2 := updateServices(state, &model.Update{Ts: 1000, Tick: &model.Tick{}})
-	updates2 = updateViews(state, 0, updates2)
+	updates2 = updateAlarms(state, 0, updates2)
 
 	if updates2[0].oldService.name() != "test.service" {
 		t.Errorf("Expected service in update")
 	}
 
-	if updates2[1].oldView.name() != "testview" || updates2[1].oldView.data.State != model.StateOk || updates2[1].newView.data.State != model.StateError {
-		t.Errorf("Expected view in update")
+	if updates2[1].oldAlarm.name() != "testalarm" || updates2[1].oldAlarm.data.State != model.StateOk || updates2[1].newAlarm.data.State != model.StateError {
+		t.Errorf("Expected alarm in update")
 	}
 
-	if state.views["testview"].data.State != model.StateError {
-		t.Errorf("Expected view in error")
+	if state.alarms["testalarm"].data.State != model.StateError {
+		t.Errorf("Expected alarm in error")
 	}
 
 	updates3 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", DeleteService: &model.DeleteService{}})
-	updates3 = updateViews(state, 0, updates3)
+	updates3 = updateAlarms(state, 0, updates3)
 
 	if updates3[0].oldService.name() != "test.service" || updates3[0].newService != nil {
 		t.Errorf("Expected service in update")
 	}
 
-	if updates3[1].oldView.name() != "testview" || updates3[1].oldView.data.State != model.StateError || updates3[1].newView.data.State != model.StateOk {
-		t.Errorf("Expected view in update")
+	if updates3[1].oldAlarm.name() != "testalarm" || updates3[1].oldAlarm.data.State != model.StateError || updates3[1].newAlarm.data.State != model.StateOk {
+		t.Errorf("Expected alarm in update")
 	}
 
-	if state.views["testview"].data.State != model.StateOk {
-		t.Errorf("Expected view in error")
+	if state.alarms["testalarm"].data.State != model.StateOk {
+		t.Errorf("Expected alarm in error")
 	}
 
-	if len(state.views["testview"].servicesInView) != 0 {
-		t.Errorf("Expected service removed from view")
+	if len(state.alarms["testalarm"].servicesInAlarm) != 0 {
+		t.Errorf("Expected service removed from alarm")
 	}
 }
 
-func TestDeleteView(t *testing.T) {
+func TestDeleteAlarm(t *testing.T) {
 	state := newState()
-	state.viewStates = []*model.View{&model.View{Name: "testview", IncidentNbr: 4}}
-	state.viewTemplates = []ViewTemplate{ViewTemplate{
-		config:   config.ConfigView{Name: "testview"},
+	state.alarmStates = []*model.Alarm{&model.Alarm{Name: "testalarm", IncidentNbr: 4}}
+	state.alarmTemplates = []alarmTemplate{alarmTemplate{
+		config:   config.ConfigAlarm{Name: "testalarm"},
 		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
 	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
-	updates1 = updateViews(state, 0, updates1)
+	updates1 = updateAlarms(state, 0, updates1)
 
-	u := &model.Update{Ts: 1, View: "testview", DeleteView: &model.DeleteView{}}
+	u := &model.Update{Ts: 1, Alarm: "testalarm", DeleteAlarm: &model.DeleteAlarm{}}
 	updates2 := updateServices(state, u)
-	updates2 = removeViews(state, u, updates2)
-	updates2 = updateViews(state, 0, updates2)
+	updates2 = removeAlarms(state, u, updates2)
+	updates2 = updateAlarms(state, 0, updates2)
 
-	if state.views["testview"].data.State != model.StateOk {
-		t.Errorf("Expected view still in state")
+	if state.alarms["testalarm"].data.State != model.StateOk {
+		t.Errorf("Expected alarm still in state")
 	}
 
 	updates3 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", DeleteService: &model.DeleteService{}})
-	updateViews(state, 0, updates3)
+	updateAlarms(state, 0, updates3)
 
-	u2 := &model.Update{Ts: 1, View: "testview", DeleteView: &model.DeleteView{}}
+	u2 := &model.Update{Ts: 1, Alarm: "testalarm", DeleteAlarm: &model.DeleteAlarm{}}
 	updates4 := updateServices(state, u2)
-	updates4 = removeViews(state, u2, updates4)
-	updates4 = updateViews(state, 0, updates4)
+	updates4 = removeAlarms(state, u2, updates4)
+	updates4 = updateAlarms(state, 0, updates4)
 
-	_, exists := state.views["testview"]
+	_, exists := state.alarms["testalarm"]
 	if exists {
-		t.Errorf("Expected view removed from state")
+		t.Errorf("Expected alarm removed from state")
 	}
 }
 
 func TestInitialInError(t *testing.T) {
 	state := newState()
-	state.viewStates = make([]*model.View, 0)
-	state.viewTemplates = []ViewTemplate{ViewTemplate{
-		config:   config.ConfigView{Name: "testview"},
+	state.alarmStates = make([]*model.Alarm, 0)
+	state.alarmTemplates = []alarmTemplate{alarmTemplate{
+		config:   config.ConfigAlarm{Name: "testalarm"},
 		includes: []*regexp.Regexp{regexp.MustCompile(makePattern("test.*"))},
 	}}
 
 	updates1 := updateServices(state, &model.Update{Ts: 0, Service: "test.service", SetTimeout: &model.SetTimeout{Timeout: 0}, Beat: &model.Beat{}})
-	updates1 = updateViews(state, 0, updates1)
+	updates1 = updateAlarms(state, 0, updates1)
 
-	if state.views["testview"].data.State != model.StateError {
-		t.Errorf("Expected view in error (was: %v)", state.views["testview"].data.State)
+	if state.alarms["testalarm"].data.State != model.StateError {
+		t.Errorf("Expected alarm in error (was: %v)", state.alarms["testalarm"].data.State)
 	}
-	if state.views["testview"].data.IncidentNbr != 1 {
-		t.Errorf("Expected incident #1 (was: %v)", state.views["testview"].data.IncidentNbr)
+	if state.alarms["testalarm"].data.IncidentNbr != 1 {
+		t.Errorf("Expected incident #1 (was: %v)", state.alarms["testalarm"].data.IncidentNbr)
 	}
 
-	if updates1[0].oldView != nil || updates1[0].newView.data.Name != "testview" || updates1[0].newView.data.State != model.StateNew {
-		t.Errorf("Expected new view as New")
+	if updates1[0].oldAlarm != nil || updates1[0].newAlarm.data.Name != "testalarm" || updates1[0].newAlarm.data.State != model.StateNew {
+		t.Errorf("Expected new alarm as New")
 	}
-	if updates1[2].oldView.data.Name != "testview" || updates1[2].oldView.data.State != model.StateNew || updates1[2].newView.data.State != model.StateError {
-		t.Errorf("Expected updated view in error")
+	if updates1[2].oldAlarm.data.Name != "testalarm" || updates1[2].oldAlarm.data.State != model.StateNew || updates1[2].newAlarm.data.State != model.StateError {
+		t.Errorf("Expected updated alarm in error")
 	}
 }

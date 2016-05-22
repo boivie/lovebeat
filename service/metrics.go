@@ -27,11 +27,11 @@ func (s *metricsReporter) OnServiceUpdated(ts int64, oldService, newService mode
 }
 func (s *metricsReporter) OnServiceRemoved(ts int64, service model.Service) {}
 
-func (s *metricsReporter) OnViewAdded(ts int64, view model.View, config config.ConfigView) {}
-func (s *metricsReporter) OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView) {
-	s.metrics.SetGauge("view.state."+newView.Name, int(StateMap[newView.State]))
+func (s *metricsReporter) OnAlarmAdded(ts int64, alarm model.Alarm, config config.ConfigAlarm) {}
+func (s *metricsReporter) OnAlarmUpdated(ts int64, oldAlarm, newAlarm model.Alarm, config config.ConfigAlarm) {
+	s.metrics.SetGauge("alarm.state."+newAlarm.Name, int(StateMap[newAlarm.State]))
 }
-func (s *metricsReporter) OnViewRemoved(ts int64, view model.View, config config.ConfigView) {}
+func (s *metricsReporter) OnAlarmRemoved(ts int64, alarm model.Alarm, config config.ConfigAlarm) {}
 
 func NewMetricsReporter(m metrics.Metrics) ServiceCallback {
 	return &metricsReporter{m}

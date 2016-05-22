@@ -7,15 +7,15 @@ import (
 	"strings"
 )
 
-// Instantiated from a view template
-type View struct {
-	servicesInView []*Service
-	data           model.View
-	tmpl           ViewTemplate
+// Instantiated from an alarm template
+type alarm struct {
+	servicesInAlarm []*service
+	data            model.Alarm
+	tmpl            alarmTemplate
 }
 
-type ViewTemplate struct {
-	config   config.ConfigView
+type alarmTemplate struct {
+	config   config.ConfigAlarm
 	includes []*regexp.Regexp
 	excludes []*regexp.Regexp
 }
@@ -31,7 +31,7 @@ func makePattern(p string) string {
 
 var NAME_RE = regexp.MustCompile("\\$([a-z]+)")
 
-func (v *ViewTemplate) makeName(serviceName string) string {
+func (v *alarmTemplate) makeName(serviceName string) string {
 	var matchingRegexp *regexp.Regexp
 
 	for _, r := range v.includes {
@@ -74,13 +74,13 @@ func expandName(p *regexp.Regexp, serviceName, namePattern string) string {
 	})
 }
 
-func (v *View) name() string {
+func (v *alarm) name() string {
 	return v.data.Name
 }
 
-func (v *View) calculateState() string {
+func (v *alarm) calculateState() string {
 	state := model.StateOk
-	for _, s := range v.servicesInView {
+	for _, s := range v.servicesInAlarm {
 		if s.data.State == model.StateError {
 			state = model.StateError
 		}
@@ -88,10 +88,10 @@ func (v *View) calculateState() string {
 	return state
 }
 
-func (v *View) getExternalModel() model.View {
+func (v *alarm) getExternalModel() model.Alarm {
 	r := v.data
 	r.FailedServices = make([]string, 0)
-	for _, s := range v.servicesInView {
+	for _, s := range v.servicesInAlarm {
 		if s.data.State == model.StateError {
 			r.FailedServices = append(r.FailedServices, s.data.Name)
 		}
@@ -99,12 +99,12 @@ func (v *View) getExternalModel() model.View {
 	return r
 }
 
-func (v *View) removeService(service *Service) {
-	services := v.servicesInView[:0]
-	for _, x := range v.servicesInView {
+func (v *alarm) removeService(service *service) {
+	services := v.servicesInAlarm[:0]
+	for _, x := range v.servicesInAlarm {
 		if x != service {
 			services = append(services, x)
 		}
 	}
-	v.servicesInView = services
+	v.servicesInAlarm = services
 }

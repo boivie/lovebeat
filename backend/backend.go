@@ -6,12 +6,12 @@ import (
 
 type Backend interface {
 	LoadServices() []*model.Service
-	LoadViews() []*model.View
+	LoadAlarms() []*model.Alarm
 
 	SaveService(service *model.Service)
-	SaveView(view *model.View)
+	SaveAlarm(alarm *model.Alarm)
 
 	DeleteService(name string)
-	DeleteView(name string)
+	DeleteAlarm(name string)
 	Sync()
 }

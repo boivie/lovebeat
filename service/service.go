@@ -5,15 +5,15 @@ import (
 	"github.com/boivie/lovebeat/model"
 )
 
-type Service struct {
+type service struct {
 	data     model.Service
-	inViews  []*View
+	inAlarms []*alarm
 	lastBeat int64
 	expiry   int64
 }
 
-func newService(name string) *Service {
-	return &Service{
+func newService(name string) *service {
+	return &service{
 		data: model.Service{
 			Name:     name,
 			LastBeat: -1,
@@ -23,7 +23,7 @@ func newService(name string) *Service {
 	}
 }
 
-func (s *Service) updateExpiry() {
+func (s *service) updateExpiry() {
 	s.expiry = 0
 
 	if s.data.Timeout > 0 {
@@ -40,9 +40,9 @@ func (s *Service) updateExpiry() {
 	}
 }
 
-func (s *Service) name() string { return s.data.Name }
+func (s *service) name() string { return s.data.Name }
 
-func (s *Service) stateAt(ts int64) string {
+func (s *service) stateAt(ts int64) string {
 	var state = model.StateOk
 	if s.data.MutedSince > 0 {
 		state = model.StateMuted
@@ -54,7 +54,7 @@ func (s *Service) stateAt(ts int64) string {
 	return state
 }
 
-func (s *Service) registerBeat(ts int64) {
+func (s *service) registerBeat(ts int64) {
 	if s.data.LastBeat > 0 {
 		log.Debugf("Beat from %s (prev %d ms ago)", s.name(), ts-s.data.LastBeat)
 	} else {
@@ -71,10 +71,10 @@ func (s *Service) registerBeat(ts int64) {
 	s.lastBeat = ts
 }
 
-func (s *Service) getExternalModel() model.Service {
+func (s *service) getExternalModel() model.Service {
 	r := s.data
-	for _, v := range s.inViews {
-		r.InViews = append(r.InViews, v.data.Name)
+	for _, v := range s.inAlarms {
+		r.InAlarms = append(r.InAlarms, v.data.Name)
 	}
 	return r
 }

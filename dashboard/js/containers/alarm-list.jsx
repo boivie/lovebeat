@@ -1,27 +1,27 @@
 import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux'
-import { fetchViews } from '../actions'
-import Views from '../components/views'
+import { fetchAlarms } from '../actions'
+import Alarms from '../components/alarms'
 
-class ViewList extends Component {
+class AlarmList extends Component {
   componentWillMount() {
     const { dispatch } = this.props
-    dispatch(fetchViews())
+    dispatch(fetchAlarms())
   }
 
   render() {
-    const { views, isFetching, lastUpdated } = this.props
-    const isEmpty = views.length === 0
+    const { alarms, isFetching, lastUpdated } = this.props
+    const isEmpty = alarms.length === 0
 
     return (
       <div>
-        <div className="view-title">
-          Views
+        <div className="alarm-title">
+          Alarms
         </div>
       {isEmpty
         ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
         : <div style={{ opacity: isFetching ? 0.5 : 1 }}>
-            <Views views={views}/>
+            <Alarms alarms={alarms}/>
           </div>
       }
       </div>
@@ -29,29 +29,29 @@ class ViewList extends Component {
   }
 }
 
-ViewList.propTypes = {
-  views: PropTypes.array.isRequired,
+AlarmList.propTypes = {
+  alarms: PropTypes.array.isRequired,
   isFetching: PropTypes.bool.isRequired,
   lastUpdated: PropTypes.number,
   dispatch: PropTypes.func.isRequired
 }
 
 function mapStateToProps(state) {
-  const { listOfViews } = state
+  const { listOfAlarms } = state
   const {
     isFetching,
     lastUpdated,
-    items: views
-  } = listOfViews || {
+    items: alarms
+  } = listOfAlarms || {
     isFetching: true,
     items: []
   }
 
   return {
-    views,
+    alarms,
     isFetching,
     lastUpdated
   }
 }
 
-export default connect(mapStateToProps)(ViewList)
+export default connect(mapStateToProps)(AlarmList)

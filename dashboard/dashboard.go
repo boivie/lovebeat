@@ -27,6 +27,7 @@ func BundleHandler(c http.ResponseWriter, req *http.Request) {
 func Register(rtr *mux.Router, version_ string) {
 	version = version_
 	rtr.HandleFunc("/", DashboardHandler).Methods("GET")
-	rtr.HandleFunc("/views/{name}", DashboardHandler).Methods("GET")
+	rtr.HandleFunc("/services", DashboardHandler).Methods("GET")
+	rtr.HandleFunc("/alarms/{name}", DashboardHandler).Methods("GET")
 	rtr.HandleFunc("/bundle.js", BundleHandler).Methods("GET")
 }

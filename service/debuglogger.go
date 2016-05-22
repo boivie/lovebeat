@@ -25,14 +25,14 @@ func (s *debugLogger) OnServiceRemoved(ts int64, service model.Service) {
 	log.Infof("SERVICE '%s', %s -> deleted", service.Name, service.State)
 }
 
-func (s *debugLogger) OnViewAdded(ts int64, view model.View, config config.ConfigView) {
-	log.Infof("VIEW '%s', created -> %s", view.Name, view.State)
+func (s *debugLogger) OnAlarmAdded(ts int64, alarm model.Alarm, config config.ConfigAlarm) {
+	log.Infof("ALARM '%s', created -> %s", alarm.Name, alarm.State)
 }
-func (s *debugLogger) OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView) {
-	log.Infof("VIEW '%s', state %s -> %s", oldView.Name, oldView.State, newView.State)
+func (s *debugLogger) OnAlarmUpdated(ts int64, oldAlarm, newAlarm model.Alarm, config config.ConfigAlarm) {
+	log.Infof("ALARM '%s', state %s -> %s", oldAlarm.Name, oldAlarm.State, newAlarm.State)
 }
-func (s *debugLogger) OnViewRemoved(ts int64, view model.View, config config.ConfigView) {
-	log.Infof("VIEW '%s', %s -> deleted", view.Name, view.State)
+func (s *debugLogger) OnAlarmRemoved(ts int64, alarm model.Alarm, config config.ConfigAlarm) {
+	log.Infof("ALARM '%s', %s -> deleted", alarm.Name, alarm.State)
 }
 
 func NewDebugLogger() ServiceCallback {

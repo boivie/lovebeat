@@ -25,7 +25,7 @@ const MAX_PENDING_WRITES = 1000
 
 var (
 	RECORD_SERVICE = []byte("SERV\t")
-	RECORD_VIEW    = []byte("VIEW\t")
+	RECORD_ALARM   = []byte("ALARM\t")
 	NEWLINE        = []byte("\n")
 )
 
@@ -36,7 +36,7 @@ type FileBackend struct {
 	q        chan update
 	sync     chan chan bool
 	services map[string]*model.Service
-	views    map[string]*model.View
+	alarms   map[string]*model.Alarm
 }
 
 func (f FileBackend) Sync() {
@@ -49,8 +49,8 @@ func (f FileBackend) SaveService(service *model.Service) {
 	f.q <- update{setService: service}
 }
 
-func (f FileBackend) SaveView(view *model.View) {
-	f.q <- update{setView: view}
+func (f FileBackend) SaveAlarm(alarm *model.Alarm) {
+	f.q <- update{setAlarm: alarm}
 }
 
 func (r FileBackend) LoadServices() []*model.Service {
@@ -63,10 +63,10 @@ func (r FileBackend) LoadServices() []*model.Service {
 	return v
 }
 
-func (r FileBackend) LoadViews() []*model.View {
-	v := make([]*model.View, len(r.views))
+func (r FileBackend) LoadAlarms() []*model.Alarm {
+	v := make([]*model.Alarm, len(r.alarms))
 	idx := 0
-	for _, value := range r.views {
+	for _, value := range r.alarms {
 		v[idx] = value
 		idx++
 	}
@@ -77,8 +77,8 @@ func (f FileBackend) DeleteService(name string) {
 	f.q <- update{deleteService: name}
 }
 
-func (f FileBackend) DeleteView(name string) {
-	f.q <- update{deleteView: name}
+func (f FileBackend) DeleteAlarm(name string) {
+	f.q <- update{deleteAlarm: name}
 }
 
 func (f FileBackend) readAll() {
@@ -104,16 +104,16 @@ func (f FileBackend) readAll() {
 			service := &model.Service{}
 			json.Unmarshal(line[5:], &service)
 			f.services[service.Name] = service
-		} else if bytes.HasPrefix(line, RECORD_VIEW) {
-			view := &model.View{}
-			json.Unmarshal(line[5:], &view)
-			f.views[view.Name] = view
+		} else if bytes.HasPrefix(line, RECORD_ALARM) {
+			alarm := &model.Alarm{}
+			json.Unmarshal(line[5:], &alarm)
+			f.alarms[alarm.Name] = alarm
 		} else {
 			log.Infof("Found unexpected line in database - skipping")
 		}
 	}
-	log.Infof("Loaded %d services and %d views from '%s'",
-		len(f.services), len(f.views), s)
+	log.Infof("Loaded %d services and %d alarms from '%s'",
+		len(f.services), len(f.alarms), s)
 }
 
 func (f FileBackend) saveAll(counters metrics.Metrics) {
@@ -132,9 +132,9 @@ func (f FileBackend) saveAll(counters metrics.Metrics) {
 		gz.Write(b)
 		gz.Write(NEWLINE)
 	}
-	for _, view := range f.views {
-		b, _ := json.Marshal(view)
-		gz.Write(RECORD_VIEW)
+	for _, alarm := range f.alarms {
+		b, _ := json.Marshal(alarm)
+		gz.Write(RECORD_ALARM)
 		gz.Write(b)
 		gz.Write(NEWLINE)
 	}
@@ -145,7 +145,7 @@ func (f FileBackend) saveAll(counters metrics.Metrics) {
 		return
 	}
 	duration := time.Since(start)
-	log.Debugf("Saved %d items in %d ms", len(f.services)+len(f.views),
+	log.Debugf("Saved %d items in %d ms", len(f.services)+len(f.alarms),
 		duration.Nanoseconds()/1000000)
 
 	f.uploadToRemote()
@@ -153,14 +153,14 @@ func (f FileBackend) saveAll(counters metrics.Metrics) {
 	counters.IncCounter("db.save.count")
 	counters.SetGauge("db.save.duration", int(duration.Nanoseconds()/1000000))
 	counters.SetGauge("service.count", len(f.services))
-	counters.SetGauge("view.count", len(f.views))
+	counters.SetGauge("alarm.count", len(f.alarms))
 }
 
 type update struct {
 	setService    *model.Service
-	setView       *model.View
+	setAlarm      *model.Alarm
 	deleteService string
-	deleteView    string
+	deleteAlarm   string
 }
 
 func (f FileBackend) downloadFromRemote() {
@@ -252,11 +252,11 @@ func (f FileBackend) monitor(counters metrics.Metrics, notifier notify.Notifier)
 			if upd.deleteService != "" {
 				delete(f.services, upd.deleteService)
 			}
-			if upd.setView != nil {
-				f.views[upd.setView.Name] = upd.setView
+			if upd.setAlarm != nil {
+				f.alarms[upd.setAlarm.Name] = upd.setAlarm
 			}
-			if upd.deleteView != "" {
-				delete(f.views, upd.deleteView)
+			if upd.deleteAlarm != "" {
+				delete(f.alarms, upd.deleteAlarm)
 			}
 		}
 	}
@@ -268,7 +268,7 @@ func NewFileBackend(cfg *config.ConfigDatabase, m metrics.Metrics, notifier noti
 		q:        make(chan update, MAX_PENDING_WRITES),
 		sync:     make(chan chan bool),
 		services: make(map[string]*model.Service),
-		views:    make(map[string]*model.View),
+		alarms:   make(map[string]*model.Alarm),
 	}
 	be.downloadFromRemote()
 	be.readAll()

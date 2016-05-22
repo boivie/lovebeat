@@ -25,10 +25,10 @@ func (m webhooksAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 				ToState     string `json:"to_state"`
 				IncidentNbr int    `json:"incident_number"`
 			}{
-				Name:        ev.View.Name,
+				Name:        ev.Alarm.Name,
 				FromState:   strings.ToUpper(ev.Previous),
 				ToState:     strings.ToUpper(ev.Current),
-				IncidentNbr: ev.View.IncidentNbr,
+				IncidentNbr: ev.Alarm.IncidentNbr,
 			},
 		}
 

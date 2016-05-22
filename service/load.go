@@ -6,42 +6,38 @@ import (
 	"regexp"
 )
 
-func loadViewTemplates(cfg config.Config) []ViewTemplate {
-	views := []ViewTemplate{
-		ViewTemplate{
-			config:   config.ConfigView{Name: "all"},
-			includes: []*regexp.Regexp{regexp.MustCompile("")}},
-	}
+func loadAlarmTemplates(cfg config.Config) []alarmTemplate {
+	alarms := make([]alarmTemplate, 0)
 
-	for _, view := range cfg.Views {
+	for _, alarm := range cfg.Alarms {
 		var includesRee []*regexp.Regexp
 		var excludesRee []*regexp.Regexp
-		if view.Pattern != "" {
-			view.Includes = append(view.Includes, view.Pattern)
+		if alarm.Pattern != "" {
+			alarm.Includes = append(alarm.Includes, alarm.Pattern)
 		}
-		for _, pattern := range view.Includes {
+		for _, pattern := range alarm.Includes {
 			ree, _ := regexp.Compile(makePattern(pattern))
 			includesRee = append(includesRee, ree)
 		}
-		for _, pattern := range view.Excludes {
+		for _, pattern := range alarm.Excludes {
 			ree, _ := regexp.Compile(makePattern(pattern))
 			excludesRee = append(excludesRee, ree)
 		}
-		views = append(views, ViewTemplate{view, includesRee, excludesRee})
+		alarms = append(alarms, alarmTemplate{alarm, includesRee, excludesRee})
 	}
-	return views
+	return alarms
 }
 
 func loadState(state *servicesState, be backend.Backend, cfg config.Config) {
-	state.viewTemplates = loadViewTemplates(cfg)
-	state.viewStates = be.LoadViews()
+	state.alarmTemplates = loadAlarmTemplates(cfg)
+	state.alarmStates = be.LoadAlarms()
 
 	for _, data := range be.LoadServices() {
-		service := &Service{data: *data}
+		service := &service{data: *data}
 		service.updateExpiry()
 		state.services[data.Name] = service
 
-		addViewsToService(state, service, []stateUpdate{})
+		addAlarmsToService(state, service, []stateUpdate{})
 	}
 	return
 }

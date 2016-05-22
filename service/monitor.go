@@ -25,8 +25,14 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 			observers = append(observers, c)
 		case c := <-svcs.getServicesChan:
 			ret := make([]model.Service, 0)
-			if view, ok := servicesState.views[c.View]; ok {
-				for _, s := range view.servicesInView {
+			if c.Alarm != "" {
+				if alarm, ok := servicesState.alarms[c.Alarm]; ok {
+					for _, s := range alarm.servicesInAlarm {
+						ret = append(ret, s.getExternalModel())
+					}
+				}
+			} else {
+				for _, s := range servicesState.services {
 					ret = append(ret, s.getExternalModel())
 				}
 			}
@@ -39,14 +45,14 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 				r := ret.getExternalModel()
 				c.Reply <- &r
 			}
-		case c := <-svcs.getViewsChan:
-			ret := make([]model.View, 0)
-			for _, v := range servicesState.views {
+		case c := <-svcs.getAlarmsChan:
+			ret := make([]model.Alarm, 0)
+			for _, v := range servicesState.alarms {
 				ret = append(ret, v.getExternalModel())
 			}
 			c.Reply <- ret
-		case c := <-svcs.getViewChan:
-			if ret, ok := servicesState.views[c.Name]; ok {
+		case c := <-svcs.getAlarmChan:
+			if ret, ok := servicesState.alarms[c.Name]; ok {
 				r := ret.getExternalModel()
 				c.Reply <- &r
 			} else {
@@ -58,8 +64,8 @@ func (svcs *ServicesImpl) Monitor(cfg config.Config, notifier notify.Notifier, b
 				log.Debugf("UPDATE: %s", string(j))
 			}
 			updates := updateServices(servicesState, c)
-			updates = removeViews(servicesState, c, updates)
-			updates = updateViews(servicesState, c.Ts, updates)
+			updates = removeAlarms(servicesState, c, updates)
+			updates = updateAlarms(servicesState, c.Ts, updates)
 			persist(be, updates)
 			sendCallbacks(observers, c, updates)
 		}

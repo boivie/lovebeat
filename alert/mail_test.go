@@ -10,19 +10,19 @@ import (
 const email = "test@example.com"
 
 func TestSimpleSubject(t *testing.T) {
-	v1 := model.View{Name: "TestView", State: "ok", IncidentNbr: 1}
-	alert := AlertInfo{v1, "ok", "error", config.ConfigView{}}
+	v1 := model.Alarm{Name: "TestAlarm", State: "ok", IncidentNbr: 1}
+	alert := AlertInfo{v1, "ok", "error", config.ConfigAlarm{}}
 	mail := createMail(email, alert)
-	if mail.Subject != "[LOVEBEAT] TestView-1" {
+	if mail.Subject != "[LOVEBEAT] TestAlarm-1" {
 		t.Errorf("Was: %v", mail.Subject)
 	}
 }
 
 func TestSimpleBody(t *testing.T) {
-	v1 := model.View{Name: "TestView", State: "ok", IncidentNbr: 1}
-	alert := AlertInfo{v1, "ok", "error", config.ConfigView{}}
+	v1 := model.Alarm{Name: "TestAlarm", State: "ok", IncidentNbr: 1}
+	alert := AlertInfo{v1, "ok", "error", config.ConfigAlarm{}}
 	mail := createMail(email, alert)
-	ref := "The status for view 'TestView' has changed from 'OK' to 'ERROR'"
+	ref := "The status for alarm 'TestAlarm' has changed from 'OK' to 'ERROR'"
 
 	if !strings.Contains(mail.Body, ref) {
 		t.Errorf("Was: %v", mail.Body)

@@ -21,28 +21,28 @@ func (s *alerter) OnServiceAdded(ts int64, service model.Service)               
 func (s *alerter) OnServiceUpdated(ts int64, oldService, newService model.Service) {}
 func (s *alerter) OnServiceRemoved(ts int64, service model.Service)                {}
 
-func (s *alerter) OnViewAdded(ts int64, view model.View, config config.ConfigView) {}
+func (s *alerter) OnAlarmAdded(ts int64, alarm model.Alarm, config config.ConfigAlarm) {}
 
-func (s *alerter) OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView) {
-	if oldView.State != newView.State {
+func (s *alerter) OnAlarmUpdated(ts int64, oldAlarm, newAlarm model.Alarm, config config.ConfigAlarm) {
+	if oldAlarm.State != newAlarm.State {
 		s.q <- AlertInfo{
-			View:       newView,
-			Previous:   oldView.State,
-			Current:    newView.State,
-			ViewConfig: config,
+			Alarm:       newAlarm,
+			Previous:    oldAlarm.State,
+			Current:     newAlarm.State,
+			AlarmConfig: config,
 		}
 	}
 }
 
-func (s *alerter) OnViewRemoved(ts int64, view model.View, config config.ConfigView) {
+func (s *alerter) OnAlarmRemoved(ts int64, alarm model.Alarm, config config.ConfigAlarm) {
 	// TODO: Send alerts?
 }
 
 type AlertInfo struct {
-	View       model.View
-	Previous   string
-	Current    string
-	ViewConfig config.ConfigView
+	Alarm       model.Alarm
+	Previous    string
+	Current     string
+	AlarmConfig config.ConfigAlarm
 }
 
 type AlerterBackend interface {
@@ -63,11 +63,9 @@ func runner(cfg config.Config, q <-chan AlertInfo, notifier notify.Notifier) {
 		case <-healthCheck.C:
 			notifier.Notify("alerter")
 		case event := <-q:
-			for _, alert := range event.ViewConfig.Alerts {
-				if alertCfg, ok := cfg.Alerts[alert]; ok {
-					for _, a := range alerters {
-						a.Notify(alertCfg, event)
-					}
+			for _, alert := range event.AlarmConfig.Alerts {
+				for _, a := range alerters {
+					a.Notify(alert, event)
 				}
 			}
 		}

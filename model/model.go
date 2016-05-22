@@ -28,14 +28,14 @@ type Service struct {
 	State           string   `json:"state"`                  // One of the StateXX constants
 	MutedSince      int64    `json:"muted_since"`            // Since when this service has been muted (if >0)
 	LastStateChange int64    `json:"last_state_change"`      // Time when the service last changed state
-	InViews         []string `json:"in_views,omitempty"`     // A list of views this service is included in
+	InAlarms        []string `json:"in_alarms,omitempty"`    // A list of alarms this service is included in
 }
 
-// View is a collection of services
-type View struct {
-	Name            string   `json:"name"`              // Name of the view
+// Alarm contains a number of services and trigger alerts when it's not OK.
+type Alarm struct {
+	Name            string   `json:"name"`              // Name of the alarm
 	State           string   `json:"state"`             // One of the StateXX constant
-	IncidentNbr     int      `json:"incident_nbr"`      // Incrementing number everytime the view leaves the StateOk state
+	IncidentNbr     int      `json:"incident_nbr"`      // Incrementing number everytime the alarm leaves the StateOk state
 	FailedServices  []string `json:"failed_services"`   // A list of failed services, if any. This list may be trimmed.
-	LastStateChange int64    `json:"last_state_change"` // Time when the view last changed state
+	LastStateChange int64    `json:"last_state_change"` // Time when the alarm last changed state
 }

@@ -21,7 +21,7 @@ class Services extends Component {
     return (<ul className="services">
       <ReactCSSTransitionGroup transitionName="services" transitionEnterTimeout={500} transitionLeaveTimeout={400}>
         {services.map(service => <Service key={service.name} service={service} checked={this.props.checked[service.name] || false}
-          toggleChecked={() => this.props.toggleServiceChecked(this.props.viewId, service.name)}
+          toggleChecked={() => this.props.toggleServiceChecked(this.props.alarmId, service.name)}
           setServiceTimeout={this.props.setServiceTimeout}/>)}
       </ReactCSSTransitionGroup>
     </ul>)
@@ -29,7 +29,7 @@ class Services extends Component {
 }
 
 Services.propTypes = {
-  viewId: PropTypes.string.isRequired,
+  alarmId: PropTypes.string.isRequired,
   services: PropTypes.array.isRequired,
   checked: PropTypes.object.isRequired,
   setServiceTimeout: PropTypes.func.isRequired,

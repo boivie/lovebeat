@@ -32,17 +32,17 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 
 		prevUpper := strings.ToUpper(ev.Previous)
 		currentUpper := strings.ToUpper(ev.Current)
-		view := ev.View
+		alarm := ev.Alarm
 
 		var color string
 		var title string
-		link := m.publicUrl + "views/" + view.Name
+		link := m.publicUrl + "alarms/" + alarm.Name
 		if ev.Current == model.StateError {
 			color = "danger"
-			title = fmt.Sprintf("<%s|%s> is in ERROR", link, view.Name)
+			title = fmt.Sprintf("<%s|%s> is in ERROR", link, alarm.Name)
 		} else {
 			color = "good"
-			title = fmt.Sprintf("<%s|%s> has recovered", link, view.Name)
+			title = fmt.Sprintf("<%s|%s> has recovered", link, alarm.Name)
 		}
 
 		payload := struct {
@@ -56,13 +56,13 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 			Channel:  cfg.SlackChannel,
 			Attachments: []SlackAttachment{
 				SlackAttachment{
-					Fallback: fmt.Sprintf("lovebeat: %s changed from %s to %s", view.Name, prevUpper, currentUpper),
+					Fallback: fmt.Sprintf("lovebeat: %s changed from %s to %s", alarm.Name, prevUpper, currentUpper),
 					Color:    color,
 					Title:    title,
 					Text:     fmt.Sprintf("Changed from %s to %s.", prevUpper, currentUpper),
 					Fields: []SlackField{
-						SlackField{Title: "View Name", Value: view.Name, Short: true},
-						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", view.IncidentNbr), Short: true},
+						SlackField{Title: "Alarm", Value: alarm.Name, Short: true},
+						SlackField{Title: "Incident Number", Value: fmt.Sprintf("#%d", alarm.IncidentNbr), Short: true},
 					},
 				},
 			},
@@ -70,7 +70,7 @@ func (m slackAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 
 		if ev.Current == model.StateError {
 			payload.Attachments[0].Fields = append(payload.Attachments[0].Fields,
-				SlackField{Title: "Failed Service(s)", Value: strings.Join(ev.View.FailedServices, ", "), Short: false})
+				SlackField{Title: "Failed Service(s)", Value: strings.Join(ev.Alarm.FailedServices, ", "), Short: false})
 		}
 
 		log.Debugf("Performing slack request at %v", m.cfg.WebhookUrl)

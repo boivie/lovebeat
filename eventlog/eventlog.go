@@ -25,7 +25,7 @@ func (s *eventLog) OnServiceAdded(ts int64, service model.Service) {
 func (s *eventLog) OnServiceUpdated(ts int64, oldService, newService model.Service) {
 	if oldService.State != newService.State {
 		newService.BeatHistory = nil
-		newService.InViews = nil
+		newService.InAlarms = nil
 		s.log(Event{Ts: ts, Type: "service_state_changed",
 			ServiceStateChangedEvent: &ServiceStateChangedEvent{newService, oldService.State, newService.State}})
 	}
@@ -35,19 +35,19 @@ func (s *eventLog) OnServiceRemoved(ts int64, service model.Service) {
 		ServiceRemovedEvent: &ServiceRemovedEvent{service}})
 }
 
-func (s *eventLog) OnViewAdded(ts int64, view model.View, config config.ConfigView) {
-	s.log(Event{Ts: ts, Type: "view_added",
-		ViewAddedEvent: &ViewAddedEvent{view}})
+func (s *eventLog) OnAlarmAdded(ts int64, alarm model.Alarm, config config.ConfigAlarm) {
+	s.log(Event{Ts: ts, Type: "alarm_added",
+		AlarmAddedEvent: &AlarmAddedEvent{alarm}})
 }
-func (s *eventLog) OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView) {
-	if oldView.State != newView.State {
-		s.log(Event{Ts: ts, Type: "view_state_changed",
-			ViewStateChangedEvent: &ViewStateChangedEvent{newView, oldView.State, newView.State}})
+func (s *eventLog) OnAlarmUpdated(ts int64, oldAlarm, newAlarm model.Alarm, config config.ConfigAlarm) {
+	if oldAlarm.State != newAlarm.State {
+		s.log(Event{Ts: ts, Type: "alarm_state_changed",
+			AlarmStateChanged: &AlarmStateChangedEvent{newAlarm, oldAlarm.State, newAlarm.State}})
 	}
 }
-func (s *eventLog) OnViewRemoved(ts int64, view model.View, config config.ConfigView) {
-	s.log(Event{Ts: ts, Type: "view_removed",
-		ViewRemovedEvent: &ViewRemovedEvent{view}})
+func (s *eventLog) OnAlarmRemoved(ts int64, alarm model.Alarm, config config.ConfigAlarm) {
+	s.log(Event{Ts: ts, Type: "alarm_removed",
+		AlarmRemovedEvent: &AlarmRemovedEvent{alarm}})
 }
 
 func (el *eventLog) log(jev interface{}) {

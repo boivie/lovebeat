@@ -9,10 +9,11 @@ type Services interface {
 	Subscribe(cb ServiceCallback)
 	Update(update *model.Update)
 
-	GetServices(view string) []model.Service
+	GetServices() []model.Service
+	GetServicesInAlarm(alarm string) []model.Service
 	GetService(name string) *model.Service
-	GetViews() []model.View
-	GetView(name string) *model.View
+	GetAlarms() []model.Alarm
+	GetAlarm(name string) *model.Alarm
 }
 
 type ServiceCallback interface {
@@ -22,7 +23,7 @@ type ServiceCallback interface {
 	OnServiceUpdated(ts int64, oldService, newService model.Service)
 	OnServiceRemoved(ts int64, service model.Service)
 
-	OnViewAdded(ts int64, view model.View, config config.ConfigView)
-	OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView)
-	OnViewRemoved(ts int64, view model.View, config config.ConfigView)
+	OnAlarmAdded(ts int64, alarm model.Alarm, config config.ConfigAlarm)
+	OnAlarmUpdated(ts int64, oldAlarm, newAlarm model.Alarm, config config.ConfigAlarm)
+	OnAlarmRemoved(ts int64, alarm model.Alarm, config config.ConfigAlarm)
 }

@@ -19,10 +19,10 @@ func (m scriptAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = append(os.Environ(), []string{
-			"LOVEBEAT_VIEW=" + ev.View.Name,
+			"LOVEBEAT_ALARM=" + ev.Alarm.Name,
 			"LOVEBEAT_STATE=" + strings.ToUpper(ev.Current),
 			"LOVEBEAT_PREVIOUS_STATE=" + strings.ToUpper(ev.Previous),
-			"LOVEBEAT_INCIDENT=" + strconv.Itoa(ev.View.IncidentNbr)}...)
+			"LOVEBEAT_INCIDENT=" + strconv.Itoa(ev.Alarm.IncidentNbr)}...)
 		c := make(chan int, 1)
 		go func() {
 			err := cmd.Run()

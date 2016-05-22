@@ -4,44 +4,44 @@ import (
 	"github.com/boivie/lovebeat/model"
 )
 
-func addViewsToService(state *servicesState, svc *Service, prevUpdates []stateUpdate) (updates []stateUpdate) {
+func addAlarmsToService(state *servicesState, svc *service, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
-	for _, tmpl := range state.viewTemplates {
+	for _, tmpl := range state.alarmTemplates {
 		name := tmpl.makeName(svc.data.Name)
 		if name != "" {
-			view, exists := state.views[name]
+			a, exists := state.alarms[name]
 			if !exists {
-				view = &View{tmpl: tmpl, data: model.View{
+				a = &alarm{tmpl: tmpl, data: model.Alarm{
 					Name:        name,
 					State:       model.StateNew,
 					IncidentNbr: 0,
 				}}
-				for _, existingView := range state.viewStates {
-					if existingView.Name == name {
-						view.data = *existingView
+				for _, existingAlarm := range state.alarmStates {
+					if existingAlarm.Name == name {
+						a.data = *existingAlarm
 					}
 				}
-				state.views[name] = view
-				viewCopy := *view
-				updates = append(updates, stateUpdate{oldView: nil, newView: &viewCopy})
+				state.alarms[name] = a
+				alarmCopy := *a
+				updates = append(updates, stateUpdate{oldAlarm: nil, newAlarm: &alarmCopy})
 			}
-			view.servicesInView = append(view.servicesInView, svc)
-			svc.inViews = append(svc.inViews, view)
+			a.servicesInAlarm = append(a.servicesInAlarm, svc)
+			svc.inAlarms = append(svc.inAlarms, a)
 		}
 	}
 	return
 }
 
-func removeViewsFromService(state *servicesState, svc *Service, prevUpdates []stateUpdate) (updates []stateUpdate) {
+func removeAlarmsFromService(state *servicesState, svc *service, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
-	for _, view := range svc.inViews {
-		var remainingServices []*Service
-		for _, s := range view.servicesInView {
+	for _, alarm := range svc.inAlarms {
+		var remainingServices []*service
+		for _, s := range alarm.servicesInAlarm {
 			if s != svc {
 				remainingServices = append(remainingServices, s)
 			}
 		}
-		view.servicesInView = remainingServices
+		alarm.servicesInAlarm = remainingServices
 	}
 	return
 }
@@ -58,12 +58,12 @@ func updateServices(state *servicesState, cmd *model.Update) (updates []stateUpd
 		}
 	} else if cmd.Service != "" {
 		updated := false
-		var old *Service
+		var old *service
 		service := state.services[cmd.Service]
 		if service == nil {
 			service = newService(cmd.Service)
 			state.services[cmd.Service] = service
-			updates = addViewsToService(state, service, updates)
+			updates = addAlarmsToService(state, service, updates)
 			updated = true
 		} else {
 			var r = *service
@@ -88,7 +88,7 @@ func updateServices(state *servicesState, cmd *model.Update) (updates []stateUpd
 			}
 		}
 		if cmd.DeleteService != nil {
-			updates = removeViewsFromService(state, service, updates)
+			updates = removeAlarmsFromService(state, service, updates)
 			delete(state.services, service.name())
 			service = nil
 			updated = old != nil
@@ -110,19 +110,19 @@ func updateServices(state *servicesState, cmd *model.Update) (updates []stateUpd
 	return
 }
 
-func removeViews(state *servicesState, c *model.Update, prevUpdates []stateUpdate) (updates []stateUpdate) {
+func removeAlarms(state *servicesState, c *model.Update, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
-	if c.DeleteView != nil {
-		view, exist := state.views[c.View]
-		if exist && len(view.servicesInView) == 0 {
-			delete(state.views, c.View)
-			updates = append(updates, stateUpdate{oldView: view, newView: nil})
+	if c.DeleteAlarm != nil {
+		alarm, exist := state.alarms[c.Alarm]
+		if exist && len(alarm.servicesInAlarm) == 0 {
+			delete(state.alarms, c.Alarm)
+			updates = append(updates, stateUpdate{oldAlarm: alarm, newAlarm: nil})
 		}
 	}
 	return
 }
 
-func updateViews(state *servicesState, ts int64, prevUpdates []stateUpdate) (updates []stateUpdate) {
+func updateAlarms(state *servicesState, ts int64, prevUpdates []stateUpdate) (updates []stateUpdate) {
 	updates = prevUpdates
 	for _, update := range prevUpdates {
 		service := update.newService
@@ -130,16 +130,16 @@ func updateViews(state *servicesState, ts int64, prevUpdates []stateUpdate) (upd
 			service = update.oldService
 		}
 		if service != nil {
-			for _, view := range service.inViews {
-				newState := view.calculateState()
-				if view.data.State != newState {
-					ref := *view
-					view.data.State = newState
-					view.data.LastStateChange = ts
+			for _, alarm := range service.inAlarms {
+				newState := alarm.calculateState()
+				if alarm.data.State != newState {
+					ref := *alarm
+					alarm.data.State = newState
+					alarm.data.LastStateChange = ts
 					if ref.data.State == model.StateOk || ref.data.State == model.StateNew {
-						view.data.IncidentNbr += 1
+						alarm.data.IncidentNbr += 1
 					}
-					updates = append(updates, stateUpdate{oldView: &ref, newView: view})
+					updates = append(updates, stateUpdate{oldAlarm: &ref, newAlarm: alarm})
 				}
 			}
 		}

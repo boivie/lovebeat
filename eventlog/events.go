@@ -27,22 +27,22 @@ type ServiceRemovedEvent struct {
 	Service model.Service `json:"service"`
 }
 
-// ViewAddedEvent will be sent when a view has been added
-type ViewAddedEvent struct {
-	View model.View `json:"view"`
+// AlarmAddedEvent will be sent when an alarm has been added
+type AlarmAddedEvent struct {
+	Alarm model.Alarm `json:"alarm"`
 }
 
-// ViewStateChangedEvent will be sent when a view has changed state
-type ViewStateChangedEvent struct {
-	View     model.View `json:"view"`
-	Previous string     `json:"previous"`
-	Current  string     `json:"current"`
+// AlarmStateChangedEvent will be sent when an alarm has changed state
+type AlarmStateChangedEvent struct {
+	Alarm    model.Alarm `json:"alarm"`
+	Previous string      `json:"previous"`
+	Current  string      `json:"current"`
 }
 
-// ViewRemovedEvent will be sent when a view has been manually removed. It will not be sent
-// if a view has been removed by the configuration as loaded on startup
-type ViewRemovedEvent struct {
-	View model.View `json:"view"`
+// AlarmRemovedEvent will be sent when an alarm has been manually removed. It will not be sent
+// if an alarm has been removed by the configuration as loaded on startup
+type AlarmRemovedEvent struct {
+	Alarm model.Alarm `json:"alarm"`
 }
 
 type Event struct {
@@ -53,7 +53,7 @@ type Event struct {
 	ServiceStateChangedEvent *ServiceStateChangedEvent `json:"service_state_changed,omitempty"`
 	ServiceRemovedEvent      *ServiceRemovedEvent      `json:"service_removed,omitempty"`
 
-	ViewAddedEvent        *ViewAddedEvent        `json:"view_added,omitempty"`
-	ViewStateChangedEvent *ViewStateChangedEvent `json:"view_state_changed,omitempty"`
-	ViewRemovedEvent      *ViewRemovedEvent      `json:"view_removed,omitempty"`
+	AlarmAddedEvent   *AlarmAddedEvent        `json:"alarm_added,omitempty"`
+	AlarmStateChanged *AlarmStateChangedEvent `json:"alarm_state_changed,omitempty"`
+	AlarmRemovedEvent *AlarmRemovedEvent      `json:"alarm_removed,omitempty"`
 }

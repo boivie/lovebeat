@@ -10,7 +10,7 @@ import (
 type webSocketEvent struct {
 	Type    string              `json:"type"`
 	Service *api.HttpApiService `json:"service,omitempty"`
-	View    *model.View         `json:"view,omitempty"`
+	Alarm   *model.Alarm        `json:"alarm,omitempty"`
 }
 
 type wsObj struct {
@@ -19,27 +19,30 @@ type wsObj struct {
 func (s *wsObj) OnUpdate(ts int64, update model.Update) {}
 
 func (s *wsObj) OnServiceAdded(ts int64, service model.Service) {
-	var encoded, _ = json.Marshal(webSocketEvent{Type: "ADD_SERVICE", Service: api.ToHttpService(service)})
+	srv := api.ToHttpService(service)
+	var encoded, _ = json.Marshal(webSocketEvent{Type: "ADD_SERVICE", Service: &srv})
 	h.broadcast <- encoded
 }
 func (s *wsObj) OnServiceUpdated(ts int64, oldService, newService model.Service) {
-	var encoded, _ = json.Marshal(webSocketEvent{Type: "UPDATE_SERVICE", Service: api.ToHttpService(newService)})
+	srv := api.ToHttpService(newService)
+	var encoded, _ = json.Marshal(webSocketEvent{Type: "UPDATE_SERVICE", Service: &srv})
 	h.broadcast <- encoded
 }
 func (s *wsObj) OnServiceRemoved(ts int64, service model.Service) {
-	var encoded, _ = json.Marshal(webSocketEvent{Type: "REMOVE_SERVICE", Service: api.ToHttpService(service)})
+	srv := api.ToHttpService(service)
+	var encoded, _ = json.Marshal(webSocketEvent{Type: "REMOVE_SERVICE", Service: &srv})
 	h.broadcast <- encoded
 }
 
-func (s *wsObj) OnViewAdded(ts int64, view model.View, config config.ConfigView) {
-	var encoded, _ = json.Marshal(webSocketEvent{Type: "ADD_VIEW", View: &view})
+func (s *wsObj) OnAlarmAdded(ts int64, alarm model.Alarm, config config.ConfigAlarm) {
+	var encoded, _ = json.Marshal(webSocketEvent{Type: "ADD_ALARM", Alarm: &alarm})
 	h.broadcast <- encoded
 }
-func (s *wsObj) OnViewUpdated(ts int64, oldView, newView model.View, config config.ConfigView) {
-	var encoded, _ = json.Marshal(webSocketEvent{Type: "UPDATE_VIEW", View: &newView})
+func (s *wsObj) OnAlarmUpdated(ts int64, oldAlarm, newAlarm model.Alarm, config config.ConfigAlarm) {
+	var encoded, _ = json.Marshal(webSocketEvent{Type: "UPDATE_ALARM", Alarm: &newAlarm})
 	h.broadcast <- encoded
 }
-func (s *wsObj) OnViewRemoved(ts int64, view model.View, config config.ConfigView) {
-	var encoded, _ = json.Marshal(webSocketEvent{Type: "REMOVE_VIEW", View: &view})
+func (s *wsObj) OnAlarmRemoved(ts int64, alarm model.Alarm, config config.ConfigAlarm) {
+	var encoded, _ = json.Marshal(webSocketEvent{Type: "REMOVE_ALARM", Alarm: &alarm})
 	h.broadcast <- encoded
 }

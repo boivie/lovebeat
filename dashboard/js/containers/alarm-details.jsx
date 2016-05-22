@@ -1,20 +1,20 @@
 import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux'
-import { fetchServices, triggerBeat, muteService, unmuteService, deleteService } from '../actions'
+import { fetchAlarm, triggerBeat, muteService, unmuteService, deleteService } from '../actions'
 import Services from './services'
 
 function loadData(props) {
-  const { viewId } = props
-  props.fetchServices(viewId)
+  const { alarmId } = props
+  props.fetchAlarm(alarmId)
 }
 
-class ViewDetails extends Component {
+class AlarmDetails extends Component {
   componentWillMount() {
     loadData(this.props)
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.viewId !== this.props.viewId) {
+    if (nextProps.alarmId !== this.props.alarmId) {
       loadData(nextProps)
     }
   }
@@ -48,7 +48,7 @@ class ViewDetails extends Component {
 
     return (
       <div>
-      <h1>{this.props.viewId}</h1>
+      <h1>{this.props.alarmId}</h1>
       <div className="toolbar">
         <button onClick={this.trigger.bind(this)} disabled={!enabled} title="Trigger" className="tool-btn"><svg className="btn-icon"><use xlinkHref='#icon-heartbeat'/></svg></button>
         <button onClick={this.mute.bind(this)} disabled={!enabled} title="Mute" className="tool-btn"><svg className="btn-icon"><use xlinkHref='#icon-mute'/></svg></button>
@@ -58,7 +58,7 @@ class ViewDetails extends Component {
       {isEmpty
         ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
         : <div>
-            <Services key={this.props.viewId} viewId={this.props.viewId} services={services} checked={checked}/>
+            <Services key={this.props.alarmId} alarmId={this.props.alarmId} services={services} checked={checked}/>
           </div>
       }
       </div>
@@ -66,32 +66,32 @@ class ViewDetails extends Component {
   }
 }
 
-ViewDetails.propTypes = {
-  viewId: PropTypes.string.isRequired,
+AlarmDetails.propTypes = {
+  alarmId: PropTypes.string.isRequired,
   services: PropTypes.array.isRequired,
   isFetching: PropTypes.bool.isRequired,
   lastUpdated: PropTypes.number,
-  fetchServices: PropTypes.func.isRequired,
+  fetchAlarm: PropTypes.func.isRequired,
   checked: PropTypes.object.isRequired
 }
 
 function mapStateToProps(state, ownProps) {
-  const { servicesByView } = state
-  const viewId = ownProps.params.viewId
+  const { servicesByAlarm } = state
+  const alarmId = ownProps.params.alarmId
 
   const {
     isFetching,
     lastUpdated,
     items: services,
     checked
-  } = servicesByView[viewId] || {
+  } = servicesByAlarm[alarmId] || {
     isFetching: true,
     items: [],
     checked: {}
   }
 
   return {
-    viewId,
+    alarmId,
     services,
     isFetching,
     lastUpdated,
@@ -100,5 +100,5 @@ function mapStateToProps(state, ownProps) {
 }
 
 export default connect(mapStateToProps, {
-  fetchServices, triggerBeat, muteService, unmuteService, deleteService
-})(ViewDetails)
+  fetchAlarm, triggerBeat, muteService, unmuteService, deleteService
+})(AlarmDetails)
