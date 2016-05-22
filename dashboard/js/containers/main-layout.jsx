@@ -41,7 +41,7 @@ class MainLayout extends Component {
       <div className="application">
         <header id="top">
           <div className="brand">
-            <svg className="icon icon-heartbeat"><use xlinkHref='#icon-heartbeat'/></svg> Lovebeat
+            <Link to="/"><svg className="icon icon-heartbeat"><use xlinkHref='#icon-heartbeat'/></svg> Lovebeat</Link>
           </div>
         </header>
         <div className="wrapper-main">
