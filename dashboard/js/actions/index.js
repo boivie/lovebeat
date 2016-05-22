@@ -2,6 +2,8 @@ export const REQUEST_ALARM = 'REQUEST_ALARM'
 export const RECEIVE_ALARM = 'RECEIVE_ALARM'
 export const REQUEST_ALARMS = 'REQUEST_ALARMS'
 export const RECEIVE_ALARMS = 'RECEIVE_ALARMS'
+export const REQUEST_ALL_SERVICES = 'REQUEST_ALL_SERVICES'
+export const RECEIVE_ALL_SERVICES = 'RECEIVE_ALL_SERVICES'
 export const ADD_SERVICE = 'ADD_SERVICE'
 export const UPDATE_SERVICE = 'UPDATE_SERVICE'
 export const REMOVE_SERVICE = 'REMOVE_SERVICE'
@@ -49,6 +51,29 @@ export function fetchAlarm(alarmId) {
     return fetch(`/api/alarms/${alarmId}`)
       .then(response => response.json())
       .then(json => dispatch(receiveAlarm(alarmId, json)))
+  }
+}
+
+function requestAllServices() {
+  return {
+    type: REQUEST_ALL_SERVICES
+  }
+}
+
+function receiveAllServices(json) {
+  return {
+    type: RECEIVE_ALL_SERVICES,
+    services: json.services,
+    receivedAt: Date.now()
+  }
+}
+
+export function fetchAllServices() {
+  return dispatch => {
+    dispatch(requestAllServices())
+    return fetch(`/api/services`)
+      .then(response => response.json())
+      .then(json => dispatch(receiveAllServices(json)))
   }
 }
 

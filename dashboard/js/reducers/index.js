@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux'
 import {
-  REQUEST_ALARM, RECEIVE_ALARM, REQUEST_ALARMS, RECEIVE_ALARMS,
+  REQUEST_ALL_SERVICES, RECEIVE_ALL_SERVICES, REQUEST_ALARM, RECEIVE_ALARM,
+  REQUEST_ALARMS, RECEIVE_ALARMS,
   ADD_SERVICE, UPDATE_SERVICE, REMOVE_SERVICE, ADD_ALARM, UPDATE_ALARM,
   TOGGLE_SERVICE_CHECKED, REMOVE_ALARM
 } from '../actions'
@@ -12,11 +13,13 @@ function services(state = {
   checked: {}
 }, action) {
   switch (action.type) {
+    case REQUEST_ALL_SERVICES:
     case REQUEST_ALARM:
       return Object.assign({}, state, {
         isFetching: true,
         didInvalidate: false
       })
+    case RECEIVE_ALL_SERVICES:
     case RECEIVE_ALARM:
       return Object.assign({}, state, {
         isFetching: false,
@@ -57,6 +60,11 @@ function servicesByAlarm(state = { }, action) {
       return Object.assign({}, state, {
         [action.alarmId]: services(state[action.alarmId], action)
       })
+    case REQUEST_ALL_SERVICES:
+    case RECEIVE_ALL_SERVICES:
+      return Object.assign({}, state, {
+        [""]: services(state[""], action)
+      })
     case ADD_SERVICE:
     case UPDATE_SERVICE:
     case REMOVE_SERVICE:
@@ -66,6 +74,7 @@ function servicesByAlarm(state = { }, action) {
         const alarmId = in_alarms[i]
         upd[alarmId] = services(state[alarmId], action)
       }
+      upd[""] = services(state[""], action)
       return Object.assign({}, state, upd)
     default:
       return state

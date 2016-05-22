@@ -50,6 +50,25 @@ class MainLayout extends Component {
           </main>
         </div>
         <aside id="left">
+          <div className="alarm-title">
+            Services
+          </div>
+
+          <ul className="alarms">
+            <li className="alarm-li">
+              <div className="alarm-tile">
+                <h2 className="title">
+                  <Link to="/services">
+                    <span className="label-align">All Services</span>
+                  </Link>
+                </h2>
+              </div>
+            </li>
+          </ul>
+
+          <div className="alarm-title">
+            Alarms
+          </div>
           <AlarmList/>
         </aside>
       </div>

@@ -15,9 +15,6 @@ class AlarmList extends Component {
 
     return (
       <div>
-        <div className="alarm-title">
-          Alarms
-        </div>
       {isEmpty
         ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
         : <div style={{ opacity: isFetching ? 0.5 : 1 }}>
