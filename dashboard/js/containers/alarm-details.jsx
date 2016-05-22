@@ -23,10 +23,10 @@ class AlarmDetails extends Component {
   render() {
     const { checked, services, isFetching, lastUpdated } = this.props
     const isEmpty = services.length === 0
-
+    const pathSepStyles = {margin: "0 0.25em"}
     return (
       <div>
-      <h1>{this.props.alarmId}</h1>
+      <h1><span>alarms</span><span style={pathSepStyles}>/</span><span>{this.props.alarmId}</span></h1>
       <ServicesToolbar checked={checked}/>
       {isEmpty
         ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
