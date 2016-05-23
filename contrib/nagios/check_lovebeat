@@ -2,7 +2,7 @@
 
 HOST=$1
 
-STATUS=$(curl -f -s http://$HOST/status)
+STATUS=$(curl -f -s http://$HOST/api/status)
 if [ $? -ne 0 ];
 then
     echo "CRITICAL - failed to contact lovebeat server on $HOST"
