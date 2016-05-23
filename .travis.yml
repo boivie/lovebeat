@@ -21,8 +21,8 @@ script:
 - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && goveralls -coverprofile=profile.cov -service travis-ci -repotoken $COVERALLS_TOKEN'
 after_success:
 - gox -ldflags="-s -w -X main.version=${TRAVIS_TAG:-$TRAVIS_COMMIT}" -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
-- '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && ghr --username boivie --token $GITHUB_TOKEN --replace --prerelease --debug -c $TRAVIS_COMMIT latest dist/'
-- '[ "${TRAVIS_TAG}" != "" ] && ghr --username boivie --token $GITHUB_TOKEN --replace -c $TRAVIS_COMMIT $TRAVIS_TAG dist/'
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then ghr --username boivie --token $GITHUB_TOKEN --replace --prerelease --debug -c $TRAVIS_COMMIT latest dist/; fi
+- if [ "$TRAVIS_TAG" != "" ]; then ghr --username boivie --token $GITHUB_TOKEN --replace -c $TRAVIS_COMMIT $TRAVIS_TAG dist/; fi
 notifications:
   email:
     recipients:
