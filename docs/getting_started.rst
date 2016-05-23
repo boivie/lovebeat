@@ -28,29 +28,30 @@ your services in. You can set a timeout so that the service will change state
 into **ERROR** if the service hasn't issued a beat within that period of time.
 
 A service can also be muted. This will move it into the **MUTED** state, and then
-it will not trigger any alerts or cause views to be in **ERROR**.
+it will not trigger any alerts or cause alarms to be in **ERROR**.
 
-Views
------
+Alarms
+------
 
-A view shows a filtered subset of your services. You specify a matching pattern
-and all services whose identifiers match this pattern will be part of
-the view.
+An alarm contains a filtered subset of your services. You specify a matching
+pattern and all services whose identifiers match this pattern will be part of
+the alarm.
 
-This is an example of a view called "backup-jobs" that match all servies
+This is an example of an alarm called "backup-jobs" that match all services
 starting with "backup."
 
 .. code-block:: ini
 
-    [[views]]
+    [[alarms]]
     name = "backup-jobs"
     pattern = "backup.*"
 
-The views will inherit state from their services. If all services are **OK**,
-the view will be **OK**. But if any service is **ERROR** state, the view will
-transition into the **ERROR** state.
+Alarms also have states. If all services within the alarm are **OK**, the alarm
+will be **OK**. But if any service is in **ERROR** state, the alarm will
+transition into the **ERROR** state. And when an alarm is in **ERROR**, it can
+trigger alerts to e.g. send an e-mail, post a Slack_ message or run a script.
 
-Views can be automatically created based on the service names, which is a
+Alarms can be automatically created based on the service names, which is a
 powerful feature when your service names have a structure.
 
 Say that you have an application running on three servers (alpha, beta and
@@ -64,25 +65,25 @@ delta), and the application provides two heartbeats, ".healthcheck" and
  * application-name.delta.healthcheck
  * application-name.delta.background-job-1
 
-By having a view configuration such as:
+By having an alarm configuration such as:
 
 .. code-block:: ini
 
-    [[views]]
+    [[alarms]]
     name = "server-$name"
     pattern = "application-name.$name.*"
 
-You will then end up with three views, "server-alpha" including the services
+You will then end up with three alarms, "server-alpha" including the services
 "application-name.alpha.healthcheck" and "application-name.alpha.background-job-1"
 and similar for "server-beta" and "server-delta".
 
 For more advanced pattern matching, use ``includes`` and ``excludes`` to specify a list
 of patterns. If any pattern in ``includes`` match, and no pattern in ``excludes`` match,
-the service will be part of the view. Example as below:
+the service will be part of the alarm. Example as below:
 
 .. code-block:: ini
 
-    [[views]]
+    [[alarms]]
     name = "source-$name"
     includes = ["source.$name.*", "old-source.$name.*"]
     excludes = ["source.deprecated.*"]
@@ -92,3 +93,5 @@ Web UI
 ------
 
 Just point your browser to http://localhost:8080/
+
+.. _Slack: https://slack.com/

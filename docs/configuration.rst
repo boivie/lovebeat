@@ -2,8 +2,8 @@ Configuration
 =============
 
 You don't need to write a configuration file to get started (just launch the
-executable), but some settings need to be specified if you want to use advanced
-features such as SMTP mail notifications.
+executable), but some settings need to be specified if you want to configure alarms
+and use advanced features such as SMTP mail notifications.
 
 Note that lovebeat by default reads ``/etc/lovebeat.cfg`` but you can override
 this by specifying the ``-config <file>`` argument when starting lovebeat. If
@@ -27,7 +27,7 @@ documented as well.
     #public_url = "http://lovebeat.example.com/"
 
     ##
-    ## The database stores information about all services and views. It's
+    ## The database stores information about all services and alarms. It's
     ## in one single file and it's safely rewritten on save, which it does
     ## when exiting the program as well as every minute while running. This
     ## can be changed by the 'interval' setting.

@@ -26,14 +26,15 @@ are confident that it's monitoring your services correctly.
 External Monitoring
 ~~~~~~~~~~~~~~~~~~~
 
-It is easy to have an external monitoring system find out if lovebeat if
-healthy. There is an API endpoint, ``/status`` for that purpose.
+It is easy to have an external monitoring system find out if lovebeat and the
+services reporting to it are healthy. There are two API endpoint,
+``/api/status`` and ``/api/alarms/<alarm_name>/status`` for that purpose.
 
 Calling it will result in the following response:
 
 .. code-block:: bash
 
-    $ curl http://localhost:8080/status
+    $ curl http://localhost:8080/api/status
     num_ok 4
     num_error 2
     has_error true
@@ -44,7 +45,7 @@ following will be the response instead:
 
 .. code-block:: bash
 
-    $ curl -H "Accept: application/json" http://localhost:8080/status
+    $ curl -H "Accept: application/json" http://localhost:8080/api/status
     {
       "num_ok": 4,
       "num_error": 2,
@@ -54,11 +55,8 @@ following will be the response instead:
 
 ``good`` will be **true** only if there are no services in **ERROR** state.
 
-By specifying a ``?view=name`` query parameters, only services that are members
-of the provided view will be used.
-
-You can let e.g. nagios_ monitor it. There is a
-provided nagios plugin in the contrib/ directory.
+You can let e.g. nagios_ monitor it. There is a provided nagios plugin in the
+contrib/ directory.
 
 Lovebeat Monitoring
 ~~~~~~~~~~~~~~~~~~~
@@ -89,7 +87,7 @@ them to be shown in  e.g. graphite_, influxdb_ or similar.
 
 You will get some health information about Lovebeat itself, such as the time
 it takes to save its database, and also status information (as gauges) of
-all services and views. This allows you to correlate service status with other
+all services and alarms. This allows you to correlate service status with other
 metrics you collect.
 
 Simply specify a server and the prefix that Lovebeat will use for all metrics

@@ -80,9 +80,6 @@ GET /api/services
 
 Returns the list of services.
 
-  * By specifying a ``?view=<name>`` query parameter, only services that are
-    members of the specified view will be returned.
-
 GET /api/services/<service_name>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -107,20 +104,20 @@ DELETE /api/services/<service_name>
 
 Deletes a service.
 
-GET /api/views
-~~~~~~~~~~~~~~
+GET /api/alarms
+~~~~~~~~~~~~~~~
 
-Returns a list of views.
+Returns a list of alarms.
 
-GET /api/views/<view_name>
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+GET /api/alarms/<alarm_name>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Returns details of a specific view.
+Returns details of a specific alarm and the services included in it.
 
-DELETE /api/views/<view_name>
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+DELETE /api/alarms/<alarm_name>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removes the view. The view must be empty and it will appear again when a
-service is created that match this view config's patterns.
+Removes the alarm. The alarm must be empty and it will appear again when a
+service is created that match this alarm config's patterns.
 
 .. _graphite: http://graphite.wikidot.com/

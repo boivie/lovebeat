@@ -2,7 +2,7 @@ Alerters
 ========
 
 You can setup lovebeat to send mails or issue outgoing webhooks (HTTP POST) to
-your web service whenever a view changes state. This is done on a view by
+your web service whenever an alarm changes state. This is done on an alarm by
 modifying the configuration file.
 
 Send Mail
@@ -26,7 +26,7 @@ The configuration file should look as following:
 Outgoing Webhooks
 -----------------
 
-When a view changes state, a POST will be sent to the URL(s) specified in the
+When an alarm changes state, a POST will be sent to the URL(s) specified in the
 configuration. The JSON data that is sent follows:
 
 .. code-block:: http
@@ -38,7 +38,7 @@ configuration. The JSON data that is sent follows:
     X-Lovebeat: 1
 
     {
-      "name": "view.name.here",
+      "name": "alarm.name.here",
       "from_state": "ok",
       "to_state": "error",
       "incident_number": 4
@@ -48,18 +48,18 @@ Example of the configuration file:
 
 .. code-block:: ini
 
-    [[views]]
+    [[alarms]]
     name = "example"
     pattern = "test.*"
     alerts = ["to-requestbin"]
 
-    [alerts.to-requestbin]
+    [[alarms.alerts]]
     webhook = "http://requestb.in/19lw85o1"
 
 Slack
 -----
 
-Lovebeat can post messages to a slack_ channel whenever a view changes state.
+Lovebeat can post messages to a slack_ channel whenever an alarm changes state.
 First of all, setup an incoming webhook to get a Webhook URL that you will
 enter in the lovebeat configuration file.
 
@@ -67,12 +67,12 @@ A working example would look like:
 
 .. code-block:: ini
 
-    [[views]]
+    [[alarms]]
     name = "example"
     pattern = "test.*"
     alerts = ["message-to-ops"]
 
-    [alerts.message-to-ops]
+    [[alarms.alerts]]
     slack_channel = "#ops"
 
     [slack]
@@ -81,10 +81,10 @@ A working example would look like:
 Script
 ------
 
-Lovebeat can run arbitrary scripts (or other executable files) whenever a view
+Lovebeat can run arbitrary scripts (or other executable files) whenever an alarm
 changes state. The details of the alert will be posted as environment variables:
 
-  * LOVEBEAT_VIEW=<name of the view>
+  * LOVEBEAT_ALARM=<name of the alarm>
   * LOVEBEAT_STATE=<the current state>
   * LOVEBEAT_PREVIOUS_STATE=<the previous state>
   * LOVEBEAT_INCIDENT=<incident number>
@@ -101,12 +101,12 @@ Example of the configuration file:
 
 .. code-block:: ini
 
-    [[views]]
+    [[alarms]]
     name = "example"
     pattern = "test.*"
     alerts = ["test-alert"]
 
-    [alerts.test-alert]
+    [[alarms.alerts]]
     script = "/path/to/script.sh"
 
 The script (/path/to/script.sh) could look like:
@@ -122,10 +122,10 @@ The output would then be (among other environment variables):
 
 .. code-block:: text
 
-    2016/01/26 18:10:56 INFO VIEW 'example', 11: state ok -> error
+    2016/01/26 18:10:56 INFO ALARM 'example', 11: state ok -> error
     2016/01/26 18:10:56 INFO Running alert script /path/to/script.sh
     Hello World
-    LOVEBEAT_VIEW=slack
+    LOVEBEAT_ALARM=example
     LOVEBEAT_STATE=ERROR
     LOVEBEAT_PREVIOUS_STATE=OK
     LOVEBEAT_INCIDENT=11
