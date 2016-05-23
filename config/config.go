@@ -19,6 +19,7 @@ type Config struct {
 	Database ConfigDatabase
 	Metrics  ConfigMetrics
 	Alarms   []ConfigAlarm
+	Alerts   map[string]ConfigAlert
 	Eventlog ConfigEventlog
 	Notify   []ConfigNotify
 }
@@ -65,7 +66,7 @@ type ConfigAlarm struct {
 	Pattern  string
 	Includes []string
 	Excludes []string
-	Alerts   []ConfigAlert
+	Alerts   []string
 }
 
 type ConfigEventlog struct {

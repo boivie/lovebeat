@@ -64,8 +64,12 @@ func runner(cfg config.Config, q <-chan AlertInfo, notifier notify.Notifier) {
 			notifier.Notify("alerter")
 		case event := <-q:
 			for _, alert := range event.AlarmConfig.Alerts {
-				for _, a := range alerters {
-					a.Notify(alert, event)
+				if alertCfg, ok := cfg.Alerts[alert]; ok {
+					for _, a := range alerters {
+						a.Notify(alertCfg, event)
+					}
+				} else {
+					log.Warningf("Alarm %s references alert %s which can't be found", event.Alarm.Name, alert)
 				}
 			}
 		}

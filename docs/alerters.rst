@@ -53,7 +53,7 @@ Example of the configuration file:
     pattern = "test.*"
     alerts = ["to-requestbin"]
 
-    [[alarms.alerts]]
+    [alerts.to-requestbin]
     webhook = "http://requestb.in/19lw85o1"
 
 Slack
@@ -72,7 +72,7 @@ A working example would look like:
     pattern = "test.*"
     alerts = ["message-to-ops"]
 
-    [[alarms.alerts]]
+    [alerts.message-to-ops]
     slack_channel = "#ops"
 
     [slack]
@@ -106,7 +106,7 @@ Example of the configuration file:
     pattern = "test.*"
     alerts = ["test-alert"]
 
-    [[alarms.alerts]]
+    [alerts.test-alert]
     script = "/path/to/script.sh"
 
 The script (/path/to/script.sh) could look like:
