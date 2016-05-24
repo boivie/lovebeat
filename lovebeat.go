@@ -100,7 +100,10 @@ func main() {
 	log.Info(versionStr)
 	log.Infof("Started on %s, PID %d, running from %s", myName, os.Getpid(), wd)
 
-	cfg := config.ReadConfig(*cfgFile, *cfgDir)
+	cfg, err := config.ReadConfig(*cfgFile, *cfgDir)
+	if err != nil {
+		os.Exit(2)
+	}
 
 	notifier := notify.Init(myName, cfg.Notify)
 

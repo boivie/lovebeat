@@ -91,17 +91,19 @@ func exists(path string) (bool, error) {
 	return false, err
 }
 
-func readFile(conf *Config, fname string) {
+func readFile(conf *Config, fname string) error {
 	if e, _ := exists(fname); e {
 		log.Infof("Reading configuration file %s", fname)
 		if _, err := toml.DecodeFile(fname, conf); err != nil {
 			log.Errorf("Failed to parse configuration file '%s': %v", fname, err)
+			return err
 		}
 	}
+	return nil
 }
 
-func ReadConfig(fname string, dirname string) Config {
-	var conf = Config{
+func ReadConfig(fname string, dirname string) (conf Config, err error) {
+	conf = Config{
 		General: ConfigGeneral{
 			PublicUrl: "http://lovebeat.example.com/",
 		},
@@ -134,17 +136,27 @@ func ReadConfig(fname string, dirname string) Config {
 			Mode: 644, // Reinterpreted as octal below
 		},
 	}
-	readFile(&conf, fname)
+	err = readFile(&conf, fname)
+	if err != nil {
+		return
+	}
 	if dirname != "" {
-		files, err := ioutil.ReadDir(dirname)
+		var files []os.FileInfo
+		files, err = ioutil.ReadDir(dirname)
 		if err == nil {
 			for _, f := range files {
 				path := filepath.Join(dirname, f.Name())
-				readFile(&conf, path)
+				err = readFile(&conf, path)
+				if err != nil {
+					return
+				}
 			}
+		} else {
+			// This directory is optional
+			err = nil
 		}
 	}
 	mode, _ := strconv.ParseInt(strconv.FormatInt(int64(conf.Eventlog.Mode), 10), 8, 64)
 	conf.Eventlog.Mode = os.FileMode(mode)
-	return conf
+	return
 }
