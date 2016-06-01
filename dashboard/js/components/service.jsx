@@ -16,6 +16,9 @@ function humanDateTime(d) {
 }
 
 function tohuman(d) {
+  if (d == 0) {
+    return "0 s"
+  }
   return juration.stringify(d, { format: 'short' })
 }
 
