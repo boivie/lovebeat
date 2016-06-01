@@ -9,9 +9,9 @@ import (
 
 func TestNewService(t *testing.T) {
 	state := newState()
-	updates := updateServices(state, &model.Update{Ts: 1, Service: "test", Beat: &model.Beat{}})
+	updates := updateServices(state, &model.Update{Ts: 1000, Service: "test", Beat: &model.Beat{}})
 
-	if state.services["test"].lastBeat != 1 {
+	if state.services["test"].lastBeat != 1000 {
 		t.Errorf("Missing beat")
 	}
 
@@ -36,36 +36,63 @@ func TestExpireService(t *testing.T) {
 	}
 }
 
+func TestFastBeatsRateLimited(t *testing.T) {
+	state := newState()
+	updateServices(state, &model.Update{Ts: 0, Service: "test", SetTimeout: &model.SetTimeout{Timeout: 10000}, Beat: &model.Beat{}})
+	updates := updateServices(state, &model.Update{Ts: 1000, Service: "test", Beat: &model.Beat{}})
+	if len(updates) == 0 {
+		t.Errorf("Expected updates")
+	}
+
+	updates2 := updateServices(state, &model.Update{Ts: 1100, Service: "test", Beat: &model.Beat{}})
+
+	if len(updates2) != 0 {
+		t.Errorf("Expected no updates within the same second")
+	}
+
+	updates3 := updateServices(state, &model.Update{Ts: 2000, Service: "test", Beat: &model.Beat{}})
+
+	if len(updates3) == 0 {
+		t.Errorf("Expected updates")
+	}
+
+	updates4 := updateServices(state, &model.Update{Ts: 2900, Service: "test", Beat: &model.Beat{}})
+
+	if len(updates4) != 0 {
+		t.Errorf("Expected no updates within the same second")
+	}
+}
+
 func TestMuteExpired(t *testing.T) {
 	state := newState()
-	updateServices(state, &model.Update{Ts: 0, Service: "test", SetTimeout: &model.SetTimeout{Timeout: 1000}, Beat: &model.Beat{}})
-	updates1 := updateServices(state, &model.Update{Ts: 500, Service: "test", MuteService: &model.MuteService{Muted: true}})
+	updateServices(state, &model.Update{Ts: 0, Service: "test", SetTimeout: &model.SetTimeout{Timeout: 10000}, Beat: &model.Beat{}})
+	updates1 := updateServices(state, &model.Update{Ts: 5000, Service: "test", MuteService: &model.MuteService{Muted: true}})
 
 	if updates1[0].oldService.name() != "test" || updates1[0].oldService.data.State != model.StateOk || updates1[0].newService.data.State != model.StateMuted {
 		t.Errorf("Expected service muted")
 	}
 
 	// Idempotent muting
-	updates2 := updateServices(state, &model.Update{Ts: 500, Service: "test", MuteService: &model.MuteService{Muted: true}})
+	updates2 := updateServices(state, &model.Update{Ts: 5000, Service: "test", MuteService: &model.MuteService{Muted: true}})
 
 	if len(updates2) != 0 {
 		t.Errorf("Expected no updates")
 	}
 
-	updates3 := updateServices(state, &model.Update{Ts: 1000, Tick: &model.Tick{}})
+	updates3 := updateServices(state, &model.Update{Ts: 5000, Tick: &model.Tick{}})
 
 	if len(updates3) != 0 {
 		t.Errorf("Expected no errors")
 	}
 
 	// un-mute
-	updates4 := updateServices(state, &model.Update{Ts: 1500, Service: "test", MuteService: &model.MuteService{Muted: false}})
+	updates4 := updateServices(state, &model.Update{Ts: 12000, Service: "test", MuteService: &model.MuteService{Muted: false}})
 	if updates4[0].oldService.name() != "test" || updates4[0].oldService.data.State != model.StateMuted || updates4[0].newService.data.State != model.StateError {
 		t.Errorf("Expected service in error")
 	}
 
 	// Idempotent un-muting
-	updates5 := updateServices(state, &model.Update{Ts: 500, Service: "test", MuteService: &model.MuteService{Muted: false}})
+	updates5 := updateServices(state, &model.Update{Ts: 12000, Service: "test", MuteService: &model.MuteService{Muted: false}})
 	if len(updates5) != 0 {
 		t.Errorf("Expected no updates")
 	}

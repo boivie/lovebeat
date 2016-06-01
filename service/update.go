@@ -70,7 +70,7 @@ func updateServices(state *servicesState, cmd *model.Update) (updates []stateUpd
 			old = &r
 		}
 
-		if cmd.Beat != nil {
+		if cmd.Beat != nil && (cmd.Ts-service.data.LastBeat) >= 1000 {
 			service.registerBeat(cmd.Ts)
 			updated = true
 		}
@@ -100,6 +100,7 @@ func updateServices(state *servicesState, cmd *model.Update) (updates []stateUpd
 			if state != service.data.State {
 				service.data.State = state
 				service.data.LastStateChange = cmd.Ts
+				updated = true
 			}
 		}
 
