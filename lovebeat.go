@@ -15,6 +15,7 @@ import (
 	"github.com/boivie/lovebeat/service"
 	slog "github.com/boivie/lovebeat/syslog"
 	"github.com/boivie/lovebeat/websocket"
+	"github.com/franela/goreq"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 )
 
 var (
@@ -104,6 +106,9 @@ func main() {
 	if err != nil {
 		os.Exit(2)
 	}
+
+	// Set the default goreq timeout here. It's global and isn't set per request.
+	goreq.SetConnectTimeout(10 * time.Second)
 
 	notifier := notify.Init(myName, cfg.Notify)
 
