@@ -12,7 +12,7 @@ assets.go: $(ASSETS) assets/bundle.js
 	$(GO_BINDATA) $(BINDATA_DEBUG) -pkg=dashboard -prefix "assets/" -o assets.go assets/...
 
 assets/bundle.js: node_modules/webpack/bin/webpack.js $(JS_FILES)
-	./node_modules/webpack/bin/webpack.js
+	./node_modules/webpack/bin/webpack.js --production
 
 node_modules/webpack/bin/webpack.js:
 	npm install
