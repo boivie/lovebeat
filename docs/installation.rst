@@ -4,7 +4,7 @@ Installation
 Using docker
 ------------
 
-We keep up-to-date docker_ images. They are really tiny, too.
+We keep up-to-date docker_ images.
 
 To get started, simply:
 
