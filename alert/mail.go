@@ -3,6 +3,7 @@ package alert
 import (
 	"bytes"
 	"github.com/boivie/lovebeat/config"
+	"gopkg.in/mailgun/mailgun-go.v1"
 	"net/smtp"
 	"strings"
 	"text/template"
@@ -15,7 +16,8 @@ type mail struct {
 }
 
 type mailAlerter struct {
-	cfg *config.ConfigMail
+	smtp    *config.ConfigSmtp
+	mailgun *config.ConfigMailgun
 }
 
 const (
@@ -68,12 +70,17 @@ func createMail(address string, ev AlertInfo) mail {
 func (m mailAlerter) Notify(cfg config.ConfigAlert, ev AlertInfo) {
 	if cfg.Mail != "" {
 		mail := createMail(cfg.Mail, ev)
-		sendMail(m.cfg, mail)
+
+		if m.mailgun != nil {
+			sendMailgun(m.mailgun, mail)
+		} else {
+			sendSmtp(m.smtp, mail)
+		}
 	}
 }
 
-func sendMail(cfg *config.ConfigMail, mail mail) {
-	log.Infof("Sending from %s on host %s", cfg.From, cfg.Server)
+func sendSmtp(cfg *config.ConfigSmtp, mail mail) {
+	log.Infof("Sending from %s via SMTP server %s", cfg.From, cfg.Server)
 	var context = make(map[string]interface{})
 	context["From"] = cfg.From
 	context["To"] = mail.To
@@ -89,7 +96,26 @@ func sendMail(cfg *config.ConfigMail, mail mail) {
 	}
 }
 
+func sendMailgun(cfg *config.ConfigMailgun, mail mail) {
+	log.Infof("Sending from %s via mailgun domain %s", cfg.From, cfg.Domain)
+
+	mg := mailgun.NewMailgun(cfg.Domain, cfg.ApiKey, "")
+	message := mailgun.NewMessage(cfg.From, mail.Subject, mail.Body, mail.To)
+
+	_, id, err := mg.Send(message)
+	if err != nil {
+		log.Errorf("Failed to send e-mail: %s", err)
+	} else {
+		log.Infof("Sent mail as ID %s", id)
+	}
+}
+
 func NewMailAlerter(cfg config.Config) AlerterBackend {
-	log.Debugf("Sending mail via %s, from %s", cfg.Mail.Server, cfg.Mail.From)
-	return &mailAlerter{&cfg.Mail}
+	if cfg.Mailgun.Domain != "" {
+		log.Infof("Sending mail via Mailgun from domain %s, from %s", cfg.Mailgun.Domain, cfg.Mailgun.From)
+		return &mailAlerter{mailgun: &cfg.Mailgun}
+	}
+
+	log.Infof("Sending mail via SMTP at %s, from %s", cfg.Mail.Server, cfg.Mail.From)
+	return &mailAlerter{smtp: &cfg.Mail}
 }

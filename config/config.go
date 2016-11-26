@@ -11,7 +11,8 @@ import (
 
 type Config struct {
 	General  ConfigGeneral
-	Mail     ConfigMail
+	Mail     ConfigSmtp
+	Mailgun  ConfigMailgun
 	Slack    ConfigSlack
 	Udp      ConfigBind
 	Tcp      ConfigBind
@@ -28,9 +29,15 @@ type ConfigGeneral struct {
 	PublicUrl string `toml:"public_url"`
 }
 
-type ConfigMail struct {
+type ConfigSmtp struct {
 	From   string
 	Server string
+}
+
+type ConfigMailgun struct {
+	From   string
+	Domain string
+	ApiKey string `toml:"api_key"`
 }
 
 type ConfigSlack struct {
@@ -107,10 +114,11 @@ func ReadConfig(fname string, dirname string) (conf Config, err error) {
 		General: ConfigGeneral{
 			PublicUrl: "http://lovebeat.example.com/",
 		},
-		Mail: ConfigMail{
+		Mail: ConfigSmtp{
 			From:   "lovebeat@example.com",
 			Server: "localhost:25",
 		},
+		Mailgun: ConfigMailgun{},
 		Slack: ConfigSlack{
 			WebhookUrl: "https://hooks.slack.com/services/TXXXXXXXX/BXXXXXXXX/XXXXXXXXXXXXXXXXX",
 		},

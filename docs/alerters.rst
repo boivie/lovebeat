@@ -13,7 +13,11 @@ that will be used when sending the e-mails. It doesn't currently support
 SMTP authentication, so you might want to run a local SMTP server to proxy
 the sent e-mails.
 
-The configuration file should look as following:
+If you have an account at Mailgun_, you can specify your domain and API key
+to let Lovebeat send mails using Mailgun's API. By doing this, the SMTP settings
+will not be used.
+
+The configuration file should look as following for SMTP:
 
 .. code-block:: ini
 
@@ -21,7 +25,27 @@ The configuration file should look as following:
     server = "localhost:25"
     from = "lovebeat@example.com"
 
-**TODO:** Write detailed configuration
+If you're using Mailgun for sending your mails, your configuration will look
+as follows:
+
+.. code-block:: ini
+
+    [mailgun]
+    domain = "example.com"
+    from = "lovebeat@example.com"
+    api_key = "key-5ap419x2asxge9a6xaqq0ztagv-a4axj"
+
+Example of specifying an alarm that sends mails:
+
+.. code-block:: ini
+
+    [[alarms]]
+    name = "example"
+    pattern = "test.*"
+    alerts = ["mail-alert"]
+
+    [alerts.mail-alert]
+    mail = "administrator@example.com"
 
 Outgoing Webhooks
 -----------------
@@ -131,3 +155,4 @@ The output would then be (among other environment variables):
     LOVEBEAT_INCIDENT=11
 
 .. _slack: https://slack.com/
+.. _Mailgun: https://mailgun.com/

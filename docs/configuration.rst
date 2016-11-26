@@ -68,6 +68,17 @@ documented as well.
     #from = "lovebeat@example.com"
 
     ##
+    ## Mailgun settings, which takes priority over the SMTP settings
+    ## if specified
+    ##
+    ## The API Key can be found in Mailgun's Account Settings.
+    #
+    #[mailgun]
+    #domain = ""
+    #from = ""
+    #api_key = ""
+
+    ##
     ## Metrics reporting to a statsd proxy, using the UDP protocol.
     ## Note that this one is by default disabled, but can be enabled
     ## by specifying a server address and port, e.g. "localhost:8125"
