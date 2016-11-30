@@ -1,12 +1,17 @@
 Getting started
 ===============
 
-Concept
--------
+Concepts
+--------
+
+It's really helpful if you understand the different concepts in lovebeat.
 
 Services send "heartbeats" with regular intervals to lovebeat. If they for some
-reason stop sending the heartbeats, lovebeat will react to this and update the
-service state and possibly trigger alarms, such as sending e-mails.
+reason stop sending these heartbeats, lovebeat will react to this and update 
+the service state, which in may trigger and alarm, which in turn will trigger 
+alerts, such as sending e-mails.
+
+And you can monitor it all in the Lovebeat web UI.
 
 So let's break it down a bit:
 
@@ -18,7 +23,7 @@ as the name, and it typically looks like "myapp.mailers.invoice" with periods
 as the delimiter.
 
 As you grow and have a lot of services to monitor, it's good to have some
-sort of hierarchy.
+sort of hierarchy. It's up to you to choose one.
 
 States
 ------
@@ -48,8 +53,7 @@ starting with "backup."
 
 Alarms also have states. If all services within the alarm are **OK**, the alarm
 will be **OK**. But if any service is in **ERROR** state, the alarm will
-transition into the **ERROR** state. And when an alarm is in **ERROR**, it can
-trigger alerts to e.g. send an e-mail, post a Slack_ message or run a script.
+transition into the **ERROR** state.
 
 Alarms can be automatically created based on the service names, which is a
 powerful feature when your service names have a structure.
@@ -88,10 +92,18 @@ the service will be part of the alarm. Example as below:
     includes = ["source.$name.*", "old-source.$name.*"]
     excludes = ["source.deprecated.*"]
 
+Alerts
+------
+
+When an alarm changes state (to *ERROR* or *OK*), it can trigger alerts
+that e.g. sends and e-mail (through SMTP or Mailgun_), posts a Slack_ message
+to your team's channel, sends an outgoing webhook or runs a shell script.
 
 Web UI
 ------
 
-Just point your browser to http://localhost:8080/
+Just point your browser to http://localhost:8080/ to see the current status
+of all your services and alarms.
 
 .. _Slack: https://slack.com/
+.. _Mailgun: https://mailgun.com/
