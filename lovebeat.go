@@ -86,7 +86,7 @@ func main() {
 	log.Debug("Debug logs enabled")
 
 	if *validate {
-		fmt.Fprintf(os.Stderr, "Validating auto-algorithm from stdin\n")
+		fmt.Fprint(os.Stderr, "Validating auto-algorithm from stdin\n")
 		algorithms.Validate()
 		return
 	}
