@@ -18,8 +18,11 @@ import (
 	"github.com/franela/goreq"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
+	"golang.org/x/crypto/ssh/terminal"
+	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"runtime"
 	"strings"
@@ -139,6 +142,28 @@ func main() {
 	go api.TcpListener(&cfg.Tcp)
 
 	m.IncCounter("started.count")
+
+	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+		var cmd string
+		var args []string
+		_, port, err := net.SplitHostPort(cfg.Http.Listen)
+		if err == nil {
+			url := fmt.Sprintf("http://localhost:%v", port)
+
+			switch runtime.GOOS {
+			case "windows":
+				cmd = "cmd"
+				args = []string{"/c", "start"}
+			case "darwin":
+				cmd = "open"
+			default: // "linux", "freebsd", "openbsd", "netbsd"
+				cmd = "xdg-open"
+			}
+			args = append(args, url)
+			log.Infof("Starting your browser with %s - the Lovebeat Web UI.", url)
+			exec.Command(cmd, args...).Start()
+		}
+	}
 
 	signalHandler(be)
 }
