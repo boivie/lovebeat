@@ -1,6 +1,14 @@
 Installation
 ============
 
+Prebuilt executable
+-------------------
+
+Our releases are built and uploaded to github. You can download a binary
+matching your architecture and OS at:
+
+  https://github.com/boivie/lovebeat/releases
+
 Using docker
 ------------
 
@@ -14,14 +22,6 @@ To get started, simply:
 
 You may want to run with other options to specify volumes for the data and
 configuration.
-
-Prebuilt executable
--------------------
-
-Our releases are built and uploaded to github. You can download a binary
-matching your architecture and OS at:
-
-  https://github.com/boivie/lovebeat/releases
 
 Building from source
 --------------------

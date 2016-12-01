@@ -15,10 +15,11 @@ your plants or changing sheets in your bed). It can also be used for the
 opposite - for finding out when things start to happen that shouldn't, like
 your frontend calling deprecated methods in the backend.
 
-Lovebeat provide a lot of different APIs. We recommend the "statsd"-compatible
+Lovebeat provides a lot of different APIs. We recommend the "statsd"-compatible
 UDP protocol when adding triggers to your software for minimum impact on your
-performance. A TCP protocol if you don't trust UDP and HTTP protocol for curl.
-And don't forget the web UI.
+performance (when you're running Lovebeat on the same machine or trust the
+network to deliver your UDP packets). A TCP protocol is available if you 
+don't trust UDP and HTTP protocol for curl. And don't forget the web UI.
 
 .. toctree::
    :maxdepth: 2
