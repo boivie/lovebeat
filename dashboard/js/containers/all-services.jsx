@@ -19,7 +19,7 @@ class AllServices extends Component {
       <h1>All Services</h1>
       <ServicesToolbar checked={checked}/>
       {isEmpty
-        ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
+        ? (isFetching ? <h2>Loading...</h2> : <p>Sorry - we couldn't find any services. Start sending heartbeats and they'll turn up here.</p>)
         : <div>
             <Services key="all-services" services={services} checked={checked}/>
           </div>

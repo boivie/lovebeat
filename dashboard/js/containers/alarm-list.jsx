@@ -16,7 +16,7 @@ class AlarmList extends Component {
     return (
       <div>
       {isEmpty
-        ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
+        ? (isFetching ? <h2>Loading...</h2> : <p style={{padding: ".8em .5em .8em 1.5em"}}>You haven't configured any alarms yet.</p>)
         : <div style={{ opacity: isFetching ? 0.5 : 1 }}>
             <Alarms alarms={alarms}/>
           </div>
