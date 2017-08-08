@@ -1,12 +1,13 @@
 package config
 
 import (
-	"github.com/BurntSushi/toml"
-	"github.com/op/go-logging"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/BurntSushi/toml"
+	"github.com/op/go-logging"
 )
 
 type Config struct {
@@ -153,10 +154,12 @@ func ReadConfig(fname string, dirname string) (conf Config, err error) {
 		files, err = ioutil.ReadDir(dirname)
 		if err == nil {
 			for _, f := range files {
-				path := filepath.Join(dirname, f.Name())
-				err = readFile(&conf, path)
-				if err != nil {
-					return
+				if f.Name()[0] != '.' {
+					path := filepath.Join(dirname, f.Name())
+					err = readFile(&conf, path)
+					if err != nil {
+						return
+					}
 				}
 			}
 		} else {
