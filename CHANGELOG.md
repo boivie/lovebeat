@@ -1,3 +1,7 @@
+## 1.0.3 - 2017-08-08
+
+  * Don't read hidden configuration files
+
 ## 1.0.2 - 2017-03-20
 
   * Improved dashboard help texts
